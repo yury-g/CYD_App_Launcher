@@ -70,6 +70,151 @@ Simplified FFT visualization of IBI data to detect breathing rate. Spectrum bars
 
 ---
 
+## 📸 Visual Overview
+
+### App Screenshots & UI Layout
+
+```
+┌─────────────────────────────────────────────────────────┐
+│  BEAT │ BREATH │ RELAX │  HRV  │  FFT  │  (Menu Bar)   │
+├═════════════════════════════════════════════════════════┤
+│                                                         │
+│  APP 0: HEARTBEAT VISUALIZER                            │
+│  ┌───────────────────────────────────────────────────┐  │
+│  │ ▁▂▃▄▅▆▇█▇▆▅▄▃▂▁▂▃▄▅▆▇█  (scrolling waveform)     │  │
+│  │                      ●  (beat flash dot)          │  │
+│  │                                                    │  │
+│  └───────────────────────────────────────────────────┘  │
+│  BPM: 72      IBI: 833ms                         ♥      │
+└─────────────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────────────┐
+│  APP 1: BREATHING TRAINER                               │
+│                                                         │
+│                      ◯                                  │
+│                    ◯   ◯                                │
+│                  ◯  IN   ◯  (expanding circle)          │
+│                    ◯   ◯                                │
+│                      ◯                                  │
+│                                                         │
+│  BPM: 68                                                │
+└─────────────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────────────┐
+│  APP 2: RELAXATION                                      │
+│                                                         │
+│                    ┌─────┐                              │
+│                    │  72 │  (large BPM in color circle) │
+│                    └─────┘                              │
+│                                                         │
+│  [RED ========●======= TEAL]  (stress spectrum bar)     │
+└─────────────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────────────┐
+│  APP 3: HRV DASHBOARD                                   │
+│  ┌──────────────┐  │  RMSSD: 42ms                       │
+│  │  •  •        │  │  SDNN:  58ms                       │
+│  │    • •  •    │  │  IBI:   847ms                      │
+│  │  •    •   •  │  │  BPM:   71                         │
+│  │    •  •      │  │  N:     42 beats                   │
+│  └──────────────┘  │                                    │
+│  (Poincaré plot)   │  (metrics panel)                   │
+└─────────────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────────────┐
+│  APP 4: BREATH FFT                                      │
+│                                                         │
+│  ▌ ▌ ▌ █ ▌ ▌ ▌ ▌  (frequency spectrum bars)            │
+│  │ │ │ │ │ │ │ │                                       │
+│  └─┴─┴─┴─┴─┴─┴─┘                                       │
+│      ↑ peak                                             │
+│                                                         │
+│  Breathing: 7.2/min                                     │
+└─────────────────────────────────────────────────────────┘
+```
+
+### System Architecture
+
+```
+┌──────────────────────────────────────────────────────────────┐
+│                       CYD HARDWARE                           │
+│  ┌────────────┐  ┌────────────┐  ┌──────────────┐           │
+│  │ ILI9341    │  │ XPT2046    │  │ ESP32        │           │
+│  │ 320x240    │  │ Touch      │  │ 240MHz       │           │
+│  │ TFT        │  │ Controller │  │ WiFi+BT      │           │
+│  └────────────┘  └────────────┘  └──────────────┘           │
+│         ↓                ↓               ↓                   │
+│  ┌───────────────────────────────────────────────┐           │
+│  │          TFT_eSPI + XPT2046 Libraries         │           │
+│  └───────────────────────────────────────────────┘           │
+└──────────────────────────────────────────────────────────────┘
+                           ↓
+┌──────────────────────────────────────────────────────────────┐
+│              CYD_APP_LAUNCHER.INO (Main Loop)                │
+│  ┌──────────────────────────────────────────────┐            │
+│  │  setup() → init hardware, draw menu          │            │
+│  │  loop()  → read touch, read sensor, route    │            │
+│  └──────────────────────────────────────────────┘            │
+│                           ↓                                  │
+│  ┌──────────────────────────────────────────────┐            │
+│  │            APP ROUTER (switch/case)           │            │
+│  │  case 0: runHeartbeat()                      │            │
+│  │  case 1: runBreathing()                      │            │
+│  │  case 2: runRelaxation()                     │            │
+│  │  case 3: runHRV()                            │            │
+│  │  case 4: runBreathFFT()                      │            │
+│  └──────────────────────────────────────────────┘            │
+└──────────────────────────────────────────────────────────────┘
+                           ↓
+┌──────────────────────────────────────────────────────────────┐
+│              PULSESENSOR (GPIO 36)                           │
+│  ┌──────────────────────────────────────────────┐            │
+│  │  PulseSensor Playground Library              │            │
+│  │  - Analog read @ ~500Hz                      │            │
+│  │  - Beat detection algorithm                  │            │
+│  │  - BPM / IBI calculation                     │            │
+│  └──────────────────────────────────────────────┘            │
+└──────────────────────────────────────────────────────────────┘
+```
+
+### File Structure
+
+```
+CYD_App_Launcher/
+├── CYD_App_Launcher.ino   ← Main firmware (531 lines)
+│   ├── Pin definitions
+│   ├── Global state variables
+│   ├── setup() - Initialize all hardware
+│   ├── loop() - Touch handling + app routing
+│   ├── RGB LED functions (ledcAttach API)
+│   ├── Auto-scaling waveform helpers
+│   ├── Drawing helper functions
+│   └── Five app functions:
+│       ├── runHeartbeat()   - Scrolling waveform
+│       ├── runBreathing()   - Breathing pacer
+│       ├── runRelaxation()  - Color biofeedback
+│       ├── runHRV()         - Poincaré + metrics
+│       └── runBreathFFT()   - RSA breathing detection
+│
+├── README.md              ← This file
+├── CHANGELOG.md           ← Version history
+├── .gitignore
+│
+├── build/                 ← Created by arduino-cli compile
+│   └── esp32.esp32.esp32/
+│       ├── CYD_App_Launcher.ino.bin
+│       ├── CYD_App_Launcher.ino.bootloader.bin
+│       └── CYD_App_Launcher.ino.partitions.bin
+│
+└── firmware/              ← For ESP Web Tools deployment
+    ├── bootloader.bin     (from PulseSensor_CYD repo)
+    ├── partitions.bin     (from PulseSensor_CYD repo)
+    ├── boot_app0.bin      (from PulseSensor_CYD repo)
+    └── firmware.bin       (compiled from this project)
+```
+
+---
+
 ## 🧠 Code Architecture & Key Improvements
 
 This firmware incorporates proven patterns from the **WorldFamousElectronics/PulseSensor_CYD** reference implementation:

@@ -523,3 +523,278 @@ This firmware is designed to be read and understood by students learning embedde
 
 **Last updated:** April 8, 2026  
 **Status:** v0.2.0 — Awaiting compilation fix
+<div align="center">
+
+# 📱 Visual App Gallery
+
+*What you'll see on the 320×240 CYD display*
+
+</div>
+
+## App 0: Heartbeat Visualizer
+
+<div align="center">
+
+<svg width="320" height="240" viewBox="0 0 320 240" xmlns="http://www.w3.org/2000/svg">
+  <!-- CYD Screen Background -->
+  <rect width="320" height="240" fill="#000"/>
+  
+  <!-- Menu Bar -->
+  <rect x="0" y="0" width="64" height="30" fill="#E63946"/>
+  <text x="10" y="20" fill="#fff" font-size="10" font-family="monospace">BEAT</text>
+  <rect x="64" y="0" width="64" height="30" fill="#2a2a2a"/>
+  <text x="70" y="20" fill="#999" font-size="10" font-family="monospace">BREATH</text>
+  <rect x="128" y="0" width="64" height="30" fill="#2a2a2a"/>
+  <text x="135" y="20" fill="#999" font-size="10" font-family="monospace">RELAX</text>
+  <rect x="192" y="0" width="64" height="30" fill="#2a2a2a"/>
+  <text x="202" y="20" fill="#999" font-size="10" font-family="monospace">HRV</text>
+  <rect x="256" y="0" width="64" height="30" fill="#2a2a2a"/>
+  <text x="265" y="20" fill="#999" font-size="10" font-family="monospace">FFT</text>
+  
+  <!-- Waveform Area -->
+  <rect x="0" y="40" width="320" height="140" fill="#0a0a0a"/>
+  
+  <!-- Scrolling Waveform (cyan wave) -->
+  <path d="M0,120 Q10,100 20,110 T40,120 T60,110 T80,130 T100,100 T120,140 T140,90 T160,130 T180,110 T200,125 T220,105 T240,120 T260,115 T280,125 T300,110 T320,120" 
+        stroke="#07FF" stroke-width="4" fill="none"/>
+  
+  <!-- Beat Flash Dot -->
+  <circle cx="280" cy="90" r="8" fill="#E63946"/>
+  
+  <!-- Grid Lines -->
+  <line x1="0" y1="90" x2="320" y2="90" stroke="#1a1a1a" stroke-width="1"/>
+  <line x1="0" y1="130" x2="320" y2="130" stroke="#1a1a1a" stroke-width="1"/>
+  
+  <!-- BPM Display -->
+  <text x="10" y="210" fill="#fff" font-size="18" font-family="monospace">BPM: 72</text>
+  <text x="160" y="210" fill="#fff" font-size="18" font-family="monospace">IBI: 833</text>
+  
+  <!-- Heart Icon -->
+  <circle cx="288" cy="215" r="8" fill="#E63946"/>
+  <circle cx="304" cy="215" r="8" fill="#E63946"/>
+  <path d="M 280,219 L 296,233 L 312,219" fill="#E63946"/>
+</svg>
+
+**Heartbeat Visualizer** — Scrolling waveform at ~60 FPS with auto-scaling. Red dot flashes on each beat. RGB LED mirrors the flash. BPM and IBI update in real-time.
+
+</div>
+
+---
+
+## App 1: Breathing Trainer
+
+<div align="center">
+
+<svg width="320" height="240" viewBox="0 0 320 240" xmlns="http://www.w3.org/2000/svg">
+  <rect width="320" height="240" fill="#000"/>
+  
+  <!-- Menu Bar (inactive) -->
+  <rect x="0" y="0" width="64" height="30" fill="#2a2a2a"/>
+  <text x="10" y="20" fill="#999" font-size="10" font-family="monospace">BEAT</text>
+  <rect x="64" y="0" width="64" height="30" fill="#22D3EE"/>
+  <text x="70" y="20" fill="#000" font-size="10" font-family="monospace">BREATH</text>
+  <rect x="128" y="0" width="64" height="30" fill="#2a2a2a"/>
+  <text x="135" y="20" fill="#999" font-size="10" font-family="monospace">RELAX</text>
+  <rect x="192" y="0" width="64" height="30" fill="#2a2a2a"/>
+  <text x="202" y="20" fill="#999" font-size="10" font-family="monospace">HRV</text>
+  <rect x="256" y="0" width="64" height="30" fill="#2a2a2a"/>
+  <text x="265" y="20" fill="#999" font-size="10" font-family="monospace">FFT</text>
+  
+  <!-- Breathing Circle (expanding, cyan) -->
+  <circle cx="160" cy="120" r="60" fill="none" stroke="#22D3EE" stroke-width="3"/>
+  <circle cx="160" cy="120" r="50" fill="none" stroke="#22D3EE" stroke-width="2" opacity="0.5"/>
+  <circle cx="160" cy="120" r="40" fill="none" stroke="#22D3EE" stroke-width="2" opacity="0.3"/>
+  
+  <!-- Inhale Text -->
+  <text x="128" y="125" fill="#22D3EE" font-size="20" font-family="monospace" font-weight="bold">INHALE</text>
+  
+  <!-- BPM Display -->
+  <text x="10" y="220" fill="#999" font-size="14" font-family="monospace">BPM: 68</text>
+</svg>
+
+**Breathing Trainer** — Circle expands (4s inhale) and contracts (4s exhale) in an 8-second cycle. Paces you at 7.5 breaths/min for relaxation. BPM shown as you calm down.
+
+</div>
+
+---
+
+## App 2: Relaxation Mode
+
+<div align="center">
+
+<svg width="320" height="240" viewBox="0 0 320 240" xmlns="http://www.w3.org/2000/svg">
+  <rect width="320" height="240" fill="#000"/>
+  
+  <!-- Menu Bar -->
+  <rect x="0" y="0" width="64" height="30" fill="#2a2a2a"/>
+  <text x="10" y="20" fill="#999" font-size="10" font-family="monospace">BEAT</text>
+  <rect x="64" y="0" width="64" height="30" fill="#2a2a2a"/>
+  <text x="70" y="20" fill="#999" font-size="10" font-family="monospace">BREATH</text>
+  <rect x="128" y="0" width="64" height="30" fill="#4ADE80"/>
+  <text x="135" y="20" fill="#000" font-size="10" font-family="monospace">RELAX</text>
+  <rect x="192" y="0" width="64" height="30" fill="#2a2a2a"/>
+  <text x="202" y="20" fill="#999" font-size="10" font-family="monospace">HRV</text>
+  <rect x="256" y="0" width="64" height="30" fill="#2a2a2a"/>
+  <text x="265" y="20" fill="#999" font-size="10" font-family="monospace">FFT</text>
+  
+  <!-- Color Circle (gradient from red to teal, showing ~72 BPM = mid-range) -->
+  <circle cx="160" cy="110" r="60" fill="url(#relaxGrad)"/>
+  <defs>
+    <linearGradient id="relaxGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#FFA500;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#4ADE80;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  
+  <!-- BPM Number -->
+  <text x="132" y="125" fill="#000" font-size="36" font-family="monospace" font-weight="bold">72</text>
+  
+  <!-- Stress Spectrum Bar -->
+  <rect x="40" y="190" width="240" height="12" rx="6" fill="#1a1a1a"/>
+  <rect x="40" y="190" width="120" height="12" rx="6" fill="url(#specGrad)"/>
+  <circle cx="160" cy="196" r="8" fill="#FFA500" stroke="#000" stroke-width="2"/>
+  <defs>
+    <linearGradient id="specGrad">
+      <stop offset="0%" style="stop-color:#E63946"/>
+      <stop offset="100%" style="stop-color:#22D3EE"/>
+    </linearGradient>
+  </defs>
+  <text x="40" y="218" fill="#E63946" font-size="10" font-family="monospace">STRESS</text>
+  <text x="232" y="218" fill="#22D3EE" font-size="10" font-family="monospace">RELAXED</text>
+</svg>
+
+**Relaxation Mode** — Large BPM inside a color-changing circle. Circle shifts from red (stressed) → orange → green → teal (relaxed) as heart rate drops. Live biofeedback loop.
+
+</div>
+
+---
+
+## App 3: HRV Dashboard
+
+<div align="center">
+
+<svg width="320" height="240" viewBox="0 0 320 240" xmlns="http://www.w3.org/2000/svg">
+  <rect width="320" height="240" fill="#000"/>
+  
+  <!-- Menu Bar -->
+  <rect x="0" y="0" width="64" height="30" fill="#2a2a2a"/>
+  <text x="10" y="20" fill="#999" font-size="10" font-family="monospace">BEAT</text>
+  <rect x="64" y="0" width="64" height="30" fill="#2a2a2a"/>
+  <text x="70" y="20" fill="#999" font-size="10" font-family="monospace">BREATH</text>
+  <rect x="128" y="0" width="64" height="30" fill="#2a2a2a"/>
+  <text x="135" y="20" fill="#999" font-size="10" font-family="monospace">RELAX</text>
+  <rect x="192" y="0" width="64" height="30" fill="#FACC15"/>
+  <text x="202" y="20" fill="#000" font-size="10" font-family="monospace">HRV</text>
+  <rect x="256" y="0" width="64" height="30" fill="#2a2a2a"/>
+  <text x="265" y="20" fill="#999" font-size="10" font-family="monospace">FFT</text>
+  
+  <!-- Poincaré Plot (left) -->
+  <rect x="10" y="45" width="140" height="140" fill="#0a0a0a" stroke="#2a2a2a" stroke-width="1"/>
+  <text x="12" y="56" fill="#666" font-size="8" font-family="monospace">IBI(n+1)</text>
+  
+  <!-- Scatter points (Poincaré) -->
+  <circle cx="50" cy="100" r="2" fill="#07FF"/>
+  <circle cx="70" cy="110" r="2" fill="#07FF"/>
+  <circle cx="90" cy="95" r="2" fill="#07FF"/>
+  <circle cx="65" cy="120" r="2" fill="#07FF"/>
+  <circle cx="80" cy="105" r="2" fill="#07FF"/>
+  <circle cx="100" cy="115" r="2" fill="#07FF"/>
+  <circle cx="55" cy="90" r="2" fill="#07FF"/>
+  <circle cx="75" cy="125" r="2" fill="#07FF"/>
+  <circle cx="85" cy="100" r="2" fill="#07FF"/>
+  <circle cx="95" cy="108" r="2" fill="#07FF"/>
+  <circle cx="105" cy="112" r="2" fill="#07FF"/>
+  <circle cx="60" cy="103" r="2" fill="#07FF"/>
+  
+  <!-- Metrics Panel (right) -->
+  <text x="165" y="65" fill="#22D3EE" font-size="11" font-family="monospace">RMSSD</text>
+  <text x="240" y="65" fill="#22D3EE" font-size="16" font-family="monospace" font-weight="bold">42</text>
+  <text x="280" y="65" fill="#666" font-size="10" font-family="monospace">ms</text>
+  
+  <text x="165" y="90" fill="#FACC15" font-size="11" font-family="monospace">SDNN</text>
+  <text x="240" y="90" fill="#FACC15" font-size="16" font-family="monospace" font-weight="bold">58</text>
+  <text x="280" y="90" fill="#666" font-size="10" font-family="monospace">ms</text>
+  
+  <text x="165" y="115" fill="#E63946" font-size="11" font-family="monospace">IBI</text>
+  <text x="230" y="115" fill="#E63946" font-size="16" font-family="monospace" font-weight="bold">847</text>
+  <text x="280" y="115" fill="#666" font-size="10" font-family="monospace">ms</text>
+  
+  <text x="165" y="140" fill="#4ADE80" font-size="11" font-family="monospace">BPM</text>
+  <text x="240" y="140" fill="#4ADE80" font-size="16" font-family="monospace" font-weight="bold">71</text>
+  
+  <text x="165" y="170" fill="#666" font-size="10" font-family="monospace">42 beats logged</text>
+</svg>
+
+**HRV Dashboard** — Poincaré plot (left) shows each IBI vs. the next. Wide scatter = good variability. Metrics panel (right) shows RMSSD, SDNN, current IBI, and BPM. Needs ~10 beats to populate.
+
+</div>
+
+---
+
+## App 4: Breath FFT
+
+<div align="center">
+
+<svg width="320" height="240" viewBox="0 0 320 240" xmlns="http://www.w3.org/2000/svg">
+  <rect width="320" height="240" fill="#000"/>
+  
+  <!-- Menu Bar -->
+  <rect x="0" y="0" width="64" height="30" fill="#2a2a2a"/>
+  <text x="10" y="20" fill="#999" font-size="10" font-family="monospace">BEAT</text>
+  <rect x="64" y="0" width="64" height="30" fill="#2a2a2a"/>
+  <text x="70" y="20" fill="#999" font-size="10" font-family="monospace">BREATH</text>
+  <rect x="128" y="0" width="64" height="30" fill="#2a2a2a"/>
+  <text x="135" y="20" fill="#999" font-size="10" font-family="monospace">RELAX</text>
+  <rect x="192" y="0" width="64" height="30" fill="#2a2a2a"/>
+  <text x="202" y="20" fill="#999" font-size="10" font-family="monospace">HRV</text>
+  <rect x="256" y="0" width="64" height="30" fill="#a855f7"/>
+  <text x="265" y="20" fill="#fff" font-size="10" font-family="monospace">FFT</text>
+  
+  <!-- FFT Spectrum Bars -->
+  <rect x="20" y="120" width="16" height="20" fill="#07FF"/>
+  <rect x="40" y="110" width="16" height="30" fill="#07FF"/>
+  <rect x="60" y="100" width="16" height="40" fill="#07FF"/>
+  <rect x="80" y="80" width="16" height="60" fill="#E63946"/>
+  <rect x="100" y="95" width="16" height="45" fill="#07FF"/>
+  <rect x="120" y="105" width="16" height="35" fill="#07FF"/>
+  <rect x="140" y="115" width="16" height="25" fill="#07FF"/>
+  <rect x="160" y="120" width="16" height="20" fill="#07FF"/>
+  <rect x="180" y="125" width="16" height="15" fill="#07FF"/>
+  <rect x="200" y="128" width="16" height="12" fill="#07FF"/>
+  <rect x="220" y="130" width="16" height="10" fill="#07FF"/>
+  <rect x="240" y="132" width="16" height="8" fill="#07FF"/>
+  <rect x="260" y="134" width="16" height="6" fill="#07FF"/>
+  <rect x="280" y="135" width="16" height="5" fill="#07FF"/>
+  
+  <!-- Peak Marker -->
+  <text x="82" y="75" fill="#E63946" font-size="12" font-family="monospace">↑ peak</text>
+  
+  <!-- Breathing Rate Display -->
+  <text x="60" y="170" fill="#fff" font-size="16" font-family="monospace">Breathing: 7.2/min</text>
+  
+  <!-- Grid Lines -->
+  <line x1="20" y1="140" x2="300" y2="140" stroke="#2a2a2a" stroke-width="1"/>
+</svg>
+
+**Breath FFT** — Measures your actual breathing rate from heart rate variability (RSA). Spectrum bars show frequency components of IBI data. Peak frequency (red bar) indicates detected breathing rate. Needs ~16 beats (~15 sec) to lock on.
+
+</div>
+
+---
+
+<div align="center">
+
+## 🏗️ System Architecture (Visual)
+
+</div>
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                     ⚡ ESP32-2432S028R (CYD)                    │
+│  ┌─────────────┐  ┌──────────────┐  ┌────────────────────────┐ │
+│  │  ILI9341    │  │  XPT2046     │  │  ESP32 (240MHz)        │ │
+│  │  320×240    │  │  Touch       │  │  WiFi + Bluetooth      │ │
+│  │  TFT LCD    │  │  Resistive   │  │  Dual Core             │ │
+│  └──────┬──────┘  └──────┬───────┘  └────────┬───────────────┘ │
+│         │                │                   │                  │
+│         │                │                   │                  │

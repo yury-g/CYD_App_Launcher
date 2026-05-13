@@ -39,7 +39,8 @@
 #define MIN_QUALIFIED_IBI 333
 #define MAX_QUALIFIED_IBI 1500
 #define MIN_QUALIFIED_AMPLITUDE 20
-#define REQUIRED_QUALIFIED_BEATS 3
+#define SIGNAL_QUALITY_STEPS 12
+#define LOCK_QUALITY_STEPS 10
 
 // ===== SCREEN LAYOUT =====
 
@@ -93,8 +94,7 @@ unsigned long lastSerialPrint = 0;
 bool lockedSignal = false;
 bool previousLockedSignal = false;
 bool pulseSensorReady = false;
-int qualifiedBeatStreak = 0;
-int qualitySegments = 0;
+int signalQuality = 0;
 
 // ===== GRAPH STATE =====
 
@@ -163,7 +163,7 @@ void loop() {
     lastSerialPrint = millis();
     Serial.printf("signal=%d amp=%d bpm=%d ibi=%d locked=%d quality=%d\n",
                   currentSignal, pulseAmplitude, displayBPM, displayIBI,
-                  lockedSignal ? 1 : 0, qualitySegments);
+                  lockedSignal ? 1 : 0, signalQuality);
   }
 }
 
@@ -225,16 +225,14 @@ void readPulseSensor() {
       displayBPM = bpm;
       displayIBI = ibi;
       lastQualifiedBeatTime = millis();
-      qualifiedBeatStreak++;
-      if (qualifiedBeatStreak > REQUIRED_QUALIFIED_BEATS) {
-        qualifiedBeatStreak = REQUIRED_QUALIFIED_BEATS;
-      }
+      signalQuality += 3;
+      if (signalQuality > SIGNAL_QUALITY_STEPS) signalQuality = SIGNAL_QUALITY_STEPS;
     } else {
-      qualifiedBeatStreak = 0;
+      signalQuality -= 1;
+      if (signalQuality < 0) signalQuality = 0;
     }
 
-    lockedSignal = qualifiedBeatStreak >= REQUIRED_QUALIFIED_BEATS;
-    qualitySegments = qualifiedBeatStreak;
+    lockedSignal = signalQuality >= LOCK_QUALITY_STEPS;
 
     // Blink/fade the rear red LED only after the beat is qualified.
     if (lockedSignal && qualified) {
@@ -244,8 +242,7 @@ void readPulseSensor() {
 
   if (millis() - lastQualifiedBeatTime > NO_BEAT_TIMEOUT) {
     lockedSignal = false;
-    qualifiedBeatStreak = 0;
-    qualitySegments = 0;
+    signalQuality = 0;
     displayBPM = 0;
     displayIBI = 0;
   }
@@ -427,19 +424,24 @@ void drawSignalPanel() {
   tft.setCursor(x + 9, PANEL_Y + 8);
   tft.print("QUALITY");
 
-  drawQualitySegments(x + 10, PANEL_Y + 24);
+  drawQualitySegments(x + 9, PANEL_Y + 24);
   drawLedIndicator(x + 58, PANEL_Y + 32);
 
   tft.setTextSize(1);
   tft.setTextColor(lockedSignal ? COLOR_TEAL : COLOR_AMBER, COLOR_PANEL);
   tft.setCursor(x + 9, PANEL_Y + 48);
-  tft.print(lockedSignal ? "LED RED" : "CHECK PIN");
+  tft.printf("%02d/12", signalQuality);
 }
 
 void drawQualitySegments(int x, int y) {
-  for (int i = 0; i < 3; i++) {
-    uint16_t color = i < qualitySegments ? COLOR_TEAL : COLOR_GRID;
-    tft.fillRoundRect(x + i * 13, y, 9, 20, 3, color);
+  const int segmentW = 4;
+  const int segmentGap = 2;
+  for (int i = 0; i < SIGNAL_QUALITY_STEPS; i++) {
+    uint16_t color = COLOR_GRID;
+    if (i < signalQuality) {
+      color = i < LOCK_QUALITY_STEPS ? COLOR_AMBER : COLOR_TEAL;
+    }
+    tft.fillRect(x + i * (segmentW + segmentGap), y, segmentW, 18, color);
   }
 }
 

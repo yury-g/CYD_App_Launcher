@@ -1,0 +1,40 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+PORT="${1:-/dev/cu.usbserial-3120}"
+FQBN="esp32:esp32:esp32:UploadSpeed=115200"
+BUILD_DIR="${TMPDIR:-/tmp}/cyd-app-launcher-build"
+SKETCH_DIR="${TMPDIR:-/tmp}/cyd-app-launcher-sketch/CYD_App_Launcher"
+
+TFT_FLAGS=(
+  "-DUSER_SETUP_LOADED=1"
+  "-DILI9341_DRIVER=1"
+  "-DTFT_WIDTH=240"
+  "-DTFT_HEIGHT=320"
+  "-DTFT_MISO=12"
+  "-DTFT_MOSI=13"
+  "-DTFT_SCLK=14"
+  "-DTFT_CS=15"
+  "-DTFT_DC=2"
+  "-DTFT_RST=-1"
+  "-DTFT_BL=21"
+  "-DTFT_BACKLIGHT_ON=HIGH"
+  "-DLOAD_GLCD=1"
+  "-DSPI_FREQUENCY=40000000"
+  "-DSPI_READ_FREQUENCY=16000000"
+)
+
+rm -rf "${BUILD_DIR}" "${SKETCH_DIR}"
+mkdir -p "${SKETCH_DIR}"
+cp CYD_App_Launcher.ino "${SKETCH_DIR}/"
+
+arduino-cli compile \
+  --fqbn "${FQBN}" \
+  --build-path "${BUILD_DIR}" \
+  --build-property "compiler.cpp.extra_flags=${TFT_FLAGS[*]}" \
+  "${SKETCH_DIR}"
+
+arduino-cli upload \
+  --fqbn "${FQBN}" \
+  --port "${PORT}" \
+  --input-dir "${BUILD_DIR}"

@@ -1,531 +1,470 @@
 /*
  * CYD_App_Launcher.ino
- * Student Version - 5 PulseSensor applications for ESP32 CYD (Cheap Yellow Display)
- * 
- * Hardware: ESP32-2432S028R (CYD)
- * Display: ILI9341 320x240 TFT with XPT2046 touch
- * Sensor: PulseSensor on GPIO 36
- * RGB LED: Red=4, Green=16, Blue=17 (onboard CYD LED)
- * 
- * Apps:
- * 0: Heartbeat - scrolling waveform with auto-scaling, BPM, RGB LED flash
- * 1: Breathing - sine wave circle, 8s inhale/exhale cycle
- * 2: Relaxation - large BPM in color circle, red to teal gradient
- * 3: HRV - Poincare plot with RMSSD/SDNN/IBI/BPM metrics
- * 4: BreathFFT - FFT on IBI data to detect breathing rate
+ * One-screen PulseSensor dashboard for ESP32 CYD (Cheap Yellow Display).
+ *
+ * Hardware:
+ *   Board:        ESP32-2432S028R (CYD)
+ *   Display:      ILI9341 320x240 TFT
+ *   PulseSensor:  signal wire on GPIO 35 (found with AnalogPinScanner)
+ *   RGB LED:      Red=4, Green=16, Blue=17 (active-low onboard CYD LED)
+ *
+ * This sketch intentionally stays in one file for Arduino IDE beginners.
+ *
+ * PulseSensorPlayground functions used, following the library resources:
+ *   getLatestSample()         -> live waveform
+ *   sawStartOfBeat()          -> one-shot beat event
+ *   getBeatsPerMinute()       -> BPM readout
+ *   getInterBeatIntervalMs()  -> IBI readout
+ *   getPulseAmplitude()       -> signal quality helper
  */
 
 #include <TFT_eSPI.h>
-#include <XPT2046_Touchscreen.h>
 #define USE_ARDUINO_INTERRUPTS true
 #include <PulseSensorPlayground.h>
 
-// Pin definitions
-#define TOUCH_CS 33
-#define PULSE_PIN 36
+// ===== CYD PINS =====
+
+#define PULSE_PIN 35
 #define BACKLIGHT 21
 #define LED_RED_PIN 4
 #define LED_GREEN_PIN 16
 #define LED_BLUE_PIN 17
 
-// Touch calibration (raw values from experimentation)
-#define TOUCH_X_MIN 200
-#define TOUCH_X_MAX 3800
-#define TOUCH_Y_MIN 200
-#define TOUCH_Y_MAX 3800
+// ===== PULSESENSOR SETTINGS =====
 
-// Screen dimensions
+#define PULSE_THRESHOLD 550
+#define NO_BEAT_TIMEOUT 3000
+#define MIN_QUALIFIED_BPM 40
+#define MAX_QUALIFIED_BPM 180
+#define MIN_QUALIFIED_IBI 333
+#define MAX_QUALIFIED_IBI 1500
+#define MIN_QUALIFIED_AMPLITUDE 20
+#define REQUIRED_QUALIFIED_BEATS 3
+
+// ===== SCREEN LAYOUT =====
+
 #define SCREEN_WIDTH 320
 #define SCREEN_HEIGHT 240
 
-// Waveform drawing constants
-#define WAVEFORM_TOP 40
-#define WAVEFORM_HEIGHT 140
-#define WAVEFORM_THICKNESS 4
-#define NO_BEAT_TIMEOUT 3000  // ms without beat = no finger detected
+#define GRAPH_X 8
+#define GRAPH_Y 48
+#define GRAPH_W 304
+#define GRAPH_H 112
 
-// Color palette (student-friendly, not branded)
-#define COLOR_BG 0x0000        // Black
-#define COLOR_TEXT 0xFFFF      // White
-#define COLOR_GRID 0x2104      // Dark grey
-#define COLOR_WAVE 0x07FF      // Cyan
-#define COLOR_BEAT 0xF800      // Red
-#define COLOR_INHALE 0x07E0    // Green
-#define COLOR_EXHALE 0x001F    // Blue
+#define PANEL_Y 170
+#define PANEL_H 62
 
-// Global objects
+// ===== COLORS (RGB565) =====
+
+#define COLOR_BG 0x0000
+#define COLOR_PANEL 0x0841
+#define COLOR_PANEL_DARK 0x0400
+#define COLOR_GRID 0x18E3
+#define COLOR_GRID_SOFT 0x10A2
+#define COLOR_TEXT 0xFFFF
+#define COLOR_MUTED 0x8C71
+#define COLOR_CYAN 0x07FF
+#define COLOR_CYAN_DARK 0x0452
+#define COLOR_TEAL 0x05F3
+#define COLOR_RED 0xF800
+#define COLOR_RED_DARK 0x6000
+#define COLOR_AMBER 0xFBE0
+
+// ===== GLOBAL OBJECTS =====
+
 TFT_eSPI tft = TFT_eSPI();
-XPT2046_Touchscreen touch(TOUCH_CS);
 PulseSensorPlayground pulseSensor;
 
-// Global state
-int currentApp = 0;
-int currentBPM = 0;
-int currentIBI = 0;
-int currentSignal = 512;
-unsigned long lastBeatTime = 0;
-bool fingerPresent = false;
+// ===== LIVE SENSOR STATE =====
 
-// Waveform auto-scaling
+int currentSignal = 2048;
+int displayBPM = 0;
+int displayIBI = 0;
+int pulseAmplitude = 0;
 int minSignal = 2048;
 int maxSignal = 2048;
 
-// RGB LED brightness
+unsigned long lastBeatTime = 0;
+unsigned long lastQualifiedBeatTime = 0;
+unsigned long lastPanelDraw = 0;
+unsigned long lastGraphDraw = 0;
+unsigned long lastSerialPrint = 0;
+
+bool lockedSignal = false;
+bool previousLockedSignal = false;
+bool pulseSensorReady = false;
+int qualifiedBeatStreak = 0;
+int qualitySegments = 0;
+
+// ===== GRAPH STATE =====
+
+int graphX = 0;
+int lastGraphY = GRAPH_Y + GRAPH_H / 2;
+
+// ===== RED LED FADE STATE =====
+
 int ledBrightness = 0;
-#define LED_FADE_SPEED 15
+#define LED_FADE_SPEED 12
 
-// Forward declarations for all apps
-void runHeartbeat();
-void runBreathing();
-void runRelaxation();
-void runHRV();
-void runBreathFFT();
+// ===== FORWARD DECLARATIONS =====
 
-// Helper function declarations
+void setup();
+void loop();
 void setupLED();
-void setLED(int brightness);
+void setRedLED(int brightness);
 void updateLED();
-void updateMinMax();
-void drawHeart(int x, int y, uint16_t color);
-void drawBPM(int bpm);
-void drawIBI(int ibi);
-TS_Point getTouchPoint();
+void setupPulseSensor();
+void readPulseSensor();
+bool isQualifiedBeat(int bpm, int ibi, int amplitude);
+void updateSignalRange();
+void drawStaticScreen();
+void drawHeader();
+void drawGraphFrame();
+void drawGraphColumnBackground(int localX);
+void drawWaveform();
+void drawPanels();
+void drawMetricPanel(int x, const char* label, int value, const char* unit, bool valid);
+void drawSignalPanel();
+void drawQualitySegments(int x, int y);
+void drawLedIndicator(int x, int y);
+void drawCenteredText(const char* text, int x, int y, int w, int textSize, uint16_t color, uint16_t bg);
+uint16_t blendRed(int brightness);
 
 void setup() {
   Serial.begin(115200);
-  
-  // Initialize TFT
-  tft.init();
-  tft.setRotation(1);  // Landscape
-  tft.fillScreen(COLOR_BG);
-  
-  // Initialize touch
-  touch.begin();
-  touch.setRotation(1);
-  
-  // Initialize backlight
+  delay(100);
+  Serial.println("CYD one-screen PulseSensor dashboard");
+
   pinMode(BACKLIGHT, OUTPUT);
   digitalWrite(BACKLIGHT, HIGH);
-  
-  // Initialize RGB LED
+
+  tft.init();
+  tft.setRotation(1);
+  tft.fillScreen(COLOR_BG);
+
   setupLED();
-  
-  // Initialize PulseSensor
-  pulseSensor.analogInput(PULSE_PIN);
-  pulseSensor.setThreshold(550);
-  if (!pulseSensor.begin()) {
-    Serial.println("PulseSensor initialization failed!");
-  }
-  
-  // Draw initial menu
-  drawMenu();
+  setupPulseSensor();
+  drawStaticScreen();
 }
 
 void loop() {
-  // Check for touch to switch apps
-  if (touch.touched()) {
-    TS_Point p = getTouchPoint();
-    if (p.y < 40) {  // Top menu bar touched
-      int appIndex = p.x / 64;  // 5 apps, each 64px wide
-      if (appIndex != currentApp && appIndex < 5) {
-        currentApp = appIndex;
-        tft.fillScreen(COLOR_BG);
-        drawMenu();
-      }
-    }
-  }
-  
-  // Read sensor
-  currentSignal = pulseSensor.getLatestSample();
-  
-  // Check for beat (one-shot trigger)
-  if (pulseSensor.sawStartOfBeat()) {
-    currentBPM = pulseSensor.getBeatsPerMinute();
-    currentIBI = pulseSensor.getInterBeatIntervalMs();
-    lastBeatTime = millis();
-    fingerPresent = true;
-    ledBrightness = 255;  // Flash LED on beat
-  }
-  
-  // No-finger timeout: 3 seconds without beat = reset display
-  if (fingerPresent && (millis() - lastBeatTime > NO_BEAT_TIMEOUT)) {
-    fingerPresent = false;
-    currentBPM = 0;
-    currentIBI = 0;
-  }
-  
-  // Update LED fade
+  readPulseSensor();
   updateLED();
-  
-  // Run current app
-  switch (currentApp) {
-    case 0: runHeartbeat(); break;
-    case 1: runBreathing(); break;
-    case 2: runRelaxation(); break;
-    case 3: runHRV(); break;
-    case 4: runBreathFFT(); break;
+  drawWaveform();
+
+  if (millis() - lastPanelDraw >= 180 || lockedSignal != previousLockedSignal) {
+    lastPanelDraw = millis();
+    drawHeader();
+    drawPanels();
+    previousLockedSignal = lockedSignal;
+  }
+
+  if (millis() - lastSerialPrint >= 500) {
+    lastSerialPrint = millis();
+    Serial.printf("signal=%d amp=%d bpm=%d ibi=%d locked=%d quality=%d\n",
+                  currentSignal, pulseAmplitude, displayBPM, displayIBI,
+                  lockedSignal ? 1 : 0, qualitySegments);
   }
 }
 
-// ===== RGB LED FUNCTIONS (copied from PulseSensor_CYD) =====
+// ===== HARDWARE SETUP =====
 
 void setupLED() {
-  // ESP32 Arduino Core 3.x API: ledcAttach(pin, freq, resolution)
-  ledcAttach(LED_RED_PIN, 5000, 8);    // 5kHz PWM, 8-bit resolution
+  // ESP32 Arduino Core 3.x API. The CYD RGB LED is active-low.
+  ledcAttach(LED_RED_PIN, 5000, 8);
   ledcAttach(LED_GREEN_PIN, 5000, 8);
   ledcAttach(LED_BLUE_PIN, 5000, 8);
-  setLED(0);
+
+  setRedLED(0);
+  ledcWrite(LED_GREEN_PIN, 255);
+  ledcWrite(LED_BLUE_PIN, 255);
 }
 
-void setLED(int brightness) {
-  // CYD RGB LED is active-low (0 = full on, 255 = off)
-  int pwmValue = 255 - brightness;
-  ledcWrite(LED_RED_PIN, pwmValue);
-  ledcWrite(LED_GREEN_PIN, 255);  // Green off
-  ledcWrite(LED_BLUE_PIN, 255);   // Blue off
+void setRedLED(int brightness) {
+  brightness = constrain(brightness, 0, 255);
+  ledcWrite(LED_RED_PIN, 255 - brightness);
 }
 
 void updateLED() {
   static unsigned long lastUpdate = 0;
-  if (millis() - lastUpdate > 10) {
-    lastUpdate = millis();
-    if (ledBrightness > 0) {
-      ledBrightness -= LED_FADE_SPEED;
-      if (ledBrightness < 0) ledBrightness = 0;
-      setLED(ledBrightness);
-    }
+  if (millis() - lastUpdate < 10) return;
+
+  lastUpdate = millis();
+  if (ledBrightness > 0) {
+    ledBrightness -= LED_FADE_SPEED;
+    if (ledBrightness < 0) ledBrightness = 0;
+  }
+  setRedLED(ledBrightness);
+}
+
+void setupPulseSensor() {
+  pulseSensor.analogInput(PULSE_PIN);
+  pulseSensor.setThreshold(PULSE_THRESHOLD);
+  pulseSensorReady = pulseSensor.begin();
+
+  if (!pulseSensorReady) {
+    Serial.println("PulseSensor initialization failed");
   }
 }
 
-// ===== WAVEFORM AUTO-SCALING (copied from PulseSensor_CYD) =====
+// ===== SENSOR AND BEAT LOGIC =====
 
-void updateMinMax() {
-  // Decay min/max toward 2048 (ADC midpoint) to prevent stuck scaling
-  static unsigned long lastDecay = 0;
-  if (millis() - lastDecay > 100) {
-    lastDecay = millis();
-    minSignal = min(minSignal + 5, 2048);
-    maxSignal = max(maxSignal - 5, 2048);
+void readPulseSensor() {
+  currentSignal = pulseSensor.getLatestSample();
+  pulseAmplitude = pulseSensor.getPulseAmplitude();
+  updateSignalRange();
+
+  if (pulseSensor.sawStartOfBeat()) {
+    int bpm = pulseSensor.getBeatsPerMinute();
+    int ibi = pulseSensor.getInterBeatIntervalMs();
+    bool qualified = isQualifiedBeat(bpm, ibi, pulseAmplitude);
+
+    lastBeatTime = millis();
+
+    if (qualified) {
+      displayBPM = bpm;
+      displayIBI = ibi;
+      lastQualifiedBeatTime = millis();
+      qualifiedBeatStreak++;
+      if (qualifiedBeatStreak > REQUIRED_QUALIFIED_BEATS) {
+        qualifiedBeatStreak = REQUIRED_QUALIFIED_BEATS;
+      }
+    } else {
+      qualifiedBeatStreak = 0;
+    }
+
+    lockedSignal = qualifiedBeatStreak >= REQUIRED_QUALIFIED_BEATS;
+    qualitySegments = qualifiedBeatStreak;
+
+    // Blink/fade the rear red LED only after the beat is qualified.
+    if (lockedSignal && qualified) {
+      ledBrightness = 255;
+    }
   }
-  
-  // Track actual signal range
+
+  if (millis() - lastQualifiedBeatTime > NO_BEAT_TIMEOUT) {
+    lockedSignal = false;
+    qualifiedBeatStreak = 0;
+    qualitySegments = 0;
+    displayBPM = 0;
+    displayIBI = 0;
+  }
+}
+
+bool isQualifiedBeat(int bpm, int ibi, int amplitude) {
+  if (bpm < MIN_QUALIFIED_BPM || bpm > MAX_QUALIFIED_BPM) return false;
+  if (ibi < MIN_QUALIFIED_IBI || ibi > MAX_QUALIFIED_IBI) return false;
+  if (amplitude < MIN_QUALIFIED_AMPLITUDE) return false;
+  return true;
+}
+
+void updateSignalRange() {
+  static unsigned long lastDecay = 0;
+
+  if (millis() - lastDecay >= 100) {
+    lastDecay = millis();
+    minSignal = min(minSignal + 4, currentSignal);
+    maxSignal = max(maxSignal - 4, currentSignal);
+  }
+
   minSignal = min(minSignal, currentSignal);
   maxSignal = max(maxSignal, currentSignal);
+
+  if (maxSignal - minSignal < 80) {
+    int center = currentSignal;
+    minSignal = center - 40;
+    maxSignal = center + 40;
+  }
 }
 
-// ===== HELPER FUNCTIONS =====
+// ===== STATIC UI =====
 
-void drawHeart(int x, int y, uint16_t color) {
-  // Two circles + triangle = heart shape
-  tft.fillCircle(x - 12, y - 8, 14, color);
-  tft.fillCircle(x + 12, y - 8, 14, color);
-  tft.fillTriangle(x - 26, y - 2, x + 26, y - 2, x, y + 28, color);
+void drawStaticScreen() {
+  tft.fillScreen(COLOR_BG);
+  drawHeader();
+  drawGraphFrame();
+  drawPanels();
 }
 
-void drawBPM(int bpm) {
-  tft.setTextSize(2);
+void drawHeader() {
+  tft.fillRect(0, 0, SCREEN_WIDTH, 42, COLOR_BG);
+  tft.drawFastHLine(0, 41, SCREEN_WIDTH, COLOR_GRID);
+
+  tft.setTextSize(1);
+  tft.setTextColor(COLOR_MUTED, COLOR_BG);
+  tft.setCursor(10, 8);
+  tft.print("LIVE BEAT DETECTION");
+
+  uint16_t statusColor = lockedSignal ? COLOR_TEAL : COLOR_AMBER;
+  const char* statusText = lockedSignal ? "QUALIFIED BEAT" : "SIGNAL SEARCH";
+
+  tft.fillRoundRect(184, 6, 126, 24, 6, lockedSignal ? 0x0248 : 0x4200);
+  tft.drawRoundRect(184, 6, 126, 24, 6, statusColor);
+  drawCenteredText(statusText, 184, 13, 126, 1, statusColor, lockedSignal ? 0x0248 : 0x4200);
+
   tft.setTextColor(COLOR_TEXT, COLOR_BG);
-  tft.setCursor(10, 200);
-  tft.printf("BPM: %3d", bpm);
-}
-
-void drawIBI(int ibi) {
   tft.setTextSize(2);
-  tft.setTextColor(COLOR_TEXT, COLOR_BG);
-  tft.setCursor(160, 200);
-  tft.printf("IBI: %4d", ibi);
+  tft.setCursor(10, 22);
+  tft.print(lockedSignal ? "LOCKED" : "SEARCHING");
 }
 
-TS_Point getTouchPoint() {
-  TS_Point p = touch.getPoint();
-  // Map raw touch coordinates to screen coordinates
-  int x = map(p.x, TOUCH_X_MIN, TOUCH_X_MAX, 0, SCREEN_WIDTH);
-  int y = map(p.y, TOUCH_Y_MIN, TOUCH_Y_MAX, 0, SCREEN_HEIGHT);
-  x = constrain(x, 0, SCREEN_WIDTH - 1);
-  y = constrain(y, 0, SCREEN_HEIGHT - 1);
-  return TS_Point(x, y, p.z);
+void drawGraphFrame() {
+  tft.fillRoundRect(GRAPH_X - 2, GRAPH_Y - 2, GRAPH_W + 4, GRAPH_H + 4, 6, COLOR_PANEL_DARK);
+  tft.drawRoundRect(GRAPH_X - 2, GRAPH_Y - 2, GRAPH_W + 4, GRAPH_H + 4, 6, COLOR_GRID);
+  tft.fillRect(GRAPH_X, GRAPH_Y, GRAPH_W, GRAPH_H, COLOR_BG);
+
+  for (int x = 0; x <= GRAPH_W; x += 38) {
+    tft.drawFastVLine(GRAPH_X + x, GRAPH_Y, GRAPH_H, COLOR_GRID_SOFT);
+  }
+  for (int y = 0; y <= GRAPH_H; y += 28) {
+    tft.drawFastHLine(GRAPH_X, GRAPH_Y + y, GRAPH_W, COLOR_GRID_SOFT);
+  }
+
+  tft.setTextSize(1);
+  tft.setTextColor(COLOR_MUTED, COLOR_BG);
+  tft.setCursor(GRAPH_X + 6, GRAPH_Y + 5);
+  tft.print("LIVE LINE");
 }
 
-void drawMenu() {
-  // Top menu bar with 5 app buttons
-  const char* labels[] = {"BEAT", "BREATH", "RELAX", "HRV", "FFT"};
-  for (int i = 0; i < 5; i++) {
-    uint16_t color = (i == currentApp) ? COLOR_BEAT : COLOR_GRID;
-    tft.fillRect(i * 64, 0, 64, 30, color);
-    tft.setTextColor(COLOR_TEXT);
-    tft.setTextSize(1);
-    tft.setCursor(i * 64 + 10, 12);
-    tft.print(labels[i]);
-  }
-}
+void drawGraphColumnBackground(int localX) {
+  int screenX = GRAPH_X + localX;
+  tft.drawFastVLine(screenX, GRAPH_Y, GRAPH_H, COLOR_BG);
 
-// ===== APP 0: HEARTBEAT (scrolling waveform with auto-scaling) =====
+  if (localX % 38 == 0) {
+    tft.drawFastVLine(screenX, GRAPH_Y, GRAPH_H, COLOR_GRID_SOFT);
+  }
 
-void runHeartbeat() {
-  static int x = 0;
-  static int lastY = WAVEFORM_TOP + WAVEFORM_HEIGHT / 2;
-  static unsigned long lastDraw = 0;
-  
-  // Update auto-scaling
-  updateMinMax();
-  
-  // Draw waveform at ~60 FPS
-  if (millis() - lastDraw > 16) {
-    lastDraw = millis();
-    
-    // Map signal to screen Y coordinate
-    int y = map(currentSignal, minSignal, maxSignal, WAVEFORM_TOP + WAVEFORM_HEIGHT - 1, WAVEFORM_TOP + 1);
-    y = constrain(y, WAVEFORM_TOP + 1, WAVEFORM_TOP + WAVEFORM_HEIGHT - 1);
-    
-    // Draw thick waveform line (4px vertical thickness)
-    for (int dy = -WAVEFORM_THICKNESS/2; dy < WAVEFORM_THICKNESS/2; dy++) {
-      int drawY = y + dy;
-      if (drawY >= WAVEFORM_TOP && drawY < WAVEFORM_TOP + WAVEFORM_HEIGHT) {
-        tft.drawPixel(x, drawY, COLOR_WAVE);
-      }
-    }
-    
-    // Draw connecting line from previous point
-    tft.drawLine(x - 1, lastY, x, y, COLOR_WAVE);
-    lastY = y;
-    
-    // Draw cursor line 4 pixels ahead (visual "writing cursor")
-    int cursorX = (x + 4) % SCREEN_WIDTH;
-    tft.drawFastVLine(cursorX, WAVEFORM_TOP + 1, WAVEFORM_HEIGHT - 2, COLOR_GRID);
-    
-    // Advance X position
-    x++;
-    if (x >= SCREEN_WIDTH) {
-      x = 0;
-      lastY = WAVEFORM_TOP + WAVEFORM_HEIGHT / 2;
-    }
-  }
-  
-  // Update BPM/IBI display
-  static int lastDisplayBPM = -1;
-  static int lastDisplayIBI = -1;
-  if (currentBPM != lastDisplayBPM) {
-    drawBPM(currentBPM);
-    lastDisplayBPM = currentBPM;
-  }
-  if (currentIBI != lastDisplayIBI) {
-    drawIBI(currentIBI);
-    lastDisplayIBI = currentIBI;
-  }
-  
-  // Draw beat indicator (heart icon flashes on beat)
-  static bool lastBeat = false;
-  bool beatNow = (ledBrightness > 200);
-  if (beatNow != lastBeat) {
-    uint16_t color = beatNow ? COLOR_BEAT : COLOR_BG;
-    drawHeart(280, 210, color);
-    lastBeat = beatNow;
+  for (int y = 0; y <= GRAPH_H; y += 28) {
+    tft.drawPixel(screenX, GRAPH_Y + y, COLOR_GRID_SOFT);
   }
 }
 
-// ===== APP 1: BREATHING (sine wave circle, 8s inhale/exhale) =====
+// ===== LIVE GRAPH =====
 
-void runBreathing() {
-  static unsigned long lastUpdate = 0;
-  static float phase = 0.0;
-  
-  if (millis() - lastUpdate > 50) {  // 20 FPS
-    lastUpdate = millis();
-    
-    // 8-second breathing cycle (4s inhale, 4s exhale)
-    phase += TWO_PI / (8000.0 / 50.0);
-    if (phase > TWO_PI) phase -= TWO_PI;
-    
-    // Calculate circle radius (50 to 100 pixels)
-    int radius = 50 + 50 * (0.5 + 0.5 * sin(phase));
-    
-    // Draw circle
-    tft.fillScreen(COLOR_BG);
-    drawMenu();
-    
-    uint16_t color = (sin(phase) > 0) ? COLOR_INHALE : COLOR_EXHALE;
-    tft.fillCircle(SCREEN_WIDTH / 2, 140, radius, color);
-    
-    // Draw instruction text
-    tft.setTextSize(2);
-    tft.setTextColor(COLOR_TEXT, COLOR_BG);
-    tft.setCursor(80, 200);
-    tft.print(sin(phase) > 0 ? "INHALE " : "EXHALE");
+void drawWaveform() {
+  if (millis() - lastGraphDraw < 20) return;
+  lastGraphDraw = millis();
+
+  int y = map(currentSignal, minSignal, maxSignal, GRAPH_Y + GRAPH_H - 8, GRAPH_Y + 8);
+  y = constrain(y, GRAPH_Y + 8, GRAPH_Y + GRAPH_H - 8);
+
+  drawGraphColumnBackground(graphX);
+  drawGraphColumnBackground((graphX + 1) % GRAPH_W);
+  drawGraphColumnBackground((graphX + 2) % GRAPH_W);
+
+  uint16_t waveColor = lockedSignal ? COLOR_CYAN : COLOR_CYAN_DARK;
+
+  if (graphX > 0) {
+    tft.drawLine(GRAPH_X + graphX - 1, lastGraphY, GRAPH_X + graphX, y, waveColor);
+    tft.drawPixel(GRAPH_X + graphX, y - 1, waveColor);
+    tft.drawPixel(GRAPH_X + graphX, y + 1, waveColor);
+  }
+
+  if (ledBrightness > 180) {
+    tft.fillCircle(GRAPH_X + graphX, y, 3, COLOR_RED);
+  }
+
+  lastGraphY = y;
+  graphX++;
+
+  if (graphX >= GRAPH_W) {
+    graphX = 0;
+    lastGraphY = y;
+    drawGraphFrame();
   }
 }
 
-// ===== APP 2: RELAXATION (large BPM in color circle, red to teal) =====
+// ===== DASHBOARD PANELS =====
 
-void runRelaxation() {
-  static int lastBPM = -1;
-  
-  if (currentBPM != lastBPM) {
-    tft.fillScreen(COLOR_BG);
-    drawMenu();
-    
-    // Map BPM to color (red = high, teal = low)
-    int bpm = constrain(currentBPM, 40, 120);
-    int hue = map(bpm, 120, 40, 0, 180);  // Red (0) to Teal (180)
-    
-    // Simple HSV to RGB conversion for hue only
-    uint16_t color;
-    if (hue < 60) {
-      color = tft.color565(255, hue * 4, 0);
-    } else if (hue < 120) {
-      color = tft.color565(255 - (hue - 60) * 4, 255, 0);
+void drawPanels() {
+  drawMetricPanel(8, "BPM", displayBPM, "", lockedSignal);
+  drawMetricPanel(118, "IBI", displayIBI, "ms", lockedSignal);
+  drawSignalPanel();
+}
+
+void drawMetricPanel(int x, const char* label, int value, const char* unit, bool valid) {
+  const int w = 102;
+  tft.fillRoundRect(x, PANEL_Y, w, PANEL_H, 6, COLOR_PANEL);
+  tft.drawRoundRect(x, PANEL_Y, w, PANEL_H, 6, valid ? COLOR_TEAL : COLOR_GRID);
+
+  tft.setTextSize(1);
+  tft.setTextColor(COLOR_MUTED, COLOR_PANEL);
+  tft.setCursor(x + 10, PANEL_Y + 9);
+  tft.print(label);
+
+  tft.setTextSize(4);
+  tft.setTextColor(valid ? COLOR_TEXT : COLOR_MUTED, COLOR_PANEL);
+  tft.setCursor(x + 10, PANEL_Y + 25);
+
+  if (valid) {
+    if (strcmp(label, "BPM") == 0) {
+      tft.printf("%3d", value);
     } else {
-      color = tft.color565(0, 255, (hue - 120) * 4);
+      tft.setTextSize(3);
+      tft.printf("%3d", value);
     }
-    
-    // Draw large circle
-    tft.fillCircle(SCREEN_WIDTH / 2, 140, 80, color);
-    
-    // Draw BPM text
-    tft.setTextSize(4);
-    tft.setTextColor(COLOR_BG, color);
-    char buf[8];
-    sprintf(buf, "%3d", currentBPM);
-    int textWidth = strlen(buf) * 24;
-    tft.setCursor((SCREEN_WIDTH - textWidth) / 2, 120);
-    tft.print(buf);
-    
-    lastBPM = currentBPM;
+  } else {
+    tft.print("--");
   }
-}
 
-// ===== APP 3: HRV (Poincare plot with metrics) =====
-
-#define MAX_HRV_POINTS 50
-int hrvIBIs[MAX_HRV_POINTS];
-int hrvIndex = 0;
-int hrvCount = 0;
-
-void runHRV() {
-  static unsigned long lastUpdate = 0;
-  
-  // Add new IBI to buffer on each beat
-  if (pulseSensor.sawStartOfBeat() && currentIBI > 0) {
-    hrvIBIs[hrvIndex] = currentIBI;
-    hrvIndex = (hrvIndex + 1) % MAX_HRV_POINTS;
-    if (hrvCount < MAX_HRV_POINTS) hrvCount++;
-  }
-  
-  // Redraw every 500ms
-  if (millis() - lastUpdate > 500 && hrvCount > 5) {
-    lastUpdate = millis();
-    
-    tft.fillScreen(COLOR_BG);
-    drawMenu();
-    
-    // Calculate HRV metrics
-    float sumIBI = 0, sumSqDiff = 0;
-    int validPoints = 0;
-    
-    for (int i = 1; i < hrvCount; i++) {
-      sumIBI += hrvIBIs[i];
-      float diff = hrvIBIs[i] - hrvIBIs[i-1];
-      sumSqDiff += diff * diff;
-      validPoints++;
-    }
-    
-    float avgIBI = sumIBI / validPoints;
-    float rmssd = sqrt(sumSqDiff / validPoints);
-    
-    // Calculate SDNN (standard deviation)
-    float sumSqDeviation = 0;
-    for (int i = 0; i < hrvCount; i++) {
-      float dev = hrvIBIs[i] - avgIBI;
-      sumSqDeviation += dev * dev;
-    }
-    float sdnn = sqrt(sumSqDeviation / hrvCount);
-    
-    // Draw Poincare plot (left half of screen)
-    tft.drawRect(10, 40, 140, 140, COLOR_GRID);
-    for (int i = 1; i < hrvCount; i++) {
-      int x = map(hrvIBIs[i-1], 400, 1200, 10, 150);
-      int y = map(hrvIBIs[i], 400, 1200, 180, 40);
-      x = constrain(x, 10, 150);
-      y = constrain(y, 40, 180);
-      tft.drawPixel(x, y, COLOR_WAVE);
-    }
-    
-    // Draw metrics (right half of screen)
+  if (valid && unit[0] != '\0') {
     tft.setTextSize(1);
-    tft.setTextColor(COLOR_TEXT, COLOR_BG);
-    tft.setCursor(170, 60);
-    tft.printf("RMSSD: %.1f", rmssd);
-    tft.setCursor(170, 80);
-    tft.printf("SDNN: %.1f", sdnn);
-    tft.setCursor(170, 100);
-    tft.printf("IBI: %d", currentIBI);
-    tft.setCursor(170, 120);
-    tft.printf("BPM: %d", currentBPM);
-    tft.setCursor(170, 140);
-    tft.printf("N: %d", hrvCount);
+    tft.setTextColor(COLOR_MUTED, COLOR_PANEL);
+    tft.setCursor(x + 72, PANEL_Y + 45);
+    tft.print(unit);
   }
 }
 
-// ===== APP 4: BREATH FFT (FFT on IBI to detect breathing rate) =====
+void drawSignalPanel() {
+  const int x = 228;
+  const int w = 84;
 
-#define FFT_SIZE 32
-float fftInput[FFT_SIZE];
-float fftMagnitude[FFT_SIZE / 2];
-int fftIndex = 0;
+  tft.fillRoundRect(x, PANEL_Y, w, PANEL_H, 6, COLOR_PANEL);
+  tft.drawRoundRect(x, PANEL_Y, w, PANEL_H, 6, lockedSignal ? COLOR_RED : COLOR_GRID);
 
-void runBreathFFT() {
-  static unsigned long lastUpdate = 0;
-  
-  // Add new IBI to FFT buffer on each beat
-  if (pulseSensor.sawStartOfBeat() && currentIBI > 0) {
-    fftInput[fftIndex] = currentIBI;
-    fftIndex = (fftIndex + 1) % FFT_SIZE;
+  tft.setTextSize(1);
+  tft.setTextColor(COLOR_MUTED, COLOR_PANEL);
+  tft.setCursor(x + 9, PANEL_Y + 8);
+  tft.print("QUALITY");
+
+  drawQualitySegments(x + 10, PANEL_Y + 24);
+  drawLedIndicator(x + 58, PANEL_Y + 32);
+
+  tft.setTextSize(1);
+  tft.setTextColor(lockedSignal ? COLOR_TEAL : COLOR_AMBER, COLOR_PANEL);
+  tft.setCursor(x + 9, PANEL_Y + 48);
+  tft.print(lockedSignal ? "LED RED" : "CHECK PIN");
+}
+
+void drawQualitySegments(int x, int y) {
+  for (int i = 0; i < 3; i++) {
+    uint16_t color = i < qualitySegments ? COLOR_TEAL : COLOR_GRID;
+    tft.fillRoundRect(x + i * 13, y, 9, 20, 3, color);
   }
-  
-  // Redraw every 1000ms
-  if (millis() - lastUpdate > 1000) {
-    lastUpdate = millis();
-    
-    tft.fillScreen(COLOR_BG);
-    drawMenu();
-    
-    // Simple FFT approximation (magnitude spectrum)
-    // For a real FFT, you'd use a library like arduinoFFT
-    // This is a simplified visualization showing IBI variance
-    
-    for (int i = 0; i < FFT_SIZE / 2; i++) {
-      float sum = 0;
-      for (int j = 0; j < FFT_SIZE; j++) {
-        float angle = TWO_PI * i * j / FFT_SIZE;
-        sum += fftInput[j] * cos(angle);
-      }
-      fftMagnitude[i] = abs(sum) / FFT_SIZE;
-    }
-    
-    // Find peak frequency (breathing rate)
-    int peakBin = 0;
-    float peakMag = 0;
-    for (int i = 1; i < FFT_SIZE / 2; i++) {  // Skip DC bin
-      if (fftMagnitude[i] > peakMag) {
-        peakMag = fftMagnitude[i];
-        peakBin = i;
-      }
-    }
-    
-    // Estimate breathing rate (assuming ~1 beat per second sample rate)
-    float breathRate = peakBin * 60.0 / FFT_SIZE;  // breaths per minute
-    
-    // Draw spectrum bars
-    int barWidth = SCREEN_WIDTH / (FFT_SIZE / 2);
-    for (int i = 0; i < FFT_SIZE / 2; i++) {
-      int barHeight = constrain(fftMagnitude[i] / 2, 0, 120);
-      uint16_t color = (i == peakBin) ? COLOR_BEAT : COLOR_WAVE;
-      tft.fillRect(i * barWidth, 160 - barHeight, barWidth - 2, barHeight, color);
-    }
-    
-    // Draw breathing rate estimate
-    tft.setTextSize(2);
-    tft.setTextColor(COLOR_TEXT, COLOR_BG);
-    tft.setCursor(60, 180);
-    tft.printf("Breathing: %.1f/min", breathRate);
+}
+
+void drawLedIndicator(int x, int y) {
+  uint16_t ledColor = blendRed(ledBrightness);
+  tft.drawCircle(x, y, 12, COLOR_RED_DARK);
+  tft.fillCircle(x, y, 8, ledColor);
+  if (ledBrightness > 120) {
+    tft.drawCircle(x, y, 14, COLOR_RED);
   }
+}
+
+void drawCenteredText(const char* text, int x, int y, int w, int textSize, uint16_t color, uint16_t bg) {
+  int charW = 6 * textSize;
+  int textW = strlen(text) * charW;
+  int cursorX = x + max(0, (w - textW) / 2);
+  tft.setTextSize(textSize);
+  tft.setTextColor(color, bg);
+  tft.setCursor(cursorX, y);
+  tft.print(text);
+}
+
+uint16_t blendRed(int brightness) {
+  brightness = constrain(brightness, 0, 255);
+  if (brightness < 20) return COLOR_RED_DARK;
+  if (brightness < 120) return 0xA800;
+  return COLOR_RED;
 }

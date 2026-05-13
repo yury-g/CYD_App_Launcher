@@ -41,6 +41,9 @@
 #define MIN_QUALIFIED_AMPLITUDE 20
 #define SIGNAL_QUALITY_STEPS 12
 #define LOCK_QUALITY_STEPS 10
+#define REARM_SIGNAL_RANGE 120
+#define REARM_NO_BEAT_MS 2200
+#define REARM_COOLDOWN_MS 3500
 
 // ===== SCREEN LAYOUT =====
 
@@ -90,11 +93,13 @@ unsigned long lastQualifiedBeatTime = 0;
 unsigned long lastPanelDraw = 0;
 unsigned long lastGraphDraw = 0;
 unsigned long lastSerialPrint = 0;
+unsigned long lastDetectorRearmTime = 0;
 
 bool lockedSignal = false;
 bool previousLockedSignal = false;
 bool pulseSensorReady = false;
 int signalQuality = 0;
+int rearmCount = 0;
 
 // ===== GRAPH STATE =====
 
@@ -116,6 +121,8 @@ void updateLED();
 void setupPulseSensor();
 void readPulseSensor();
 bool isQualifiedBeat(int bpm, int ibi, int amplitude);
+void maybeRearmDetector();
+void rearmPulseDetector(const char* reason);
 void updateSignalRange();
 void drawStaticScreen();
 void drawHeader();
@@ -213,6 +220,7 @@ void readPulseSensor() {
   currentSignal = pulseSensor.getLatestSample();
   pulseAmplitude = pulseSensor.getPulseAmplitude();
   updateSignalRange();
+  maybeRearmDetector();
 
   if (pulseSensor.sawStartOfBeat()) {
     int bpm = pulseSensor.getBeatsPerMinute();
@@ -253,6 +261,35 @@ bool isQualifiedBeat(int bpm, int ibi, int amplitude) {
   if (ibi < MIN_QUALIFIED_IBI || ibi > MAX_QUALIFIED_IBI) return false;
   if (amplitude < MIN_QUALIFIED_AMPLITUDE) return false;
   return true;
+}
+
+void maybeRearmDetector() {
+  unsigned long now = millis();
+  int liveRange = maxSignal - minSignal;
+  bool signalLooksAlive = liveRange >= REARM_SIGNAL_RANGE;
+  bool detectorIsQuiet = (now - lastBeatTime) >= REARM_NO_BEAT_MS;
+  bool rearmCooledDown = (now - lastDetectorRearmTime) >= REARM_COOLDOWN_MS;
+
+  if (!lockedSignal && signalLooksAlive && detectorIsQuiet && rearmCooledDown) {
+    rearmPulseDetector("alive signal without beat event");
+  }
+}
+
+void rearmPulseDetector(const char* reason) {
+  Serial.print("Re-arming PulseSensor detector: ");
+  Serial.println(reason);
+
+  pulseSensor.pause();
+  delay(8);
+  pulseSensor.resume();
+
+  lastDetectorRearmTime = millis();
+  lastBeatTime = millis();
+  signalQuality = 0;
+  displayBPM = 0;
+  displayIBI = 0;
+  lockedSignal = false;
+  rearmCount++;
 }
 
 void updateSignalRange() {
@@ -431,6 +468,10 @@ void drawSignalPanel() {
   tft.setTextColor(lockedSignal ? COLOR_TEAL : COLOR_AMBER, COLOR_PANEL);
   tft.setCursor(x + 9, PANEL_Y + 48);
   tft.printf("%02d/12", signalQuality);
+
+  tft.setTextColor(COLOR_MUTED, COLOR_PANEL);
+  tft.setCursor(x + 50, PANEL_Y + 48);
+  tft.printf("R%d", rearmCount);
 }
 
 void drawQualitySegments(int x, int y) {

@@ -1,5 +1,17 @@
 # CYD App Launcher — Student Version — Changelog
 
+## v1.0.0 — 2026-05-13
+**Known-good one-screen CYD Pulse Dashboard**
+- Reduced firmware to one beginner-friendly Arduino `.ino` file.
+- Replaced the five-app launcher with a single live PulseSensor dashboard.
+- Added live line graph, BPM, IBI, 12-step signal quality meter, and qualified beat status.
+- Changed PulseSensor input to `GPIO 35`, matching the connected CYD hardware found with the analog pin scanner.
+- Added red rear RGB LED blink/fade on qualified beats only.
+- Added automatic detector re-arm when the waveform looks alive but PulseSensorPlayground is not emitting beat events.
+- Matched PulseSensorPlayground's ESP32 expectations with `analogReadResolution(10)`.
+- Added `flash-cyd.sh` helper for repeatable Arduino CLI builds with the required `TFT_eSPI` CYD compile flags.
+- Verified on connected ESP32-2432S028R CYD hardware.
+
 ## v0.2.0 — 2026-04-08
 **Complete .ino written (compilation pending)**
 - Full CYD_App_Launcher.ino written (531 lines)
@@ -19,9 +31,3 @@
 - README placeholder
 - git initialized
 - Status: INCOMPLETE — .ino not yet written
-
-## Upcoming: v1.0.0
-- Compilation errors resolved
-- Compiled .bin verified on hardware
-- Multi-part manifest.json created
-- Web flasher live at yury-g.github.io/CYD_App_Launcher

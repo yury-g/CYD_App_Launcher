@@ -53,6 +53,14 @@ The display has one screen:
 - Lower panels for `BPM`, `IBI`, and signal quality
 - `R#` in the quality panel shows how many automatic detector re-arms have happened
 
+### Screenshots
+
+These mock screenshots match the current `v1.0.0` firmware layout.
+
+| Searching for signal | Locked on qualified beat |
+| --- | --- |
+| ![Searching signal screen](docs/screenshots/searching.svg) | ![Locked qualified beat screen](docs/screenshots/locked.svg) |
+
 ## Beat Qualification
 
 The firmware uses PulseSensorPlayground for beat detection:

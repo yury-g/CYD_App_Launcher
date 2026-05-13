@@ -11,6 +11,7 @@
  * This sketch intentionally stays in one file for Arduino IDE beginners.
  *
  * PulseSensorPlayground functions used, following the library resources:
+ *   analogReadResolution(10)  -> match PulseSensorPlayground's 0..1023 math
  *   getLatestSample()         -> live waveform
  *   sawStartOfBeat()          -> one-shot beat event
  *   getBeatsPerMinute()       -> BPM readout
@@ -81,12 +82,12 @@ PulseSensorPlayground pulseSensor;
 
 // ===== LIVE SENSOR STATE =====
 
-int currentSignal = 2048;
+int currentSignal = 512;
 int displayBPM = 0;
 int displayIBI = 0;
 int pulseAmplitude = 0;
-int minSignal = 2048;
-int maxSignal = 2048;
+int minSignal = 512;
+int maxSignal = 512;
 
 unsigned long lastBeatTime = 0;
 unsigned long lastQualifiedBeatTime = 0;
@@ -205,6 +206,11 @@ void updateLED() {
 }
 
 void setupPulseSensor() {
+  // PulseSensorPlayground's detector and ESP32 example expect 10-bit samples.
+  // ESP32 defaults to 12-bit, which can make the raw waveform look great while
+  // the library's threshold math waits in the wrong scale.
+  analogReadResolution(10);
+
   pulseSensor.analogInput(PULSE_PIN);
   pulseSensor.setThreshold(PULSE_THRESHOLD);
   pulseSensorReady = pulseSensor.begin();

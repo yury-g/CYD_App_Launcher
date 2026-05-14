@@ -1,7 +1,13 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-PORT="${1:-/dev/cu.usbserial-3120}"
+if [[ $# -ne 1 ]]; then
+  echo "Usage: $0 <serial-port>"
+  echo "Detect the CYD port first with: arduino-cli board list"
+  exit 64
+fi
+
+PORT="$1"
 FQBN="esp32:esp32:esp32:UploadSpeed=115200"
 BUILD_DIR="${TMPDIR:-/tmp}/cyd-app-launcher-build"
 SKETCH_DIR="${TMPDIR:-/tmp}/cyd-app-launcher-sketch/CYD_App_Launcher"

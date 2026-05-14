@@ -65,7 +65,7 @@
 #define HEART_MAX_SIZE 15
 #define VOLUME_MIN 0
 #define VOLUME_MAX 10
-#define VOLUME_START 3
+#define VOLUME_START 2
 
 // ===== TOUCH CALIBRATION =====
 
@@ -131,7 +131,6 @@ int maxSignal = 512;
 
 unsigned long lastBeatTime = 0;
 unsigned long lastQualifiedBeatTime = 0;
-unsigned long lastPanelDraw = 0;
 unsigned long lastGraphDraw = 0;
 unsigned long lastSerialPrint = 0;
 unsigned long lastDetectorRearmTime = 0;
@@ -142,6 +141,13 @@ bool previousLockedSignal = false;
 bool pulseSensorReady = false;
 int signalQuality = 0;
 int rearmCount = 0;
+
+bool dashboardDrawn = false;
+int previousDisplayBPM = -1;
+int previousDisplayIBI = -1;
+int previousSignalQuality = -1;
+int previousRearmCount = -1;
+bool previousDashboardLockedSignal = false;
 
 // ===== BEAT TONE STATE =====
 
@@ -183,6 +189,7 @@ void maybeRearmDetector();
 void rearmPulseDetector(const char* reason);
 void updateSignalRange();
 void drawStaticScreen();
+void drawDashboardIfChanged();
 void drawHeader();
 void drawVolumeControl();
 void drawGraphFrame();
@@ -193,7 +200,9 @@ void drawMetricPanel(int x, const char* label, int value, const char* unit, bool
 void drawSignalPanel();
 void drawQualitySegments(int x, int y);
 void drawBeatHeart();
+void fillHeartShape(int centerX, int centerY, int size, uint16_t color);
 void drawCenteredText(const char* text, int x, int y, int w, int textSize, uint16_t color, uint16_t bg);
+uint16_t liveTraceColor();
 uint16_t blendRed(int brightness);
 
 void setup() {
@@ -222,13 +231,7 @@ void loop() {
   updateBeatChime();
   drawBeatHeart();
   drawWaveform();
-
-  if (millis() - lastPanelDraw >= 180 || lockedSignal != previousLockedSignal) {
-    lastPanelDraw = millis();
-    drawHeader();
-    drawPanels();
-    previousLockedSignal = lockedSignal;
-  }
+  drawDashboardIfChanged();
 
   if (millis() - lastSerialPrint >= 500) {
     lastSerialPrint = millis();
@@ -462,9 +465,35 @@ void updateSignalRange() {
 
 void drawStaticScreen() {
   tft.fillScreen(COLOR_BG);
-  drawHeader();
   drawGraphFrame();
-  drawPanels();
+  drawDashboardIfChanged();
+}
+
+void drawDashboardIfChanged() {
+  bool statusChanged = !dashboardDrawn || lockedSignal != previousDashboardLockedSignal;
+  bool panelsChanged = statusChanged ||
+                       displayBPM != previousDisplayBPM ||
+                       displayIBI != previousDisplayIBI ||
+                       signalQuality != previousSignalQuality ||
+                       rearmCount != previousRearmCount;
+
+  if (statusChanged) {
+    drawHeader();
+  }
+
+  if (panelsChanged) {
+    drawPanels();
+  }
+
+  if (statusChanged || panelsChanged) {
+    dashboardDrawn = true;
+    previousDashboardLockedSignal = lockedSignal;
+    previousLockedSignal = lockedSignal;
+    previousDisplayBPM = displayBPM;
+    previousDisplayIBI = displayIBI;
+    previousSignalQuality = signalQuality;
+    previousRearmCount = rearmCount;
+  }
 }
 
 void drawHeader() {
@@ -549,7 +578,7 @@ void drawWaveform() {
   drawGraphColumnBackground((graphX + 1) % GRAPH_W);
   drawGraphColumnBackground((graphX + 2) % GRAPH_W);
 
-  uint16_t waveColor = lockedSignal ? COLOR_CYAN : COLOR_CYAN_DARK;
+  uint16_t waveColor = liveTraceColor();
 
   if (graphX > 0) {
     tft.drawLine(GRAPH_X + graphX - 1, lastGraphY, GRAPH_X + graphX, y, waveColor);
@@ -618,7 +647,6 @@ void drawSignalPanel() {
 
   tft.fillRoundRect(x, PANEL_Y, w, PANEL_H, 6, COLOR_PANEL);
   tft.drawRoundRect(x, PANEL_Y, w, PANEL_H, 6, lockedSignal ? COLOR_RED : COLOR_GRID);
-  beatHeartNeedsRedraw = true;
 
   tft.setTextSize(1);
   tft.setTextColor(COLOR_MUTED, COLOR_PANEL);
@@ -669,17 +697,23 @@ void drawBeatHeart() {
   const int clearH = HEART_MAX_SIZE * 2 + 7;
 
   uint16_t heartColor = blendRed(ledBrightness);
+  uint16_t outlineColor = liveTraceColor();
   tft.fillRect(clearX, clearY, clearW, clearH, COLOR_BG);
-  tft.fillCircle(centerX - size / 2, centerY - size / 3, size / 2, heartColor);
-  tft.fillCircle(centerX + size / 2, centerY - size / 3, size / 2, heartColor);
-  tft.fillTriangle(centerX - size, centerY - size / 4,
-                   centerX + size, centerY - size / 4,
-                   centerX, centerY + size, heartColor);
+  fillHeartShape(centerX, centerY, size + 2, outlineColor);
+  fillHeartShape(centerX, centerY, size, heartColor);
 
   lastDraw = millis();
   lastSize = size;
   lastBrightness = ledBrightness;
   beatHeartNeedsRedraw = false;
+}
+
+void fillHeartShape(int centerX, int centerY, int size, uint16_t color) {
+  tft.fillCircle(centerX - size / 2, centerY - size / 3, size / 2, color);
+  tft.fillCircle(centerX + size / 2, centerY - size / 3, size / 2, color);
+  tft.fillTriangle(centerX - size, centerY - size / 4,
+                   centerX + size, centerY - size / 4,
+                   centerX, centerY + size, color);
 }
 
 void drawCenteredText(const char* text, int x, int y, int w, int textSize, uint16_t color, uint16_t bg) {
@@ -690,6 +724,10 @@ void drawCenteredText(const char* text, int x, int y, int w, int textSize, uint1
   tft.setTextColor(color, bg);
   tft.setCursor(cursorX, y);
   tft.print(text);
+}
+
+uint16_t liveTraceColor() {
+  return lockedSignal ? COLOR_TEXT : COLOR_CYAN;
 }
 
 uint16_t blendRed(int brightness) {

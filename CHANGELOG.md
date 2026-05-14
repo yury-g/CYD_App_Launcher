@@ -1,5 +1,14 @@
 # CYD App Launcher — Student Version — Changelog
 
+## Unreleased
+**Beat feedback and anti-flicker dashboard polish**
+- Added a qualified-beat chime on the CYD speaker at `GPIO 26`.
+- Added touch volume controls in the header with a lower default volume of `2/10`.
+- Added a centered animated heart whose outline follows the live trace color.
+- Changed the waveform to cyan while searching and white when beats are qualified.
+- Replaced timer-driven full dashboard repaints with change-driven redraws to reduce flicker.
+- Updated flashing instructions to require a freshly detected serial port.
+
 ## v1.0.0 — 2026-05-13
 **Known-good one-screen CYD Pulse Dashboard**
 - Reduced firmware to one beginner-friendly Arduino `.ino` file.

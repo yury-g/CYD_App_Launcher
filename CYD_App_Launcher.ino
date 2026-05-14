@@ -19,7 +19,9 @@
  *   getPulseAmplitude()       -> signal quality helper
  */
 
+#include <SPI.h>
 #include <TFT_eSPI.h>
+#include <XPT2046_Touchscreen.h>
 #define USE_ARDUINO_INTERRUPTS true
 #include <PulseSensorPlayground.h>
 
@@ -30,6 +32,13 @@
 #define LED_RED_PIN 4
 #define LED_GREEN_PIN 16
 #define LED_BLUE_PIN 17
+#define SPEAKER_PIN 26
+
+#define TOUCH_IRQ 36
+#define TOUCH_MISO 39
+#define TOUCH_MOSI 32
+#define TOUCH_SCLK 25
+#define TOUCH_CS 33
 
 // ===== PULSESENSOR SETTINGS =====
 
@@ -46,6 +55,25 @@
 #define REARM_NO_BEAT_MS 2200
 #define REARM_COOLDOWN_MS 3500
 
+// ===== BEAT TONE SETTINGS =====
+
+#define SPEAKER_BITS 10
+#define BEAT_CHIME_STEP_COUNT 4
+#define HEART_CENTER_X 160
+#define HEART_CENTER_Y 22
+#define HEART_MIN_SIZE 8
+#define HEART_MAX_SIZE 15
+#define VOLUME_MIN 0
+#define VOLUME_MAX 10
+#define VOLUME_START 3
+
+// ===== TOUCH CALIBRATION =====
+
+#define TOUCH_MIN_X 200
+#define TOUCH_MAX_X 3700
+#define TOUCH_MIN_Y 240
+#define TOUCH_MAX_Y 3800
+
 // ===== SCREEN LAYOUT =====
 
 #define SCREEN_WIDTH 320
@@ -58,6 +86,12 @@
 
 #define PANEL_Y 170
 #define PANEL_H 62
+
+#define VOL_MINUS_X 226
+#define VOL_VALUE_X 258
+#define VOL_PLUS_X 292
+#define VOL_Y 9
+#define VOL_BUTTON_SIZE 22
 
 // ===== COLORS (RGB565) =====
 
@@ -78,7 +112,13 @@
 // ===== GLOBAL OBJECTS =====
 
 TFT_eSPI tft = TFT_eSPI();
+SPIClass touchSpi = SPIClass(HSPI);
+XPT2046_Touchscreen touch(TOUCH_CS, TOUCH_IRQ);
 PulseSensorPlayground pulseSensor;
+
+const uint16_t BEAT_CHIME_FREQUENCIES[BEAT_CHIME_STEP_COUNT] = {262, 392, 523, 659};
+const uint8_t BEAT_CHIME_DUTIES[BEAT_CHIME_STEP_COUNT] = {56, 42, 30, 18};
+const uint16_t BEAT_CHIME_DURATIONS_MS[BEAT_CHIME_STEP_COUNT] = {58, 66, 82, 118};
 
 // ===== LIVE SENSOR STATE =====
 
@@ -95,12 +135,21 @@ unsigned long lastPanelDraw = 0;
 unsigned long lastGraphDraw = 0;
 unsigned long lastSerialPrint = 0;
 unsigned long lastDetectorRearmTime = 0;
+unsigned long lastVolumeTouchTime = 0;
 
 bool lockedSignal = false;
 bool previousLockedSignal = false;
 bool pulseSensorReady = false;
 int signalQuality = 0;
 int rearmCount = 0;
+
+// ===== BEAT TONE STATE =====
+
+bool beatTonePlaying = false;
+uint8_t beatChimeStep = 0;
+unsigned long beatChimeNextStepTime = 0;
+bool beatHeartNeedsRedraw = true;
+uint8_t speakerVolume = VOLUME_START;
 
 // ===== GRAPH STATE =====
 
@@ -119,6 +168,14 @@ void loop();
 void setupLED();
 void setRedLED(int brightness);
 void updateLED();
+void setupSpeaker();
+void setupTouch();
+void readTouchControls();
+bool handleVolumeTouch(int16_t x, int16_t y);
+uint16_t scaledChimeDuty(uint8_t step);
+void startBeatChime();
+void updateBeatChime();
+void triggerBeatEffects();
 void setupPulseSensor();
 void readPulseSensor();
 bool isQualifiedBeat(int bpm, int ibi, int amplitude);
@@ -127,6 +184,7 @@ void rearmPulseDetector(const char* reason);
 void updateSignalRange();
 void drawStaticScreen();
 void drawHeader();
+void drawVolumeControl();
 void drawGraphFrame();
 void drawGraphColumnBackground(int localX);
 void drawWaveform();
@@ -134,7 +192,7 @@ void drawPanels();
 void drawMetricPanel(int x, const char* label, int value, const char* unit, bool valid);
 void drawSignalPanel();
 void drawQualitySegments(int x, int y);
-void drawLedIndicator(int x, int y);
+void drawBeatHeart();
 void drawCenteredText(const char* text, int x, int y, int w, int textSize, uint16_t color, uint16_t bg);
 uint16_t blendRed(int brightness);
 
@@ -151,13 +209,18 @@ void setup() {
   tft.fillScreen(COLOR_BG);
 
   setupLED();
+  setupSpeaker();
+  setupTouch();
   setupPulseSensor();
   drawStaticScreen();
 }
 
 void loop() {
   readPulseSensor();
+  readTouchControls();
   updateLED();
+  updateBeatChime();
+  drawBeatHeart();
   drawWaveform();
 
   if (millis() - lastPanelDraw >= 180 || lockedSignal != previousLockedSignal) {
@@ -205,6 +268,84 @@ void updateLED() {
   setRedLED(ledBrightness);
 }
 
+void setupSpeaker() {
+  ledcAttach(SPEAKER_PIN, BEAT_CHIME_FREQUENCIES[0], SPEAKER_BITS);
+  ledcWrite(SPEAKER_PIN, 0);
+}
+
+void setupTouch() {
+  touchSpi.begin(TOUCH_SCLK, TOUCH_MISO, TOUCH_MOSI, TOUCH_CS);
+  touch.begin(touchSpi);
+  touch.setRotation(1);
+}
+
+void readTouchControls() {
+  if (!touch.touched()) return;
+  if (millis() - lastVolumeTouchTime < 180) return;
+
+  TS_Point point = touch.getPoint();
+  int16_t x = constrain(map(point.x, TOUCH_MIN_X, TOUCH_MAX_X, 1, SCREEN_WIDTH), 0, SCREEN_WIDTH - 1);
+  int16_t y = constrain(map(point.y, TOUCH_MIN_Y, TOUCH_MAX_Y, 1, SCREEN_HEIGHT), 0, SCREEN_HEIGHT - 1);
+
+  if (handleVolumeTouch(x, y)) {
+    lastVolumeTouchTime = millis();
+  }
+}
+
+bool handleVolumeTouch(int16_t x, int16_t y) {
+  if (y < VOL_Y - 8 || y > VOL_Y + VOL_BUTTON_SIZE + 8) return false;
+
+  if (x >= VOL_MINUS_X - 8 && x <= VOL_MINUS_X + VOL_BUTTON_SIZE + 8) {
+    if (speakerVolume > VOLUME_MIN) speakerVolume--;
+  } else if (x >= VOL_PLUS_X - 8 && x <= VOL_PLUS_X + VOL_BUTTON_SIZE + 8) {
+    if (speakerVolume < VOLUME_MAX) speakerVolume++;
+  } else {
+    return false;
+  }
+
+  drawVolumeControl();
+  if (beatTonePlaying) {
+    ledcWrite(SPEAKER_PIN, scaledChimeDuty(beatChimeStep));
+  }
+  return true;
+}
+
+uint16_t scaledChimeDuty(uint8_t step) {
+  step = min<uint8_t>(step, BEAT_CHIME_STEP_COUNT - 1);
+  return (BEAT_CHIME_DUTIES[step] * speakerVolume) / VOLUME_MAX;
+}
+
+void startBeatChime() {
+  beatChimeStep = 0;
+  ledcWriteTone(SPEAKER_PIN, BEAT_CHIME_FREQUENCIES[beatChimeStep]);
+  ledcWrite(SPEAKER_PIN, scaledChimeDuty(beatChimeStep));
+  beatChimeNextStepTime = millis() + BEAT_CHIME_DURATIONS_MS[beatChimeStep];
+  beatTonePlaying = true;
+}
+
+void updateBeatChime() {
+  if (!beatTonePlaying) return;
+  if ((long)(millis() - beatChimeNextStepTime) < 0) return;
+
+  beatChimeStep++;
+  if (beatChimeStep < BEAT_CHIME_STEP_COUNT) {
+    ledcWriteTone(SPEAKER_PIN, BEAT_CHIME_FREQUENCIES[beatChimeStep]);
+    ledcWrite(SPEAKER_PIN, scaledChimeDuty(beatChimeStep));
+    beatChimeNextStepTime = millis() + BEAT_CHIME_DURATIONS_MS[beatChimeStep];
+    return;
+  }
+
+  ledcWrite(SPEAKER_PIN, 0);
+  ledcWriteTone(SPEAKER_PIN, 0);
+  beatTonePlaying = false;
+}
+
+void triggerBeatEffects() {
+  ledBrightness = 255;
+  beatHeartNeedsRedraw = true;
+  startBeatChime();
+}
+
 void setupPulseSensor() {
   // PulseSensorPlayground's detector and ESP32 example expect 10-bit samples.
   // ESP32 defaults to 12-bit, which can make the raw waveform look great while
@@ -250,7 +391,7 @@ void readPulseSensor() {
 
     // Blink/fade the rear red LED only after the beat is qualified.
     if (lockedSignal && qualified) {
-      ledBrightness = 255;
+      triggerBeatEffects();
     }
   }
 
@@ -329,23 +470,39 @@ void drawStaticScreen() {
 void drawHeader() {
   tft.fillRect(0, 0, SCREEN_WIDTH, 42, COLOR_BG);
   tft.drawFastHLine(0, 41, SCREEN_WIDTH, COLOR_GRID);
+  beatHeartNeedsRedraw = true;
 
   tft.setTextSize(1);
   tft.setTextColor(COLOR_MUTED, COLOR_BG);
   tft.setCursor(10, 8);
   tft.print("LIVE BEAT DETECTION");
-
-  uint16_t statusColor = lockedSignal ? COLOR_TEAL : COLOR_AMBER;
-  const char* statusText = lockedSignal ? "QUALIFIED BEAT" : "SIGNAL SEARCH";
-
-  tft.fillRoundRect(184, 6, 126, 24, 6, lockedSignal ? 0x0248 : 0x4200);
-  tft.drawRoundRect(184, 6, 126, 24, 6, statusColor);
-  drawCenteredText(statusText, 184, 13, 126, 1, statusColor, lockedSignal ? 0x0248 : 0x4200);
+  drawVolumeControl();
 
   tft.setTextColor(COLOR_TEXT, COLOR_BG);
-  tft.setTextSize(2);
-  tft.setCursor(10, 22);
-  tft.print(lockedSignal ? "LOCKED" : "SEARCHING");
+  tft.setTextSize(1);
+  tft.setCursor(10, 25);
+  tft.print(lockedSignal ? "QUALIFIED BEAT" : "SIGNAL SEARCH");
+}
+
+void drawVolumeControl() {
+  char volumeText[4];
+  snprintf(volumeText, sizeof(volumeText), "%u", speakerVolume);
+
+  tft.fillRect(198, 4, 120, 34, COLOR_BG);
+  tft.setTextSize(1);
+  tft.setTextColor(COLOR_CYAN, COLOR_BG);
+  tft.setCursor(201, 17);
+  tft.print("VOL");
+
+  tft.fillRoundRect(VOL_MINUS_X, VOL_Y, VOL_BUTTON_SIZE, VOL_BUTTON_SIZE, 4, COLOR_PANEL);
+  tft.drawRoundRect(VOL_MINUS_X, VOL_Y, VOL_BUTTON_SIZE, VOL_BUTTON_SIZE, 4, COLOR_GRID);
+  tft.fillRoundRect(VOL_PLUS_X, VOL_Y, VOL_BUTTON_SIZE, VOL_BUTTON_SIZE, 4, COLOR_PANEL);
+  tft.drawRoundRect(VOL_PLUS_X, VOL_Y, VOL_BUTTON_SIZE, VOL_BUTTON_SIZE, 4, COLOR_GRID);
+
+  tft.setTextColor(COLOR_TEXT, COLOR_PANEL);
+  drawCenteredText("-", VOL_MINUS_X, VOL_Y + 5, VOL_BUTTON_SIZE, 2, COLOR_TEXT, COLOR_PANEL);
+  drawCenteredText("+", VOL_PLUS_X, VOL_Y + 5, VOL_BUTTON_SIZE, 2, COLOR_TEXT, COLOR_PANEL);
+  drawCenteredText(volumeText, VOL_VALUE_X, VOL_Y + 7, 26, 1, COLOR_TEXT, COLOR_BG);
 }
 
 void drawGraphFrame() {
@@ -461,6 +618,7 @@ void drawSignalPanel() {
 
   tft.fillRoundRect(x, PANEL_Y, w, PANEL_H, 6, COLOR_PANEL);
   tft.drawRoundRect(x, PANEL_Y, w, PANEL_H, 6, lockedSignal ? COLOR_RED : COLOR_GRID);
+  beatHeartNeedsRedraw = true;
 
   tft.setTextSize(1);
   tft.setTextColor(COLOR_MUTED, COLOR_PANEL);
@@ -468,7 +626,6 @@ void drawSignalPanel() {
   tft.print("QUALITY");
 
   drawQualitySegments(x + 9, PANEL_Y + 24);
-  drawLedIndicator(x + 58, PANEL_Y + 32);
 
   tft.setTextSize(1);
   tft.setTextColor(lockedSignal ? COLOR_TEAL : COLOR_AMBER, COLOR_PANEL);
@@ -492,13 +649,37 @@ void drawQualitySegments(int x, int y) {
   }
 }
 
-void drawLedIndicator(int x, int y) {
-  uint16_t ledColor = blendRed(ledBrightness);
-  tft.drawCircle(x, y, 12, COLOR_RED_DARK);
-  tft.fillCircle(x, y, 8, ledColor);
-  if (ledBrightness > 120) {
-    tft.drawCircle(x, y, 14, COLOR_RED);
-  }
+void drawBeatHeart() {
+  static unsigned long lastDraw = 0;
+  static int lastSize = -1;
+  static int lastBrightness = -1;
+
+  if (!beatHeartNeedsRedraw && millis() - lastDraw < 30 && lastSize >= 0) return;
+
+  int size = map(ledBrightness, 0, 255, HEART_MIN_SIZE, HEART_MAX_SIZE);
+  size = constrain(size, HEART_MIN_SIZE, HEART_MAX_SIZE);
+
+  if (!beatHeartNeedsRedraw && size == lastSize && ledBrightness == lastBrightness) return;
+
+  const int centerX = HEART_CENTER_X;
+  const int centerY = HEART_CENTER_Y;
+  const int clearX = centerX - HEART_MAX_SIZE - 4;
+  const int clearY = centerY - HEART_MAX_SIZE - 4;
+  const int clearW = (HEART_MAX_SIZE + 4) * 2 + 1;
+  const int clearH = HEART_MAX_SIZE * 2 + 7;
+
+  uint16_t heartColor = blendRed(ledBrightness);
+  tft.fillRect(clearX, clearY, clearW, clearH, COLOR_BG);
+  tft.fillCircle(centerX - size / 2, centerY - size / 3, size / 2, heartColor);
+  tft.fillCircle(centerX + size / 2, centerY - size / 3, size / 2, heartColor);
+  tft.fillTriangle(centerX - size, centerY - size / 4,
+                   centerX + size, centerY - size / 4,
+                   centerX, centerY + size, heartColor);
+
+  lastDraw = millis();
+  lastSize = size;
+  lastBrightness = ledBrightness;
+  beatHeartNeedsRedraw = false;
 }
 
 void drawCenteredText(const char* text, int x, int y, int w, int textSize, uint16_t color, uint16_t bg) {

@@ -40,6 +40,16 @@ TOUCH_SCLK      = 25
 TOUCH_CS        = 33
 ```
 
+## Wiring
+
+| PulseSensor Wire | CYD Connection |
+| --- | --- |
+| Red (+V) | 3.3V on CN1 |
+| Black (GND) | GND on P3 or CN1 |
+| Purple (Signal) | GPIO 35 on P3 |
+
+Use 3.3V, not 5V. This firmware expects the PulseSensor signal on `GPIO 35`.
+
 ## Why GPIO 35
 
 The sensor pin was found with a small analog pin scanner on the connected CYD. On this unit, the PulseSensor signal was visible on `IO35`, not the originally documented `GPIO 36`.
@@ -104,6 +114,24 @@ arduino-cli board list
 ```
 
 If your serial port is different, pass the detected port as the first argument.
+
+## Browser Flasher Prototype
+
+A prototype ESP Web Tools flasher lives at `docs/flasher/index.html`. Refresh its firmware files with:
+
+```bash
+bash scripts/build-web-flasher-firmware.sh
+```
+
+See `docs/publishing.md` for the eventual publishing flow.
+
+## Troubleshooting
+
+**No serial port?** Try a different USB cable. Many micro-USB cables are charge-only.
+
+**Flat waveform?** Check that the purple PulseSensor wire is connected to `GPIO 35`.
+
+**Erratic readings?** Use gentle, steady finger pressure and insulate the back of the PulseSensor.
 
 ## Release
 

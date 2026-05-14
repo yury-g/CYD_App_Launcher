@@ -10,7 +10,7 @@ This firmware is tuned for a working CYD hardware setup with:
 - IBI readout
 - 12-step signal quality meter
 - Centered animated heart with a live-trace outline
-- Beat chime on qualified beats
+- Heartbeat tone / sound effect on qualified beats through the CYD speaker
 - Touch volume controls in the header
 - Rear RGB LED red blink/fade on qualified beats
 - Auto re-arm when the waveform looks alive but the detector is not producing beat events
@@ -75,6 +75,12 @@ These mock screenshots track the current firmware layout.
 | Searching for signal | Locked on qualified beat |
 | --- | --- |
 | ![Searching signal screen](docs/screenshots/searching.svg) | ![Locked qualified beat screen](docs/screenshots/locked.svg) |
+
+Regenerate the mock screenshots after UI changes with:
+
+```bash
+node scripts/render-dashboard-screenshots.mjs
+```
 
 ## Beat Qualification
 

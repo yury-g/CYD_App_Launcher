@@ -178,6 +178,42 @@ node scripts/render-dashboard-screenshots.mjs
 
 If you want to inspect or modify the code instead of flashing a device:
 
+### The Firmware Is One `.ino` File
+
+The Arduino sketch is intentionally kept in one file:
+
+```text
+CYD_App_Launcher.ino
+```
+
+A learner can download that file, put it inside a folder named `CYD_App_Launcher`, and open it in Arduino IDE.
+
+What the one-file sketch still needs:
+
+- Arduino IDE 2.x
+- ESP32 board package
+- `TFT_eSPI`
+- `PulseSensor Playground`
+- `XPT2046_Touchscreen`
+- CYD display setup through `TFT_eSPI` configuration or equivalent build flags
+
+Copy-all checklist:
+
+```text
+1. Download CYD_App_Launcher.ino.
+2. Make a folder named CYD_App_Launcher.
+3. Put CYD_App_Launcher.ino inside that folder.
+4. Open CYD_App_Launcher.ino in Arduino IDE.
+5. Install the ESP32 board package.
+6. Install TFT_eSPI, PulseSensor Playground, and XPT2046_Touchscreen.
+7. Configure TFT_eSPI for the CYD display.
+8. Select an ESP32 board and upload at 115200.
+```
+
+### Clone The Whole Repo
+
+For the full project with docs, scripts, screenshots, and flasher files:
+
 ```bash
 git clone https://github.com/yury-g/CYD_App_Launcher.git
 cd CYD_App_Launcher

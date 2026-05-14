@@ -31,6 +31,9 @@ p {
   color: #aab2ae;
   line-height: 1.55;
 }
+button {
+  cursor: pointer;
+}
 .panel {
   border: 1px solid #27302c;
   border-radius: 8px;
@@ -85,6 +88,36 @@ th {
   background: #171207;
   color: #ffe2a3;
   margin-top: 16px;
+}
+.copy-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: center;
+  margin-bottom: 10px;
+}
+.copy-button {
+  appearance: none;
+  border: 0;
+  border-radius: 6px;
+  background: #ffcf54;
+  color: #10211f;
+  font-weight: 800;
+  padding: 10px 14px;
+}
+pre {
+  margin: 0;
+  overflow-x: auto;
+  white-space: pre-wrap;
+  border-radius: 6px;
+  background: #050606;
+  border: 1px solid #27302c;
+  color: #e8fffb;
+  padding: 14px;
+}
+code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 0.92rem;
 }
 ul {
   color: #cbd2cf;
@@ -153,9 +186,39 @@ footer {
     </ul>
   </section>
 
+  <section class="panel">
+    <div class="copy-row">
+      <h2>Arduino IDE One-File Sketch</h2>
+      <button class="copy-button" type="button" data-copy-target="arduino-checklist">Copy All</button>
+    </div>
+    <p>The firmware is intentionally kept in one Arduino sketch file: <code>CYD_App_Launcher.ino</code>.</p>
+    <pre><code id="arduino-checklist">1. Download CYD_App_Launcher.ino.
+2. Make a folder named CYD_App_Launcher.
+3. Put CYD_App_Launcher.ino inside that folder.
+4. Open CYD_App_Launcher.ino in Arduino IDE.
+5. Install the ESP32 board package.
+6. Install TFT_eSPI, PulseSensor Playground, and XPT2046_Touchscreen.
+7. Configure TFT_eSPI for the CYD display.
+8. Select an ESP32 board and upload at 115200.</code></pre>
+  </section>
+
   <footer>
     <p>Prototype flasher for the current CYD firmware. Source: <a href="https://github.com/yury-g/CYD_App_Launcher">CYD_App_Launcher</a>.</p>
   </footer>
 </main>
+<script>
+document.querySelectorAll("[data-copy-target]").forEach((button) => {
+  button.addEventListener("click", async () => {
+    const target = document.getElementById(button.dataset.copyTarget);
+    if (!target) return;
+    await navigator.clipboard.writeText(target.textContent);
+    const original = button.textContent;
+    button.textContent = "Copied";
+    window.setTimeout(() => {
+      button.textContent = original;
+    }, 1400);
+  });
+});
+</script>
 </body>
 </html>

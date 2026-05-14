@@ -223,6 +223,12 @@ You can also use GitHub's **Code** button and choose **Download ZIP**.
 
 ## Release
 
+Current documented release:
+
+```text
+v1.1.0
+```
+
 The first known-good single-screen hardware release is tagged:
 
 ```text

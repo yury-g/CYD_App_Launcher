@@ -1,13 +1,17 @@
 # CYD App Launcher — Student Version — Changelog
 
-## Unreleased
-**Beat feedback and anti-flicker dashboard polish**
+## v1.1.0 — 2026-05-14
+**Beat feedback, browser flasher prototype, and student-friendly docs**
 - Added a qualified-beat chime on the CYD speaker at `GPIO 26`.
 - Added touch volume controls in the header with a lower default volume of `2/10`.
 - Added a centered animated heart whose outline follows the live trace color.
 - Changed the waveform to cyan while searching and white when beats are qualified.
 - Replaced timer-driven full dashboard repaints with change-driven redraws to reduce flicker.
-- Updated flashing instructions to require a freshly detected serial port.
+- Added generated dashboard screenshots and a script to re-render them from the current design.
+- Added an ESP Web Tools browser flasher prototype with matching firmware binary build script.
+- Reworked the README into a flash-first, student-friendly guide with wiring, features, troubleshooting, and source-download paths.
+- Called out that the firmware is a single Arduino `.ino` sketch for users who want to open it directly in Arduino IDE.
+- Updated flashing instructions to require a freshly detected serial port and verified the current build on connected CYD boards.
 
 ## v1.0.0 — 2026-05-13
 **Known-good one-screen CYD Pulse Dashboard**

@@ -18,9 +18,10 @@ const VOL_VALUE_X = 258;
 const VOL_PLUS_X = 292;
 const VOL_Y = 9;
 const VOL_BUTTON_SIZE = 22;
-const VOLUME_START = 2;
+const VOLUME_START = 1;
 const SIGNAL_QUALITY_STEPS = 12;
 const LOCK_QUALITY_STEPS = 10;
+const PULSE_THRESHOLD = 550;
 
 const color565 = (value) => {
   const r = Math.round(((value >> 11) & 0x1f) * 255 / 31);
@@ -37,6 +38,7 @@ const COLOR_GRID_SOFT = color565(0x10A2);
 const COLOR_TEXT = color565(0xFFFF);
 const COLOR_MUTED = color565(0x8C71);
 const COLOR_CYAN = color565(0x07FF);
+const COLOR_CYAN_DARK = color565(0x0452);
 const COLOR_TEAL = color565(0x05F3);
 const COLOR_RED = color565(0xF800);
 const COLOR_RED_DARK = color565(0x6000);
@@ -67,7 +69,7 @@ function centeredText(content, x, y, w, size, fill, extra = "") {
   return text(cursorX, y, content, size * 8, fill, extra);
 }
 
-function header({ locked, ledBrightness }) {
+function header({ locked, ledBrightness, coach }) {
   const liveTrace = locked ? COLOR_TEXT : COLOR_CYAN;
   const heartSize = Math.max(HEART_MIN_SIZE, Math.min(HEART_MAX_SIZE, Math.round(HEART_MIN_SIZE + (HEART_MAX_SIZE - HEART_MIN_SIZE) * ledBrightness / 255)));
   const heartFill = ledBrightness < 20 ? COLOR_RED_DARK : ledBrightness < 120 ? color565(0xA800) : COLOR_RED;
@@ -78,7 +80,7 @@ function header({ locked, ledBrightness }) {
     text(10, 16, "LIVE BEAT DETECTION", 8, COLOR_MUTED),
     ...heart(HEART_CENTER_X, HEART_CENTER_Y, heartSize + 2, liveTrace),
     ...heart(HEART_CENTER_X, HEART_CENTER_Y, heartSize, heartFill),
-    text(10, 33, locked ? "QUALIFIED BEAT" : "SIGNAL SEARCH", 8, COLOR_TEXT),
+    text(10, 33, coach, 8, COLOR_TEXT),
     volumeControl(),
   ].flat();
 }
@@ -95,8 +97,15 @@ function volumeControl() {
   ];
 }
 
-function graph({ locked, beatFlash, points }) {
+function graph({ locked, beatFlash, points, minSignal, maxSignal, insideBeat }) {
   const liveTrace = locked ? COLOR_TEXT : COLOR_CYAN;
+  const thresholdY = Math.max(
+    GRAPH_Y + 8,
+    Math.min(
+      GRAPH_Y + GRAPH_H - 8,
+      Math.round(GRAPH_Y + GRAPH_H - 8 - ((PULSE_THRESHOLD - minSignal) / Math.max(maxSignal - minSignal, 1)) * (GRAPH_H - 16))
+    )
+  );
   const lines = [
     roundRect(GRAPH_X - 2, GRAPH_Y - 2, GRAPH_W + 4, GRAPH_H + 4, 6, COLOR_PANEL_DARK, COLOR_GRID),
     `  <rect x="${GRAPH_X}" y="${GRAPH_Y}" width="${GRAPH_W}" height="${GRAPH_H}" fill="${COLOR_BG}"/>`,
@@ -107,6 +116,11 @@ function graph({ locked, beatFlash, points }) {
   }
   for (let y = 0; y <= GRAPH_H; y += 28) {
     lines.push(`    <line x1="${GRAPH_X}" y1="${GRAPH_Y + y}" x2="${GRAPH_X + GRAPH_W}" y2="${GRAPH_Y + y}"/>`);
+  }
+  lines.push("  </g>");
+  lines.push(`  <g fill="${insideBeat ? COLOR_AMBER : COLOR_CYAN_DARK}">`);
+  for (let x = 0; x < GRAPH_W; x += 6) {
+    lines.push(`    <rect x="${GRAPH_X + x}" y="${thresholdY}" width="1" height="1"/>`);
   }
   lines.push("  </g>");
   lines.push(text(GRAPH_X + 6, GRAPH_Y + 13, "LIVE LINE", 8, COLOR_MUTED));
@@ -135,21 +149,27 @@ function metricPanel(x, label, value, unit, valid) {
   return lines;
 }
 
-function signalPanel({ locked, quality, rearmCount }) {
+function signalPanel({ locked, quality, rearmCount, amplitude }) {
   const x = 228;
+  const ampSegments = Math.max(0, Math.min(10, Math.round((Math.min(amplitude, 120) / 120) * 10)));
   const lines = [
     roundRect(x, PANEL_Y, 84, PANEL_H, 6, COLOR_PANEL, locked ? COLOR_RED : COLOR_GRID),
-    text(x + 9, PANEL_Y + 17, "QUALITY", 8, COLOR_MUTED),
+    text(x + 9, PANEL_Y + 17, "SIGNAL", 8, COLOR_MUTED),
     "  <g>",
   ];
   for (let i = 0; i < SIGNAL_QUALITY_STEPS; i++) {
     let fill = COLOR_GRID;
     if (i < quality) fill = i < LOCK_QUALITY_STEPS ? COLOR_AMBER : COLOR_TEAL;
-    lines.push(`    <rect x="${x + 9 + i * 6}" y="${PANEL_Y + 24}" width="4" height="18" fill="${fill}"/>`);
+    lines.push(`    <rect x="${x + 9 + i * 6}" y="${PANEL_Y + 21}" width="4" height="14" fill="${fill}"/>`);
   }
   lines.push("  </g>");
-  lines.push(text(x + 9, PANEL_Y + 57, String(quality).padStart(2, "0") + "/12", 8, locked ? COLOR_TEAL : COLOR_AMBER));
-  lines.push(text(x + 50, PANEL_Y + 57, `R${rearmCount}`, 8, COLOR_MUTED));
+  lines.push(text(x + 9, PANEL_Y + 47, `Q${String(quality).padStart(2, "0")}`, 8, locked ? COLOR_TEAL : COLOR_AMBER));
+  lines.push(text(x + 50, PANEL_Y + 47, `R${rearmCount}`, 8, COLOR_MUTED));
+  for (let i = 0; i < 10; i++) {
+    const fill = i < ampSegments ? (ampSegments >= 7 ? COLOR_TEAL : COLOR_AMBER) : COLOR_GRID;
+    lines.push(`  <rect x="${x + 9 + i * 4}" y="${PANEL_Y + 49}" width="3" height="7" fill="${fill}"/>`);
+  }
+  lines.push(text(x + 52, PANEL_Y + 57, `A${String(Math.min(amplitude, 999)).padStart(3, "0")}`, 8, COLOR_MUTED));
   return lines;
 }
 
@@ -198,6 +218,11 @@ writeFileSync("docs/screenshots/searching.svg", render({
   ibi: 0,
   quality: 4,
   rearmCount: 0,
+  amplitude: 28,
+  coach: "GOOD WAVE",
+  minSignal: 450,
+  maxSignal: 585,
+  insideBeat: false,
   beatFlash: false,
   points: searchingPoints,
 }));
@@ -210,6 +235,11 @@ writeFileSync("docs/screenshots/locked.svg", render({
   ibi: 833,
   quality: 12,
   rearmCount: 1,
+  amplitude: 96,
+  coach: "QUALIFIED BEAT",
+  minSignal: 420,
+  maxSignal: 720,
+  insideBeat: true,
   beatFlash: true,
   points: lockedPoints,
 }));

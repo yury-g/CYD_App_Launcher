@@ -78,7 +78,7 @@ The display has one screen:
 - `SIGNAL SEARCH` while the firmware is looking for reliable beats
 - `QUALIFIED BEAT` after the quality meter reaches lock
 - A centered animated heart in the header
-- Header touch controls for speaker volume, starting at `2/10`
+- Header touch controls for speaker volume, starting at `1/10`
 - A live scrolling line graph in the center
 - Lower panels for `BPM`, `IBI`, and signal quality
 - `R#` in the quality panel shows how many automatic detector re-arms have happened
@@ -94,6 +94,8 @@ This firmware is tuned for a working CYD hardware setup with:
 - BPM readout
 - IBI readout
 - 12-step signal quality meter
+- Signal Coach messages for too-flat, steady, good-wave, locking, and qualified states
+- Visible pulse amplitude meter and threshold guide on the live graph
 - Centered animated heart with a live-trace outline
 - Heartbeat tone / sound effect on qualified beats through the CYD speaker
 - Touch volume controls in the header
@@ -121,11 +123,31 @@ The firmware uses PulseSensorPlayground for beat detection:
 
 - `getLatestSample()` for the waveform
 - `sawStartOfBeat()` for beat events
+- `isInsideBeat()` to show when the signal is inside the detected beat window
 - `getBeatsPerMinute()` for BPM
 - `getInterBeatIntervalMs()` for IBI
 - `getPulseAmplitude()` as part of signal qualification
+- `setThreshold(550)` as the starter sensitivity line shown on the graph
+
+The Signal Coach turns those library values into plain-language feedback: `TOO FLAT`, `HOLD STEADY`, `GOOD WAVE`, `LOCKING`, and `QUALIFIED BEAT`. The amplitude meter shows whether the pulse wave is strong enough to trust, while the dotted threshold guide connects the graph back to `setThreshold(550)`.
 
 The 12-step quality meter rises on qualified beats and falls gently on questionable beats. Lock happens at `10/12`.
+
+## Feature Wishlist
+
+These are useful next ideas, but only if they improve the student experience or the accuracy of the reading:
+
+- Method Overlay: tap the quality panel to cycle through the live Playground method names behind each reading.
+- USB Serial Lab Mode: optional Playground-style serial output for Arduino Serial Plotter or a WebSerial monitor.
+
+## Avoid For Now
+
+These are good PulseSensor Playground branches, but they should stay out of the default CYD firmware until they clearly make the device better:
+
+- Multi-sensor and Pulse Transit Time experiments need extra wiring and should wait until the one-sensor CYD lesson is rock solid.
+- WiFi server mode adds credentials, dependencies, and classroom setup friction that do not improve the default CYD experience yet.
+- Servo or motor outputs are fun Playground branches, but they add hardware without improving PulseSensor accuracy on this device.
+- Automatic Playground `blinkOnPulse()` / `fadeOnPulse()` would be less clear than the current active-low CYD LED feedback gated on qualified beats.
 
 ### Important ESP32 Detail
 
@@ -226,7 +248,7 @@ You can also use GitHub's **Code** button and choose **Download ZIP**.
 Current documented release:
 
 ```text
-v1.1.0
+v1.2.0
 ```
 
 The first known-good single-screen hardware release is tagged:

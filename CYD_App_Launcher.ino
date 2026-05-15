@@ -14,6 +14,7 @@
  *   analogReadResolution(10)  -> match PulseSensorPlayground's 0..1023 math
  *   getLatestSample()         -> live waveform
  *   sawStartOfBeat()          -> one-shot beat event
+ *   isInsideBeat()            -> inside/outside the detected beat window
  *   getBeatsPerMinute()       -> BPM readout
  *   getInterBeatIntervalMs()  -> IBI readout
  *   getPulseAmplitude()       -> signal quality helper
@@ -54,6 +55,10 @@
 #define REARM_SIGNAL_RANGE 120
 #define REARM_NO_BEAT_MS 2200
 #define REARM_COOLDOWN_MS 3500
+#define SIGNAL_COACH_FLAT_RANGE 90
+#define SIGNAL_COACH_FLAT_AMPLITUDE 12
+#define SIGNAL_COACH_STEADY_AMPLITUDE MIN_QUALIFIED_AMPLITUDE
+#define AMPLITUDE_METER_MAX 120
 
 // ===== BEAT TONE SETTINGS =====
 
@@ -65,7 +70,7 @@
 #define HEART_MAX_SIZE 15
 #define VOLUME_MIN 0
 #define VOLUME_MAX 10
-#define VOLUME_START 2
+#define VOLUME_START 1
 
 // ===== TOUCH CALIBRATION =====
 
@@ -109,6 +114,15 @@
 #define COLOR_RED_DARK 0x6000
 #define COLOR_AMBER 0xFBE0
 
+enum SignalCoachState {
+  COACH_SIGNAL_SEARCH,
+  COACH_TOO_FLAT,
+  COACH_HOLD_STEADY,
+  COACH_GOOD_WAVE,
+  COACH_LOCKING,
+  COACH_QUALIFIED
+};
+
 // ===== GLOBAL OBJECTS =====
 
 TFT_eSPI tft = TFT_eSPI();
@@ -139,14 +153,17 @@ unsigned long lastVolumeTouchTime = 0;
 bool lockedSignal = false;
 bool previousLockedSignal = false;
 bool pulseSensorReady = false;
+bool insideBeatWindow = false;
 int signalQuality = 0;
 int rearmCount = 0;
 
 bool dashboardDrawn = false;
 int previousDisplayBPM = -1;
 int previousDisplayIBI = -1;
+int previousPulseAmplitude = -1;
 int previousSignalQuality = -1;
 int previousRearmCount = -1;
+int previousSignalCoachState = -1;
 bool previousDashboardLockedSignal = false;
 
 // ===== BEAT TONE STATE =====
@@ -185,6 +202,9 @@ void triggerBeatEffects();
 void setupPulseSensor();
 void readPulseSensor();
 bool isQualifiedBeat(int bpm, int ibi, int amplitude);
+int signalCoachState();
+const char* signalCoachText();
+int amplitudeMeterSegments(int amplitude);
 void maybeRearmDetector();
 void rearmPulseDetector(const char* reason);
 void updateSignalRange();
@@ -194,11 +214,13 @@ void drawHeader();
 void drawVolumeControl();
 void drawGraphFrame();
 void drawGraphColumnBackground(int localX);
+void drawThresholdMarker(int localX);
 void drawWaveform();
 void drawPanels();
 void drawMetricPanel(int x, const char* label, int value, const char* unit, bool valid);
 void drawSignalPanel();
 void drawQualitySegments(int x, int y);
+void drawAmplitudeMeter(int x, int y, int amplitude);
 void drawBeatHeart();
 void fillHeartShape(int centerX, int centerY, int size, uint16_t color);
 void drawCenteredText(const char* text, int x, int y, int w, int textSize, uint16_t color, uint16_t bg);
@@ -369,6 +391,7 @@ void setupPulseSensor() {
 void readPulseSensor() {
   currentSignal = pulseSensor.getLatestSample();
   pulseAmplitude = pulseSensor.getPulseAmplitude();
+  insideBeatWindow = pulseSensor.isInsideBeat();
   updateSignalRange();
   maybeRearmDetector();
 
@@ -411,6 +434,41 @@ bool isQualifiedBeat(int bpm, int ibi, int amplitude) {
   if (ibi < MIN_QUALIFIED_IBI || ibi > MAX_QUALIFIED_IBI) return false;
   if (amplitude < MIN_QUALIFIED_AMPLITUDE) return false;
   return true;
+}
+
+int signalCoachState() {
+  int liveRange = maxSignal - minSignal;
+
+  if (lockedSignal) return COACH_QUALIFIED;
+  if (liveRange < SIGNAL_COACH_FLAT_RANGE || pulseAmplitude < SIGNAL_COACH_FLAT_AMPLITUDE) {
+    return COACH_TOO_FLAT;
+  }
+  if (pulseAmplitude < SIGNAL_COACH_STEADY_AMPLITUDE) return COACH_HOLD_STEADY;
+  if (signalQuality >= LOCK_QUALITY_STEPS / 2) return COACH_LOCKING;
+  if (liveRange >= REARM_SIGNAL_RANGE) return COACH_GOOD_WAVE;
+  return COACH_SIGNAL_SEARCH;
+}
+
+const char* signalCoachText() {
+  switch (signalCoachState()) {
+    case COACH_QUALIFIED:
+      return "QUALIFIED BEAT";
+    case COACH_TOO_FLAT:
+      return "TOO FLAT";
+    case COACH_HOLD_STEADY:
+      return "HOLD STEADY";
+    case COACH_GOOD_WAVE:
+      return "GOOD WAVE";
+    case COACH_LOCKING:
+      return "LOCKING";
+    default:
+      return "SIGNAL SEARCH";
+  }
+}
+
+int amplitudeMeterSegments(int amplitude) {
+  amplitude = constrain(amplitude, 0, AMPLITUDE_METER_MAX);
+  return map(amplitude, 0, AMPLITUDE_METER_MAX, 0, 10);
 }
 
 void maybeRearmDetector() {
@@ -470,10 +528,14 @@ void drawStaticScreen() {
 }
 
 void drawDashboardIfChanged() {
-  bool statusChanged = !dashboardDrawn || lockedSignal != previousDashboardLockedSignal;
+  int coach = signalCoachState();
+  bool statusChanged = !dashboardDrawn ||
+                       lockedSignal != previousDashboardLockedSignal ||
+                       coach != previousSignalCoachState;
   bool panelsChanged = statusChanged ||
                        displayBPM != previousDisplayBPM ||
                        displayIBI != previousDisplayIBI ||
+                       pulseAmplitude != previousPulseAmplitude ||
                        signalQuality != previousSignalQuality ||
                        rearmCount != previousRearmCount;
 
@@ -491,8 +553,10 @@ void drawDashboardIfChanged() {
     previousLockedSignal = lockedSignal;
     previousDisplayBPM = displayBPM;
     previousDisplayIBI = displayIBI;
+    previousPulseAmplitude = pulseAmplitude;
     previousSignalQuality = signalQuality;
     previousRearmCount = rearmCount;
+    previousSignalCoachState = coach;
   }
 }
 
@@ -510,7 +574,7 @@ void drawHeader() {
   tft.setTextColor(COLOR_TEXT, COLOR_BG);
   tft.setTextSize(1);
   tft.setCursor(10, 25);
-  tft.print(lockedSignal ? "QUALIFIED BEAT" : "SIGNAL SEARCH");
+  tft.print(signalCoachText());
 }
 
 void drawVolumeControl() {
@@ -545,6 +609,9 @@ void drawGraphFrame() {
   for (int y = 0; y <= GRAPH_H; y += 28) {
     tft.drawFastHLine(GRAPH_X, GRAPH_Y + y, GRAPH_W, COLOR_GRID_SOFT);
   }
+  for (int x = 0; x < GRAPH_W; x += 6) {
+    drawThresholdMarker(x);
+  }
 
   tft.setTextSize(1);
   tft.setTextColor(COLOR_MUTED, COLOR_BG);
@@ -562,6 +629,18 @@ void drawGraphColumnBackground(int localX) {
 
   for (int y = 0; y <= GRAPH_H; y += 28) {
     tft.drawPixel(screenX, GRAPH_Y + y, COLOR_GRID_SOFT);
+  }
+
+  drawThresholdMarker(localX);
+}
+
+void drawThresholdMarker(int localX) {
+  int y = map(PULSE_THRESHOLD, minSignal, maxSignal, GRAPH_Y + GRAPH_H - 8, GRAPH_Y + 8);
+  y = constrain(y, GRAPH_Y + 8, GRAPH_Y + GRAPH_H - 8);
+
+  if (localX % 6 == 0) {
+    uint16_t color = insideBeatWindow ? COLOR_AMBER : COLOR_CYAN_DARK;
+    tft.drawPixel(GRAPH_X + localX, y, color);
   }
 }
 
@@ -651,18 +730,20 @@ void drawSignalPanel() {
   tft.setTextSize(1);
   tft.setTextColor(COLOR_MUTED, COLOR_PANEL);
   tft.setCursor(x + 9, PANEL_Y + 8);
-  tft.print("QUALITY");
+  tft.print("SIGNAL");
 
-  drawQualitySegments(x + 9, PANEL_Y + 24);
+  drawQualitySegments(x + 9, PANEL_Y + 21);
 
   tft.setTextSize(1);
   tft.setTextColor(lockedSignal ? COLOR_TEAL : COLOR_AMBER, COLOR_PANEL);
-  tft.setCursor(x + 9, PANEL_Y + 48);
-  tft.printf("%02d/12", signalQuality);
+  tft.setCursor(x + 9, PANEL_Y + 39);
+  tft.printf("Q%02d", signalQuality);
 
   tft.setTextColor(COLOR_MUTED, COLOR_PANEL);
-  tft.setCursor(x + 50, PANEL_Y + 48);
+  tft.setCursor(x + 50, PANEL_Y + 39);
   tft.printf("R%d", rearmCount);
+
+  drawAmplitudeMeter(x + 9, PANEL_Y + 49, pulseAmplitude);
 }
 
 void drawQualitySegments(int x, int y) {
@@ -673,8 +754,26 @@ void drawQualitySegments(int x, int y) {
     if (i < signalQuality) {
       color = i < LOCK_QUALITY_STEPS ? COLOR_AMBER : COLOR_TEAL;
     }
-    tft.fillRect(x + i * (segmentW + segmentGap), y, segmentW, 18, color);
+    tft.fillRect(x + i * (segmentW + segmentGap), y, segmentW, 14, color);
   }
+}
+
+void drawAmplitudeMeter(int x, int y, int amplitude) {
+  int segments = amplitudeMeterSegments(amplitude);
+  int displayAmplitude = constrain(amplitude, 0, 999);
+
+  for (int i = 0; i < 10; i++) {
+    uint16_t color = COLOR_GRID;
+    if (i < segments) {
+      color = segments >= 7 ? COLOR_TEAL : COLOR_AMBER;
+    }
+    tft.fillRect(x + i * 4, y, 3, 7, color);
+  }
+
+  tft.setTextSize(1);
+  tft.setTextColor(COLOR_MUTED, COLOR_PANEL);
+  tft.setCursor(x + 43, y);
+  tft.printf("A%03d", displayAmplitude);
 }
 
 void drawBeatHeart() {

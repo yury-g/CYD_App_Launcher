@@ -1,5 +1,13 @@
 # CYD App Launcher — Student Version — Changelog
 
+## v1.2.0 — 2026-05-15
+**Signal Coach teaching aid and quieter startup volume**
+- Added Signal Coach states that turn PulseSensorPlayground readings into plain-language feedback: `TOO FLAT`, `HOLD STEADY`, `GOOD WAVE`, `LOCKING`, and `QUALIFIED BEAT`.
+- Added a visible pulse amplitude meter and dotted threshold guide tied to `getPulseAmplitude()`, `isInsideBeat()`, and `setThreshold(550)`.
+- Updated the README with future teaching-aid wishlist ideas and a clear Avoid For Now section.
+- Regenerated dashboard screenshots for the Signal Coach design.
+- Lowered the default speaker volume from `2/10` to `1/10`.
+
 ## v1.1.0 — 2026-05-14
 **Beat feedback, browser flasher prototype, and student-friendly docs**
 - Added a qualified-beat chime on the CYD speaker at `GPIO 26`.

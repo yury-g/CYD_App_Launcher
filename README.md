@@ -188,6 +188,8 @@ TOUCH_CS        = 33
 
 The sensor pin was found with a small analog pin scanner on the connected CYD. On this unit, the PulseSensor signal was visible on `IO35`, not the originally documented `GPIO 36`.
 
+The scanner is now kept as its own reusable diagnostic sketch: [CYD_Analog_Pin_Scanner](https://github.com/yury-g/CYD_Analog_Pin_Scanner).
+
 ### Screenshot Renderer
 
 Regenerate the mock screenshots after UI changes with:

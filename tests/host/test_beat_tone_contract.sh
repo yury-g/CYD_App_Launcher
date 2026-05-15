@@ -124,6 +124,7 @@ require_file_literal "${README}" "## Feature Wishlist" "README should record fut
 require_file_literal "${README}" "- Method Overlay: tap the quality panel to cycle through the live Playground method names behind each reading." "wishlist should include the method overlay idea"
 require_file_literal "${README}" "- USB Serial Lab Mode: optional Playground-style serial output for Arduino Serial Plotter or a WebSerial monitor." "wishlist should include serial lab mode"
 require_file_literal "${README}" "## Avoid For Now" "README should record deferred ideas"
+require_file_literal "${README}" "https://github.com/yury-g/CYD_Analog_Pin_Scanner" "README should link to the standalone analog pin scanner"
 require_file_literal "${README}" "- Multi-sensor and Pulse Transit Time experiments need extra wiring and should wait until the one-sensor CYD lesson is rock solid." "avoid list should include multi-sensor/PTT"
 require_file_literal "${README}" "- WiFi server mode adds credentials, dependencies, and classroom setup friction that do not improve the default CYD experience yet." "avoid list should include WiFi server mode"
 require_file_literal "${README}" "- Servo or motor outputs are fun Playground branches, but they add hardware without improving PulseSensor accuracy on this device." "avoid list should include servo/motor outputs"

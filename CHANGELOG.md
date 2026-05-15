@@ -1,5 +1,8 @@
 # CYD App Launcher — Student Version — Changelog
 
+## Unreleased
+- Linked the `Why GPIO 35` note to the standalone `CYD_Analog_Pin_Scanner` diagnostic repo.
+
 ## v1.2.0 — 2026-05-15
 **Signal Coach teaching aid and quieter startup volume**
 - Added Signal Coach states that turn PulseSensorPlayground readings into plain-language feedback: `TOO FLAT`, `HOLD STEADY`, `GOOD WAVE`, `LOCKING`, and `QUALIFIED BEAT`.

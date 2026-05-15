@@ -41,7 +41,8 @@ That script uses the same board family, upload speed, and display flags as `flas
 
 1. Run `bash tests/host/test_beat_tone_contract.sh`.
 2. Run `bash scripts/build-web-flasher-firmware.sh`.
-3. Run `xmllint --noout docs/flasher/index.html docs/flasher/manifest.json`.
-4. Serve the repo locally and open `docs/flasher/index.html` in a WebSerial-capable browser.
-5. Install on a CYD and verify display, PulseSensor input, sound, touch volume, and LED behavior.
-6. Update README screenshots and the flasher version before publishing.
+3. Run `xmllint --noout docs/flasher/index.html`.
+4. Parse the Web Tools manifest with `node -e 'JSON.parse(require("fs").readFileSync("docs/flasher/manifest.json", "utf8"))'`.
+5. Serve the repo locally and open `docs/flasher/index.html` in a WebSerial-capable browser.
+6. Install on a CYD and verify display, PulseSensor input, sound, touch volume, and LED behavior.
+7. Update README screenshots and the flasher version before publishing.

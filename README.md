@@ -1,8 +1,8 @@
-# CYD Pulse Dashboard
+# CYD App Launcher
 
 ![CYD Pulse Dashboard lab banner](docs/readme-banner.svg)
 
-One-screen PulseSensor dashboard for the ESP32 CYD / Cheap Yellow Display.
+PulseSensor app launcher for the ESP32 CYD / Cheap Yellow Display.
 
 This software is an educational biofeedback demo and is not intended for medical use.
 
@@ -10,7 +10,15 @@ This software is an educational biofeedback demo and is not intended for medical
 | --- | --- | --- |
 | Flash A Connected CYD | Install the firmware on the board | How code gets onto the ESP32 |
 | Wire The PulseSensor | Connect red, black, and purple wires | How the signal reaches GPIO 35 |
-| Watch The Screen | Compare search and qualified beat states | How raw pulse data becomes feedback |
+| Watch The Screen | Switch between Pulse, Splash, and About apps | How raw pulse data becomes feedback |
+
+Current development package identity:
+
+```cpp
+#define PACKAGE_APP_NAME "CYD App Launcher"
+#define PACKAGE_VERSION "1.3.0-dev"
+#define PACKAGE_BUILD "esp32-2432s028r-cyd"
+```
 
 ## Flash A Connected CYD
 
@@ -73,7 +81,20 @@ Use 3.3V, not 5V. This firmware expects the PulseSensor signal on `GPIO 35`.
 | --- | --- |
 | ![Searching signal screen](docs/screenshots/searching.svg) | ![Locked qualified beat screen](docs/screenshots/locked.svg) |
 
-The display has one screen:
+The app starts on the main `Pulse` dashboard. Touch the top-left header area to cycle:
+
+```text
+Pulse -> PinScan -> Splash -> About -> Pulse
+```
+
+The apps are intentionally self-contained:
+
+- `Pulse`: live PulseSensor dashboard.
+- `PinScan`: no-solder `GPIO35` signal scanner adapted from `yury-g/CYD_Analog_Pin_Scanner`.
+- `Splash`: PulseSensor.com identity, app name, version, and CYD build pages.
+- `About`: board, wiring, signal pin, and future app slot pages.
+
+The `Pulse` app shows:
 
 - `SIGNAL SEARCH` while the firmware is looking for reliable beats
 - `QUALIFIED BEAT` after the quality meter reaches lock
@@ -99,6 +120,8 @@ This firmware is tuned for a working CYD hardware setup with:
 - Centered animated heart with a live-trace outline
 - Heartbeat tone / sound effect on qualified beats through the CYD speaker
 - Touch volume controls in the header
+- Touch top-left app switching between self-contained apps
+- Built-in `PinScan` app for the no-solder `IO35` / P3 PulseSensor signal pin
 - Rear RGB LED red blink/fade on qualified beats
 - Auto re-arm when the waveform looks alive but the detector is not producing beat events
 
@@ -188,6 +211,8 @@ TOUCH_CS        = 33
 
 The sensor pin was found with a small analog pin scanner on the connected CYD. On this unit, the PulseSensor signal was visible on `IO35`, not the originally documented `GPIO 36`.
 
+The built-in `PinScan` app scans only `IO35` on P3, the no-solder PulseSensor signal pin for beginners. That keeps touch navigation available inside the launcher. The standalone scanner at [CYD_Analog_Pin_Scanner](https://github.com/yury-g/CYD_Analog_Pin_Scanner) scans the fuller ADC set, including pins shared with the CYD touch controller, and is still the right tool for invasive pin discovery.
+
 The scanner is now kept as its own reusable diagnostic sketch: [CYD_Analog_Pin_Scanner](https://github.com/yury-g/CYD_Analog_Pin_Scanner).
 
 ### Screenshot Renderer
@@ -250,7 +275,7 @@ You can also use GitHub's **Code** button and choose **Download ZIP**.
 Current documented release:
 
 ```text
-v1.2.0
+v1.3.0-dev
 ```
 
 The first known-good single-screen hardware release is tagged:

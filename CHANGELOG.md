@@ -1,6 +1,15 @@
 # CYD App Launcher — Student Version — Changelog
 
 ## Unreleased
+- Added `v1.3.0-dev` package identity for the CYD app launcher build.
+- Added a small touch-driven app shell with self-contained `Pulse`, `Splash`, and `About` apps.
+- Added a self-contained `PinScan` app adapted from `yury-g/CYD_Analog_Pin_Scanner` for the no-solder `GPIO35` / P3 signal pin.
+- Ported the Waveshare 1.47B large-text Splash and About carousel concepts to the CYD 320x240 display.
+- Kept the existing PulseSensor dashboard behavior as its own launcher app.
+- Set the launcher to boot directly into the main `Pulse` app and show `PulseSensor.com` at the Pulse header's top-right corner.
+- Fixed touch app switching so one press advances only one app and requires release before the next switch.
+- Limited built-in `PinScan` to `IO35` so touch navigation remains available and the app only listens to the beginner-accessible PulseSensor signal pin; use the standalone scanner for the full ADC set.
+- Added a host contract test for the app shell and ported Splash/About screens.
 - Linked the `Why GPIO 35` note to the standalone `CYD_Analog_Pin_Scanner` diagnostic repo.
 
 ## v1.2.0 — 2026-05-15

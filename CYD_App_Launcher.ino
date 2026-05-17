@@ -95,7 +95,7 @@
 #define VOL_MINUS_X 226
 #define VOL_VALUE_X 258
 #define VOL_PLUS_X 292
-#define VOL_Y 9
+#define VOL_Y 17
 #define VOL_BUTTON_SIZE 22
 
 // ===== COLORS (RGB565) =====
@@ -114,6 +114,14 @@
 #define COLOR_RED_DARK 0x6000
 #define COLOR_AMBER 0xFBE0
 
+// ===== PACKAGE IDENTITY =====
+
+#define PACKAGE_BRAND "PulseSensor.com"
+#define PACKAGE_APP_NAME "CYD App Launcher"
+#define PACKAGE_VERSION "1.3.0-dev"
+#define PACKAGE_BUILD "esp32-2432s028r-cyd"
+#define PACKAGE_BOARD "ESP32-2432S028R CYD"
+
 enum SignalCoachState {
   COACH_SIGNAL_SEARCH,
   COACH_TOO_FLAT,
@@ -121,6 +129,22 @@ enum SignalCoachState {
   COACH_GOOD_WAVE,
   COACH_LOCKING,
   COACH_QUALIFIED
+};
+
+struct LauncherApp {
+  const char* name;
+  void (*setup)();
+  void (*loop)();
+  void (*draw)();
+};
+
+struct AnalogPin {
+  const char* label;
+  uint8_t pin;
+  int value;
+  int minValue;
+  int maxValue;
+  int movement;
 };
 
 // ===== GLOBAL OBJECTS =====
@@ -149,11 +173,14 @@ unsigned long lastGraphDraw = 0;
 unsigned long lastSerialPrint = 0;
 unsigned long lastDetectorRearmTime = 0;
 unsigned long lastVolumeTouchTime = 0;
+unsigned long lastAppSwitchTouchTime = 0;
 
 bool lockedSignal = false;
 bool previousLockedSignal = false;
 bool pulseSensorReady = false;
 bool insideBeatWindow = false;
+bool touchAppJustSwitched = false;
+bool appSwitchTouchArmed = true;
 int signalQuality = 0;
 int rearmCount = 0;
 
@@ -184,6 +211,16 @@ int lastGraphY = GRAPH_Y + GRAPH_H / 2;
 int ledBrightness = 0;
 #define LED_FADE_SPEED 12
 
+// ===== APP STATE =====
+
+static uint8_t activeApp = 0;
+static bool appNeedsFullDraw = true;
+
+static AnalogPin scannerPins[] = {
+  {"IO35 P3", 35, 0, 4095, 0, 0},
+};
+static const int scannerPinCount = sizeof(scannerPins) / sizeof(scannerPins[0]);
+
 // ===== FORWARD DECLARATIONS =====
 
 void setup();
@@ -195,6 +232,8 @@ void setupSpeaker();
 void setupTouch();
 void readTouchControls();
 bool handleVolumeTouch(int16_t x, int16_t y);
+bool handleAppSwitchTouch(int16_t x, int16_t y);
+void switchToNextApp();
 uint16_t scaledChimeDuty(uint8_t step);
 void startBeatChime();
 void updateBeatChime();
@@ -211,6 +250,8 @@ void updateSignalRange();
 void drawStaticScreen();
 void drawDashboardIfChanged();
 void drawHeader();
+void drawTopBar(const char* appName);
+void drawBottomBar();
 void drawVolumeControl();
 void drawGraphFrame();
 void drawGraphColumnBackground(int localX);
@@ -224,13 +265,43 @@ void drawAmplitudeMeter(int x, int y, int amplitude);
 void drawBeatHeart();
 void fillHeartShape(int centerX, int centerY, int size, uint16_t color);
 void drawCenteredText(const char* text, int x, int y, int w, int textSize, uint16_t color, uint16_t bg);
+void drawCenteredText(const char* text, int y, int textSize, uint16_t color, uint16_t bg);
 uint16_t liveTraceColor();
 uint16_t blendRed(int brightness);
+void appPulseSetup();
+void appPulseLoop();
+void appPulseDraw();
+void appScannerSetup();
+void appScannerLoop();
+void appScannerDraw();
+void scannerUpdateReadings();
+int scannerHotIndex();
+void scannerDrawRow(int index, int y, bool hot);
+void appSplashSetup();
+void appSplashLoop();
+void appSplashDraw();
+void appAboutSetup();
+void appAboutLoop();
+void appAboutDraw();
+
+static LauncherApp apps[] = {
+  {"Pulse", appPulseSetup, appPulseLoop, appPulseDraw},
+  {"PinScan", appScannerSetup, appScannerLoop, appScannerDraw},
+  {"Splash", appSplashSetup, appSplashLoop, appSplashDraw},
+  {"About", appAboutSetup, appAboutLoop, appAboutDraw},
+};
+static const uint8_t appCount = sizeof(apps) / sizeof(apps[0]);
 
 void setup() {
   Serial.begin(115200);
   delay(100);
-  Serial.println("CYD one-screen PulseSensor dashboard");
+  Serial.print(PACKAGE_BRAND);
+  Serial.print(" ");
+  Serial.print(PACKAGE_APP_NAME);
+  Serial.print(" v");
+  Serial.print(PACKAGE_VERSION);
+  Serial.print(" ");
+  Serial.println(PACKAGE_BUILD);
 
   pinMode(BACKLIGHT, OUTPUT);
   digitalWrite(BACKLIGHT, HIGH);
@@ -243,17 +314,15 @@ void setup() {
   setupSpeaker();
   setupTouch();
   setupPulseSensor();
-  drawStaticScreen();
+  apps[activeApp].setup();
 }
 
 void loop() {
-  readPulseSensor();
   readTouchControls();
   updateLED();
   updateBeatChime();
-  drawBeatHeart();
-  drawWaveform();
-  drawDashboardIfChanged();
+  apps[activeApp].loop();
+  apps[activeApp].draw();
 
   if (millis() - lastSerialPrint >= 500) {
     lastSerialPrint = millis();
@@ -305,12 +374,19 @@ void setupTouch() {
 }
 
 void readTouchControls() {
-  if (!touch.touched()) return;
-  if (millis() - lastVolumeTouchTime < 180) return;
+  if (!touch.touched()) {
+    appSwitchTouchArmed = true;
+    touchAppJustSwitched = false;
+    return;
+  }
 
   TS_Point point = touch.getPoint();
   int16_t x = constrain(map(point.x, TOUCH_MIN_X, TOUCH_MAX_X, 1, SCREEN_WIDTH), 0, SCREEN_WIDTH - 1);
   int16_t y = constrain(map(point.y, TOUCH_MIN_Y, TOUCH_MAX_Y, 1, SCREEN_HEIGHT), 0, SCREEN_HEIGHT - 1);
+
+  touchAppJustSwitched = handleAppSwitchTouch(x, y);
+  if (touchAppJustSwitched) return;
+  if (millis() - lastVolumeTouchTime < 180) return;
 
   if (handleVolumeTouch(x, y)) {
     lastVolumeTouchTime = millis();
@@ -333,6 +409,27 @@ bool handleVolumeTouch(int16_t x, int16_t y) {
     ledcWrite(SPEAKER_PIN, scaledChimeDuty(beatChimeStep));
   }
   return true;
+}
+
+bool handleAppSwitchTouch(int16_t x, int16_t y) {
+  if (!appSwitchTouchArmed) return false;
+  if (millis() - lastAppSwitchTouchTime < 350) return false;
+  if (y > 42) return false;
+  if (x > 190) return false;
+
+  lastAppSwitchTouchTime = millis();
+  appSwitchTouchArmed = false;
+  switchToNextApp();
+  return true;
+}
+
+void switchToNextApp() {
+  activeApp = (activeApp + 1) % appCount;
+  appNeedsFullDraw = true;
+  Serial.print(PACKAGE_APP_NAME);
+  Serial.print(" app: ");
+  Serial.println(apps[activeApp].name);
+  apps[activeApp].setup();
 }
 
 uint16_t scaledChimeDuty(uint8_t step) {
@@ -567,14 +664,36 @@ void drawHeader() {
 
   tft.setTextSize(1);
   tft.setTextColor(COLOR_MUTED, COLOR_BG);
-  tft.setCursor(10, 8);
-  tft.print("LIVE BEAT DETECTION");
   drawVolumeControl();
+  tft.setCursor(224, 6);
+  tft.print(PACKAGE_BRAND);
 
   tft.setTextColor(COLOR_TEXT, COLOR_BG);
   tft.setTextSize(1);
   tft.setCursor(10, 25);
   tft.print(signalCoachText());
+}
+
+void drawTopBar(const char* appName) {
+  tft.fillRect(0, 0, SCREEN_WIDTH, 24, COLOR_PANEL);
+  tft.setTextSize(1);
+  tft.setTextColor(COLOR_TEXT, COLOR_PANEL);
+  tft.setCursor(10, 8);
+  tft.print(PACKAGE_BRAND);
+  tft.setTextColor(COLOR_CYAN, COLOR_PANEL);
+  tft.setCursor(228, 8);
+  tft.print(appName);
+}
+
+void drawBottomBar() {
+  tft.fillRect(0, SCREEN_HEIGHT - 22, SCREEN_WIDTH, 22, COLOR_PANEL);
+  tft.setTextSize(1);
+  tft.setTextColor(COLOR_MUTED, COLOR_PANEL);
+  tft.setCursor(10, SCREEN_HEIGHT - 14);
+  tft.print("TOUCH TOP LEFT: NEXT APP");
+  tft.setTextColor(COLOR_CYAN, COLOR_PANEL);
+  tft.setCursor(224, SCREEN_HEIGHT - 14);
+  tft.print(PACKAGE_BRAND);
 }
 
 void drawVolumeControl() {
@@ -584,7 +703,7 @@ void drawVolumeControl() {
   tft.fillRect(198, 4, 120, 34, COLOR_BG);
   tft.setTextSize(1);
   tft.setTextColor(COLOR_CYAN, COLOR_BG);
-  tft.setCursor(201, 17);
+  tft.setCursor(201, VOL_Y + 8);
   tft.print("VOL");
 
   tft.fillRoundRect(VOL_MINUS_X, VOL_Y, VOL_BUTTON_SIZE, VOL_BUTTON_SIZE, 4, COLOR_PANEL);
@@ -825,6 +944,10 @@ void drawCenteredText(const char* text, int x, int y, int w, int textSize, uint1
   tft.print(text);
 }
 
+void drawCenteredText(const char* text, int y, int textSize, uint16_t color, uint16_t bg) {
+  drawCenteredText(text, 0, y, SCREEN_WIDTH, textSize, color, bg);
+}
+
 uint16_t liveTraceColor() {
   return lockedSignal ? COLOR_TEXT : COLOR_CYAN;
 }
@@ -834,4 +957,215 @@ uint16_t blendRed(int brightness) {
   if (brightness < 20) return COLOR_RED_DARK;
   if (brightness < 120) return 0xA800;
   return COLOR_RED;
+}
+
+// ===== SELF-CONTAINED APPS =====
+
+void appPulseSetup() {
+  tft.fillScreen(COLOR_BG);
+  dashboardDrawn = false;
+  graphX = 0;
+  lastGraphY = GRAPH_Y + GRAPH_H / 2;
+  setupPulseSensor();
+  drawStaticScreen();
+}
+
+void appPulseLoop() {
+  readPulseSensor();
+}
+
+void appPulseDraw() {
+  drawBeatHeart();
+  drawWaveform();
+  drawDashboardIfChanged();
+}
+
+void appScannerSetup() {
+  appNeedsFullDraw = true;
+  analogReadResolution(12);
+  analogSetAttenuation(ADC_11db);
+  for (int i = 0; i < scannerPinCount; i++) {
+    scannerPins[i].value = 0;
+    scannerPins[i].minValue = 4095;
+    scannerPins[i].maxValue = 0;
+    scannerPins[i].movement = 0;
+    pinMode(scannerPins[i].pin, INPUT);
+  }
+}
+
+void appScannerLoop() {
+  scannerUpdateReadings();
+}
+
+void appScannerDraw() {
+  static unsigned long lastDraw = 0;
+  if (!appNeedsFullDraw && millis() - lastDraw < 100) return;
+
+  lastDraw = millis();
+  int hot = scannerHotIndex();
+
+  if (appNeedsFullDraw) {
+    tft.fillScreen(COLOR_BG);
+    drawTopBar("PinScan");
+    drawCenteredText("PIN SCAN", 70, 3, COLOR_CYAN, COLOR_BG);
+    tft.setTextSize(1);
+    tft.setTextColor(COLOR_MUTED, COLOR_BG);
+    tft.setCursor(34, 104);
+    tft.print("BUILT-IN SCAN KEEPS TOUCH LIVE");
+    tft.setCursor(54, 116);
+    tft.print("NO-SOLDER SIGNAL PIN");
+    drawBottomBar();
+    appNeedsFullDraw = false;
+  }
+
+  for (int i = 0; i < scannerPinCount; i++) {
+    scannerDrawRow(i, 142 + i * 15, i == hot && scannerPins[i].movement > 20);
+  }
+
+  tft.setTextSize(1);
+  tft.setTextColor(COLOR_MUTED, COLOR_BG);
+  tft.fillRect(8, 210, 304, 8, COLOR_BG);
+  tft.setCursor(10, 210);
+  tft.print("PulseSensor signal: wiggling mid-range value");
+
+  Serial.printf("35=%4d\n", scannerPins[0].value);
+}
+
+void scannerUpdateReadings() {
+  for (int i = 0; i < scannerPinCount; i++) {
+    long total = 0;
+    for (int sample = 0; sample < 8; sample++) {
+      total += analogRead(scannerPins[i].pin);
+      delayMicroseconds(150);
+    }
+
+    scannerPins[i].value = total / 8;
+    if (scannerPins[i].value < scannerPins[i].minValue) scannerPins[i].minValue = scannerPins[i].value;
+    if (scannerPins[i].value > scannerPins[i].maxValue) scannerPins[i].maxValue = scannerPins[i].value;
+    scannerPins[i].movement = scannerPins[i].maxValue - scannerPins[i].minValue;
+    if (scannerPins[i].minValue < scannerPins[i].value) scannerPins[i].minValue++;
+    if (scannerPins[i].maxValue > scannerPins[i].value) scannerPins[i].maxValue--;
+  }
+}
+
+int scannerHotIndex() {
+  int hot = 0;
+  for (int i = 1; i < scannerPinCount; i++) {
+    if (scannerPins[i].movement > scannerPins[hot].movement) hot = i;
+  }
+  return hot;
+}
+
+void scannerDrawRow(int index, int y, bool hot) {
+  const int barX = 54;
+  const int barW = 150;
+  const int fillW = map(constrain(scannerPins[index].value, 0, 4095), 0, 4095, 0, barW);
+  const uint16_t rowColor = hot ? COLOR_AMBER : COLOR_TEXT;
+  const uint16_t barColor = hot ? COLOR_AMBER : COLOR_CYAN;
+
+  tft.fillRect(0, y - 1, SCREEN_WIDTH, 14, COLOR_BG);
+  tft.setTextSize(1);
+  tft.setTextColor(rowColor, COLOR_BG);
+  tft.setCursor(10, y + 3);
+  tft.print(scannerPins[index].label);
+
+  tft.drawRect(barX, y + 1, barW, 10, COLOR_GRID);
+  tft.fillRect(barX + 1, y + 2, max(0, fillW - 2), 8, barColor);
+
+  tft.setTextColor(COLOR_TEXT, COLOR_BG);
+  tft.setCursor(212, y - 1);
+  tft.printf("%4d", scannerPins[index].value);
+  tft.setTextColor(hot ? COLOR_AMBER : COLOR_MUTED, COLOR_BG);
+  tft.setCursor(252, y - 1);
+  tft.printf("d%04d", scannerPins[index].movement);
+
+  if (scannerPins[index].value < 20 || scannerPins[index].value > 4075) {
+    tft.setTextColor(COLOR_RED, COLOR_BG);
+    tft.setCursor(292, y + 7);
+    tft.print("rail");
+  }
+}
+
+void appSplashSetup() {
+  appNeedsFullDraw = true;
+}
+
+void appSplashLoop() {
+}
+
+void appSplashDraw() {
+  static uint8_t previousPage = 255;
+  uint8_t page = (millis() / 2400) % 4;
+  if (!appNeedsFullDraw && page == previousPage) return;
+
+  appNeedsFullDraw = false;
+  previousPage = page;
+  tft.fillScreen(COLOR_BG);
+  drawTopBar("Splash");
+
+  if (page == 0) {
+    drawCenteredText("Pulse", 38, 5, COLOR_RED, COLOR_BG);
+    drawCenteredText("Sensor", 94, 5, COLOR_CYAN, COLOR_BG);
+    drawCenteredText(".com", 156, 4, COLOR_TEXT, COLOR_BG);
+  } else if (page == 1) {
+    drawCenteredText("APP", 36, 3, COLOR_MUTED, COLOR_BG);
+    drawCenteredText("CYD", 82, 5, COLOR_TEXT, COLOR_BG);
+    drawCenteredText("LAUNCHER", 140, 4, COLOR_CYAN, COLOR_BG);
+  } else if (page == 2) {
+    drawCenteredText("VERSION", 46, 3, COLOR_MUTED, COLOR_BG);
+    drawCenteredText("V" PACKAGE_VERSION, 102, 4, COLOR_AMBER, COLOR_BG);
+  } else {
+    drawCenteredText("BUILD", 36, 3, COLOR_MUTED, COLOR_BG);
+    drawCenteredText("CYD", 82, 5, COLOR_CYAN, COLOR_BG);
+    drawCenteredText("ESP32", 140, 5, COLOR_TEXT, COLOR_BG);
+    drawCenteredText(PACKAGE_BUILD, 196, 1, COLOR_AMBER, COLOR_BG);
+  }
+
+  drawBottomBar();
+}
+
+void appAboutSetup() {
+  appNeedsFullDraw = true;
+}
+
+void appAboutLoop() {
+}
+
+void appAboutDraw() {
+  static uint8_t previousPage = 255;
+  uint8_t page = (millis() / 2600) % 5;
+  if (!appNeedsFullDraw && page == previousPage) return;
+
+  appNeedsFullDraw = false;
+  previousPage = page;
+  tft.fillScreen(COLOR_BG);
+  drawTopBar("About");
+
+  if (page == 0) {
+    drawCenteredText("Pulse", 34, 4, COLOR_RED, COLOR_BG);
+    drawCenteredText("Sensor", 82, 4, COLOR_CYAN, COLOR_BG);
+    drawCenteredText(".com", 132, 4, COLOR_TEXT, COLOR_BG);
+    drawCenteredText("V" PACKAGE_VERSION, 188, 3, COLOR_AMBER, COLOR_BG);
+  } else if (page == 1) {
+    drawCenteredText("BOARD", 38, 3, COLOR_MUTED, COLOR_BG);
+    drawCenteredText("CYD", 84, 5, COLOR_CYAN, COLOR_BG);
+    drawCenteredText("ESP32", 142, 5, COLOR_TEXT, COLOR_BG);
+    drawCenteredText(PACKAGE_BOARD, 202, 1, COLOR_AMBER, COLOR_BG);
+  } else if (page == 2) {
+    drawCenteredText("SENSOR", 34, 3, COLOR_MUTED, COLOR_BG);
+    drawCenteredText("RED", 74, 5, COLOR_RED, COLOR_BG);
+    drawCenteredText("3.3V", 132, 5, COLOR_TEXT, COLOR_BG);
+    drawCenteredText("BLACK GND", 196, 2, COLOR_TEXT, COLOR_BG);
+  } else if (page == 3) {
+    drawCenteredText("SIGNAL", 34, 3, COLOR_MUTED, COLOR_BG);
+    drawCenteredText("PURPLE", 78, 5, COLOR_CYAN, COLOR_BG);
+    drawCenteredText("GPIO35", 128, 5, COLOR_AMBER, COLOR_BG);
+  } else {
+    drawCenteredText("NEXT", 34, 3, COLOR_MUTED, COLOR_BG);
+    drawCenteredText("APP", 76, 5, COLOR_CYAN, COLOR_BG);
+    drawCenteredText("SLOTS", 134, 5, COLOR_TEXT, COLOR_BG);
+    drawCenteredText("SELF-CONTAINED", 198, 2, COLOR_AMBER, COLOR_BG);
+  }
+
+  drawBottomBar();
 }

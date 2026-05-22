@@ -31,15 +31,16 @@ Read this file first, then read `CODEX_HANDOFF.md`.
 The CYD was flashed and confirmed working on 2026-05-22 from:
 
 ```text
-107b2a4 Document dual PulseSensor pin finding 20260519-130451-EDT
+49f0ce3 Add screen rotation control 20260522-121644-EDT
 ```
 
-That commit is newer than the tag named `last-working-20260519-114323-EDT`. The `last-working` tag is still useful as a checkpoint, but the best development base is the current branch head at `107b2a4`.
+That commit is newer than the tag named `last-working-20260519-114323-EDT`. The `last-working` tag is still useful as a checkpoint, but the best development base is the current branch head at `49f0ce3`.
 
-The user reported after flashing:
+The user reported the previous base worked great, then the rotate-control build was flashed and verified on the connected CYD. Serial monitor showed both rotation toggles:
 
 ```text
-This works great.
+screenRotation=3
+screenRotation=1
 ```
 
 ## Important Repo Map
@@ -126,6 +127,8 @@ signal=0 amp=100 bpm=0 ibi=0 locked=0 quality=0
 - Default speaker volume is `1`.
 - Header says `PulseSensor.com`.
 - Header brand text is white.
+- Top row has an `R` rotate button next to the volume controls.
+- The rotate button toggles between landscape rotations `1` and `3` for different enclosures.
 - Main graph has a cyan dotted threshold line plus `THR 550`.
 - Bottom-right signal box is minimal: `SIG GPIO35` plus quality bars.
 - Sound has a rising signal-quality harmony while locking and the normal beat chime after lock.
@@ -161,6 +164,8 @@ b64b02a 2026-05-19 white PulseSensor.com header
 723edc0 2026-05-19 GPIO22 experiment; caused reset loop
 9066535 2026-05-19 restored GPIO35 after GPIO22 reset loop
 107b2a4 2026-05-19 current best base; documents GPIO35/GPIO27 finding
+109dc67 2026-05-22 added next-chat handoff note
+49f0ce3 2026-05-22 current best base; adds hardware-tested rotate control
 ```
 
 ## Next Chat Prompt
@@ -174,7 +179,7 @@ Use repo yury-g/CYD_App_Launcher, branch codex/finger-coach-dashboard-20260519-1
 
 Start by reading START_HERE_NEXT_CHAT.md and CODEX_HANDOFF.md. Treat yury-g/CYD_App_Launcher as the internal development home. Do not push experiments to WorldFamousElectronics/PulseSensor_CYD unless I explicitly approve a public release.
 
-The current best hardware-tested state is 107b2a4. It was flashed successfully on 2026-05-22 to /dev/cu.usbserial-110, and the user said it works great. Preserve default volume 1, GPIO35 PulseSensor input, the minimal SIG GPIO35 quality panel, stricter false-positive tuning, and the one-screen dashboard.
+The current best hardware-tested state is 49f0ce3. It was flashed successfully on 2026-05-22 to /dev/cu.usbserial-110. Preserve default volume 1, GPIO35 PulseSensor input, the top-row rotate button, the minimal SIG GPIO35 quality panel, stricter false-positive tuning, and the one-screen dashboard.
 
 Make small changes, build with PlatformIO, flash to the CYD when asked, then preserve hardware-tested states with timestamped commits/tags on launcher.
 ```

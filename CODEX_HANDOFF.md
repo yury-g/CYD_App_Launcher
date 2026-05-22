@@ -49,10 +49,10 @@ Ground for sensors   -> GND
 Current working HEAD before this handoff note:
 
 ```text
-107b2a4 Document dual PulseSensor pin finding 20260519-130451-EDT
+49f0ce3 Add screen rotation control 20260522-121644-EDT
 ```
 
-2026-05-22 EDT: this state was built and flashed successfully to the connected CYD on `/dev/cu.usbserial-110`. The serial monitor showed live firmware output, and the user reported: "This works great."
+2026-05-22 EDT: this state was built and flashed successfully to the connected CYD on `/dev/cu.usbserial-110`. The serial monitor showed live firmware output and confirmed the new rotate control toggled both ways with `screenRotation=3` and `screenRotation=1`.
 
 Important local/GitHub tags on the internal repo:
 
@@ -63,9 +63,10 @@ signal-box-minimal-20260519-114712-EDT
 header-white-20260519-120416-EDT
 restore-gpio35-after-gpio22-loop-20260519-124815-EDT
 dual-pulse-pin-finding-20260519-130451-EDT
+rotate-control-20260522-121644-EDT
 ```
 
-Important: the tag named `last-working-20260519-114323-EDT` is a useful checkpoint, but the best current development base is the branch head at `107b2a4`, because it includes later hardware-tested fixes and documentation.
+Important: the tag named `last-working-20260519-114323-EDT` is a useful checkpoint, but the best current development base is the branch head at `49f0ce3`, because it includes later hardware-tested fixes, documentation, and the rotate control.
 
 These refs were intentionally removed from the public repo after being accidentally pushed there:
 
@@ -90,6 +91,8 @@ What is currently kept:
 
 - Header says `PulseSensor.com`.
 - Header brand text is white.
+- Top row has an `R` rotate button next to the volume controls.
+- The rotate button toggles between landscape rotations `1` and `3` for different enclosures.
 - Main graph has a cyan dotted threshold line plus `THR 550`.
 - Bottom-right signal box is minimal: `SIG GPIO35` plus quality bars only.
 - Sound has a rising signal-quality harmony while locking and the normal beat chime after lock.

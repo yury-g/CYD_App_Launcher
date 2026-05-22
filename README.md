@@ -32,6 +32,10 @@ Current horizontal dashboard:
 | --- | --- |
 | ![Searching signal screen](docs/screenshots/searching.svg) | ![Locked qualified beat screen](docs/screenshots/locked.svg) |
 
+Portrait mode:
+
+![Portrait locked CYD dashboard](docs/screenshots/portrait-locked.svg)
+
 Beat-dot explainer:
 
 ![Beat-dot explainer showing cyan beat marker dots on the live graph](docs/screenshots/beat-dot-explainer.svg)

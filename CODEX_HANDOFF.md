@@ -49,10 +49,10 @@ Ground for sensors   -> GND
 Current working HEAD before this handoff note:
 
 ```text
-49f0ce3 Add screen rotation control 20260522-121644-EDT
+214e0f7 Refresh README screenshots for palette update 20260522
 ```
 
-2026-05-22 EDT: this state was built and flashed successfully to the connected CYD on `/dev/cu.usbserial-110`. The serial monitor showed live firmware output and confirmed the new rotate control toggled both ways with `screenRotation=3` and `screenRotation=1`.
+2026-05-22 EDT: the latest code state was built and flashed successfully to the connected CYD on `/dev/cu.usbserial-110`. The serial monitor showed live firmware output and confirmed the full orientation cycle with `screenRotation=0`, `screenRotation=3`, `screenRotation=2`, and `screenRotation=1`. The palette build was exercised through acquisition and locked states.
 
 Important local/GitHub tags on the internal repo:
 
@@ -66,7 +66,7 @@ dual-pulse-pin-finding-20260519-130451-EDT
 rotate-control-20260522-121644-EDT
 ```
 
-Important: the tag named `last-working-20260519-114323-EDT` is a useful checkpoint, but the best current development base is the branch head at `49f0ce3`, because it includes later hardware-tested fixes, documentation, and the rotate control.
+Important: the tag named `last-working-20260519-114323-EDT` is a useful checkpoint, but the best current development base is the current branch head after the 2026-05-22 wrap-up. The latest hardware-flashed code commit before screenshot/docs cleanup is `11f95a8`.
 
 These refs were intentionally removed from the public repo after being accidentally pushed there:
 
@@ -91,10 +91,13 @@ What is currently kept:
 
 - Header says `PulseSensor.com`.
 - Header brand text is white.
-- Top row has an `R` rotate button next to the volume controls.
-- The rotate button toggles between landscape rotations `1` and `3` for different enclosures.
+- Top-right corner has a rotate icon button, with volume controls immediately to its left.
+- The rotate button cycles through `1 -> 0 -> 3 -> 2 -> 1`.
+- Rotations `0` and `2` use a dedicated portrait layout.
 - Main graph has a cyan dotted threshold line plus `THR 550`.
 - Bottom-right signal box is minimal: `SIG GPIO35` plus quality bars only.
+- Persistent labels and grid lines use a brighter palette for real-CYD legibility.
+- Signal acquisition is blue; locked/acquired signal is green.
 - Sound has a rising signal-quality harmony while locking and the normal beat chime after lock.
 - Default speaker volume starts at `1` via `#define VOLUME_START 1`.
 - Lock false positives were reduced by requiring:
@@ -134,6 +137,21 @@ Connected board port used:
 ```
 
 Earlier sessions used `/dev/cu.usbserial-210`; always detect the current port before flashing.
+
+## Screenshot History
+
+The current README screenshots are regenerated horizontal SVG recreations of the latest palette and rotate-icon UI:
+
+```text
+docs/screenshots/searching.svg
+docs/screenshots/locked.svg
+```
+
+The older pre-rotation/pre-palette screenshots were retired for design-version history:
+
+```text
+docs/screenshots/history/20260522-before-rotation-palette/
+```
 
 ## GitHub Auth
 
@@ -191,7 +209,9 @@ yury-g/CYD_App_Launcher
 Use branch:
 codex/finger-coach-dashboard-20260519-111641-EDT
 
-Read CODEX_HANDOFF.md first. Treat yury-g/CYD_App_Launcher as the memory brain and active internal dev home. Do not push experiments to WorldFamousElectronics/PulseSensor_CYD unless I explicitly approve a public release.
+Read START_HERE_NEXT_CHAT.md and CODEX_HANDOFF.md first. Treat yury-g/CYD_App_Launcher as the memory brain and active internal dev home. Do not push experiments to WorldFamousElectronics/PulseSensor_CYD unless I explicitly approve a public release.
+
+The current hardware-tested code state is 11f95a8, with screenshot/docs wrap-up commits after it. Preserve default volume 1, GPIO35 PulseSensor input, the top-right rotate icon button, four-orientation cycle, portrait layout, brighter persistent labels/grid lines, blue acquisition state, green locked state, the minimal SIG GPIO35 quality panel, stricter false-positive tuning, and the one-screen dashboard.
 
 Make small changes, build with PlatformIO, flash to the CYD when asked, and preserve hardware-tested states with timestamped commits/tags on the internal repo.
 ```

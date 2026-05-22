@@ -28,20 +28,24 @@ Read this file first, then read `CODEX_HANDOFF.md`.
 
 ## Current Best Working State
 
-The CYD was flashed and confirmed working on 2026-05-22 from:
+The CYD was flashed and confirmed working on 2026-05-22 through this code state:
 
 ```text
-49f0ce3 Add screen rotation control 20260522-121644-EDT
+11f95a8 Improve dashboard palette contrast 20260522
 ```
 
-That commit is newer than the tag named `last-working-20260519-114323-EDT`. The `last-working` tag is still useful as a checkpoint, but the best development base is the current branch head at `49f0ce3`.
+That commit is newer than the tag named `last-working-20260519-114323-EDT`. The `last-working` tag is still useful as a checkpoint, but the best development base is the current branch head after the 2026-05-22 wrap-up.
 
-The user reported the previous base worked great, then the rotate-control build was flashed and verified on the connected CYD. Serial monitor showed both rotation toggles:
+The user reported the dashboard worked well. The rotate-control builds were flashed and verified on the connected CYD. Serial monitor showed the full orientation cycle:
 
 ```text
+screenRotation=0
 screenRotation=3
+screenRotation=2
 screenRotation=1
 ```
+
+The latest palette build was also flashed and exercised through acquisition and locked states.
 
 ## Important Repo Map
 
@@ -127,10 +131,13 @@ signal=0 amp=100 bpm=0 ibi=0 locked=0 quality=0
 - Default speaker volume is `1`.
 - Header says `PulseSensor.com`.
 - Header brand text is white.
-- Top row has an `R` rotate button next to the volume controls.
-- The rotate button toggles between landscape rotations `1` and `3` for different enclosures.
+- Top-right corner has a rotate icon button, with volume controls immediately to its left.
+- Rotate cycles through `1 -> 0 -> 3 -> 2 -> 1`.
+- Rotations `0` and `2` use a dedicated portrait layout.
 - Main graph has a cyan dotted threshold line plus `THR 550`.
+- Persistent labels and grid lines are bright enough for the real CYD display.
 - Bottom-right signal box is minimal: `SIG GPIO35` plus quality bars.
+- Signal acquisition uses blue; locked/acquired signal uses green.
 - Sound has a rising signal-quality harmony while locking and the normal beat chime after lock.
 - Lock false positives are reduced by requiring four consecutive qualified beats, healthy live range, and low recent clipping.
 - The red heart has a cyan outline.
@@ -165,7 +172,26 @@ b64b02a 2026-05-19 white PulseSensor.com header
 9066535 2026-05-19 restored GPIO35 after GPIO22 reset loop
 107b2a4 2026-05-19 current best base; documents GPIO35/GPIO27 finding
 109dc67 2026-05-22 added next-chat handoff note
-49f0ce3 2026-05-22 current best base; adds hardware-tested rotate control
+49f0ce3 2026-05-22 added hardware-tested two-way rotate control
+66647af 2026-05-22 added four-orientation portrait/landscape layout
+58be524 2026-05-22 changed rotate button to a graphic icon
+11f95a8 2026-05-22 improved palette contrast and blue/green signal state
+214e0f7 2026-05-22 refreshed README screenshots and archived older screenshot design history
+```
+
+## Screenshot Notes
+
+Current horizontal README screenshots live in:
+
+```text
+docs/screenshots/searching.svg
+docs/screenshots/locked.svg
+```
+
+Older screenshots were retired to:
+
+```text
+docs/screenshots/history/20260522-before-rotation-palette/
 ```
 
 ## Next Chat Prompt
@@ -179,7 +205,7 @@ Use repo yury-g/CYD_App_Launcher, branch codex/finger-coach-dashboard-20260519-1
 
 Start by reading START_HERE_NEXT_CHAT.md and CODEX_HANDOFF.md. Treat yury-g/CYD_App_Launcher as the internal development home. Do not push experiments to WorldFamousElectronics/PulseSensor_CYD unless I explicitly approve a public release.
 
-The current best hardware-tested state is 49f0ce3. It was flashed successfully on 2026-05-22 to /dev/cu.usbserial-110. Preserve default volume 1, GPIO35 PulseSensor input, the top-row rotate button, the minimal SIG GPIO35 quality panel, stricter false-positive tuning, and the one-screen dashboard.
+The current best hardware-tested code state is 11f95a8, with screenshot/docs updates after it. It was flashed successfully on 2026-05-22 to /dev/cu.usbserial-110. Preserve default volume 1, GPIO35 PulseSensor input, the top-right rotate icon button, four-orientation rotation cycle, portrait layout, blue acquisition state, green locked state, brighter persistent labels/grid lines, the minimal SIG GPIO35 quality panel, stricter false-positive tuning, and the one-screen dashboard.
 
 Make small changes, build with PlatformIO, flash to the CYD when asked, then preserve hardware-tested states with timestamped commits/tags on launcher.
 ```

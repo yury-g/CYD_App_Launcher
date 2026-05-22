@@ -101,13 +101,15 @@
 #define COLOR_BG 0x0000
 #define COLOR_PANEL 0x0841
 #define COLOR_PANEL_DARK 0x0400
-#define COLOR_GRID 0x18E3
-#define COLOR_GRID_SOFT 0x10A2
+#define COLOR_GRID 0x39E7
+#define COLOR_GRID_SOFT 0x2945
 #define COLOR_TEXT 0xFFFF
-#define COLOR_MUTED 0x8C71
+#define COLOR_MUTED 0xC638
 #define COLOR_CYAN 0x07FF
 #define COLOR_CYAN_DARK 0x0452
 #define COLOR_TEAL 0x05F3
+#define COLOR_ACQUIRE_BLUE 0x3DFF
+#define COLOR_LOCK_GREEN 0x07E0
 #define COLOR_RED 0xF800
 #define COLOR_RED_DARK 0x6000
 #define COLOR_SCREEN_BEAT COLOR_CYAN
@@ -1046,7 +1048,7 @@ void drawSignalPanel() {
   snprintf(pinLabel, sizeof(pinLabel), "GPIO%d", PULSE_PIN);
 
   tft.fillRoundRect(signalPanelX, signalPanelY, signalPanelW, signalPanelH, 6, COLOR_PANEL);
-  tft.drawRoundRect(signalPanelX, signalPanelY, signalPanelW, signalPanelH, 6, lockedSignal ? COLOR_SCREEN_BEAT : COLOR_GRID);
+  tft.drawRoundRect(signalPanelX, signalPanelY, signalPanelW, signalPanelH, 6, lockedSignal ? COLOR_LOCK_GREEN : COLOR_ACQUIRE_BLUE);
 
   tft.setTextSize(1);
   tft.setTextColor(COLOR_MUTED, COLOR_PANEL);
@@ -1072,7 +1074,7 @@ void drawQualitySegments(int x, int y) {
   for (int i = 0; i < SIGNAL_QUALITY_STEPS; i++) {
     uint16_t color = COLOR_GRID;
     if (i < signalQuality) {
-      color = i < LOCK_QUALITY_STEPS ? COLOR_AMBER : COLOR_TEAL;
+      color = lockedSignal ? COLOR_LOCK_GREEN : COLOR_ACQUIRE_BLUE;
     }
     tft.fillRect(x + i * (segmentW + segmentGap), y, segmentW, segmentH, color);
   }

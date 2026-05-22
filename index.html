@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>PulseSensor CYD Dashboard &mdash; Web Installer</title>
+<meta name="description" content="One-click browser installer for the PulseSensor heartbeat dashboard on the ESP32 Cheap Yellow Display." />
+<script type="module" src="https://unpkg.com/esp-web-tools@10/dist/web/install-button.js?module"></script>
+<style>
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+    background: #FFFDF7;
+    color: #2B2B2B;
+    min-height: 100vh;
+    padding: 32px 18px;
+    line-height: 1.6;
+  }
+  main { max-width: 760px; margin: 0 auto; }
+  header { margin-bottom: 24px; }
+  h1 {
+    margin: 0 0 6px;
+    font-size: clamp(2rem, 6vw, 3rem);
+    line-height: 1.1;
+    color: #2B2B2B;
+  }
+  h2 {
+    margin: 0 0 12px;
+    font-size: 1.4rem;
+    border-bottom: 2px solid #E63946;
+    padding-bottom: 6px;
+    display: inline-block;
+  }
+  p { margin: 8px 0 14px; color: #4A4A4A; }
+  a { color: #1E88E5; text-decoration: none; }
+  a:hover { text-decoration: underline; }
+
+  .tag {
+    display: inline-block;
+    background: #E63946;
+    color: #fff;
+    font-weight: 700;
+    font-size: 0.78rem;
+    padding: 4px 10px;
+    border-radius: 999px;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    margin-bottom: 10px;
+  }
+
+  .panel {
+    border: 1px solid #E5E0D6;
+    border-radius: 8px;
+    background: #FFFFFF;
+    padding: 22px;
+    margin: 18px 0;
+  }
+  .panel.install {
+    border: 2px solid #E63946;
+    background: #FFFDF7;
+    text-align: center;
+  }
+  .panel.install p { text-align: left; }
+
+  esp-web-install-button {
+    --esp-tools-button-background: #E63946;
+    --esp-tools-button-color: #FFFFFF;
+    --esp-tools-button-border-radius: 6px;
+  }
+  .activate-btn {
+    appearance: none;
+    border: 0;
+    border-radius: 6px;
+    background: #E63946;
+    color: #FFFFFF;
+    font-size: 1.1rem;
+    font-weight: 800;
+    padding: 14px 26px;
+    cursor: pointer;
+    letter-spacing: 0.3px;
+  }
+  .activate-btn:hover { background: #c92f3d; }
+  .unsupported { display: block; color: #B45309; margin-top: 12px; font-weight: 600; }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 12px;
+  }
+  th, td {
+    text-align: left;
+    padding: 10px 8px;
+    border-bottom: 1px solid #E5E0D6;
+  }
+  th { color: #2B2B2B; font-weight: 700; background: #FFFDF7; }
+
+  .wire-red { color: #E63946; font-weight: 700; }
+  .wire-black { color: #2B2B2B; font-weight: 700; }
+  .wire-purple { color: #2B2B2B; font-weight: 700; } /* deliberately not purple — brand rule */
+
+  .warning {
+    border-left: 4px solid #E63946;
+    padding: 10px 14px;
+    background: #FFF5F5;
+    color: #4A2C2C;
+    margin-top: 16px;
+    border-radius: 4px;
+  }
+
+  pre {
+    margin: 0;
+    overflow-x: auto;
+    white-space: pre-wrap;
+    border-radius: 6px;
+    background: #1A1A1A;
+    border: 0;
+    color: #E8FFFB;
+    padding: 14px;
+  }
+  code {
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    font-size: 0.92rem;
+  }
+  p code, li code, td code {
+    background: #F5F1EA;
+    padding: 2px 6px;
+    border-radius: 4px;
+    color: #2B2B2B;
+  }
+  ul { color: #4A4A4A; padding-left: 22px; }
+  li { margin: 4px 0; }
+
+  .copy-row {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    align-items: center;
+    margin-bottom: 10px;
+    flex-wrap: wrap;
+  }
+  .copy-button {
+    appearance: none;
+    border: 0;
+    border-radius: 6px;
+    background: #1E88E5;
+    color: #FFFFFF;
+    font-weight: 700;
+    padding: 8px 14px;
+    cursor: pointer;
+  }
+  .copy-button:hover { background: #1769b3; }
+
+  footer { color: #6B7280; font-size: 0.9rem; margin-top: 32px; text-align: center; }
+  footer a { color: #1E88E5; }
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <span class="tag">Web Installer</span>
+    <h1>PulseSensor CYD Dashboard</h1>
+    <p>Install the PulseSensor heartbeat dashboard on an ESP32 <strong>Cheap Yellow Display</strong> &mdash; right from your browser.</p>
+    <p>Looking for the full tutorial with screenshots and Playground tie-ins? Visit <a href="https://pulsesensor.com/pages/cyd"><strong>pulsesensor.com/pages/cyd</strong></a>.</p>
+  </header>
+
+  <section class="panel install">
+    <h2>⚡ Flash Firmware</h2>
+    <p>Connect the CYD over USB, use Chrome, Edge, or Brave, then choose the serial port when prompted.</p>
+    <esp-web-install-button manifest="manifest.json">
+      <button slot="activate" class="activate-btn">Install PulseSensor CYD Dashboard</button>
+      <span slot="unsupported" class="unsupported">⚠️ This browser doesn't support WebSerial. Use Chrome, Edge, or Brave on a desktop or laptop.</span>
+      <span slot="not-allowed" class="unsupported">⚠️ WebSerial blocked. Make sure this page is loaded over HTTPS.</span>
+    </esp-web-install-button>
+  </section>
+
+  <section class="panel">
+    <h2>Wire The PulseSensor</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>PulseSensor Wire</th>
+          <th>CYD Connection</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><span class="wire-red">RED</span> (+V)</td>
+          <td><code>3.3V</code> on CN1</td>
+        </tr>
+        <tr>
+          <td><span class="wire-black">BLACK</span> (GND)</td>
+          <td><code>GND</code> on P3 or CN1</td>
+        </tr>
+        <tr>
+          <td><span class="wire-purple">PURPLE</span> (Signal)</td>
+          <td><code>GPIO 35</code> on P3</td>
+        </tr>
+      </tbody>
+    </table>
+    <div class="warning"><strong>Use 3.3V, not 5V.</strong> The PulseSensor signal must go to <code>GPIO 35</code>.</div>
+  </section>
+
+  <section class="panel">
+    <h2>What You'll See</h2>
+    <ul>
+      <li>Live waveform &mdash; cyan while searching, white when beats are qualified.</li>
+      <li>BPM, IBI, a 12-step signal-quality meter, and detector re-arm count.</li>
+      <li>Animated heart, rear red LED blink, and heartbeat tone on every qualified beat.</li>
+      <li>Touch volume controls in the header (default 1/10).</li>
+    </ul>
+  </section>
+
+  <section class="panel">
+    <div class="copy-row">
+      <h2 style="margin:0;border:0;padding:0;">Arduino IDE One-File Sketch</h2>
+      <button class="copy-button" type="button" data-copy-target="arduino-checklist">Copy All</button>
+    </div>
+    <p>The firmware is intentionally kept in one Arduino sketch file: <code>PulseSensor_CYD.ino</code>.</p>
+    <pre><code id="arduino-checklist">1. Download PulseSensor_CYD.ino.
+2. Make a folder named PulseSensor_CYD.
+3. Put PulseSensor_CYD.ino inside that folder.
+4. Open PulseSensor_CYD.ino in Arduino IDE.
+5. Install the ESP32 board package.
+6. Install TFT_eSPI, PulseSensor Playground, and XPT2046_Touchscreen.
+7. Configure TFT_eSPI for the CYD display.
+8. Select an ESP32 board and upload at 115200.</code></pre>
+  </section>
+
+  <footer>
+    <p>Source code: <a href="https://github.com/WorldFamousElectronics/PulseSensor_CYD">github.com/WorldFamousElectronics/PulseSensor_CYD</a></p>
+    <p>Made by <a href="https://pulsesensor.com">World Famous Electronics</a> &mdash; the original PulseSensor since 2012. ♥</p>
+  </footer>
+</main>
+<script>
+document.querySelectorAll("[data-copy-target]").forEach((button) => {
+  button.addEventListener("click", async () => {
+    const target = document.getElementById(button.dataset.copyTarget);
+    if (!target) return;
+    await navigator.clipboard.writeText(target.textContent);
+    const original = button.textContent;
+    button.textContent = "Copied!";
+    window.setTimeout(() => { button.textContent = original; }, 1400);
+  });
+});
+</script>
+</body>
+</html>

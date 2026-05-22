@@ -1,0 +1,262 @@
+<!-- ============================================================
+     PulseSensor CYD Dashboard — Shopify page body
+     Paste this into the HTML source view of:
+         pulsesensor.com/admin → Pages → CYD → "<>" Show HTML
+     ----
+     This block is fully self-contained:
+       - All styles are scoped to .cyd-page (won't touch the theme)
+       - Loads ESP Web Tools 10 from unpkg as an ES module
+       - Manifest is hosted on GitHub Pages from the customer repo:
+         https://worldfamouselectronics.github.io/PulseSensor_CYD/manifest.json
+     ============================================================ -->
+
+<style>
+  .cyd-page { max-width: 900px; margin: 0 auto; color: #2B2B2B; line-height: 1.6; }
+  .cyd-page h1 { font-size: 2.4rem; margin: 0 0 8px; color: #2B2B2B; }
+  .cyd-page h2 { font-size: 1.6rem; margin: 36px 0 12px; color: #2B2B2B; border-bottom: 2px solid #E63946; padding-bottom: 6px; display: inline-block; }
+  .cyd-page h3 { font-size: 1.2rem; margin: 22px 0 8px; color: #2B2B2B; }
+  .cyd-page p { margin: 8px 0 14px; }
+  .cyd-page a { color: #1E88E5; text-decoration: none; }
+  .cyd-page a:hover { text-decoration: underline; }
+  .cyd-page code { font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace; background: #F5F1EA; padding: 2px 6px; border-radius: 4px; font-size: 0.92em; color: #2B2B2B; }
+  .cyd-page pre { background: #1A1A1A; color: #E8FFFB; padding: 14px 16px; border-radius: 6px; overflow-x: auto; }
+  .cyd-page pre code { background: transparent; color: inherit; padding: 0; }
+  .cyd-page table { width: 100%; border-collapse: collapse; margin: 12px 0 18px; }
+  .cyd-page th, .cyd-page td { text-align: left; padding: 10px 12px; border-bottom: 1px solid #E5E0D6; }
+  .cyd-page th { background: #FFFDF7; font-weight: 700; color: #2B2B2B; }
+  .cyd-page ul, .cyd-page ol { padding-left: 22px; }
+  .cyd-page li { margin: 4px 0; }
+  .cyd-page .lede { font-size: 1.15rem; color: #4A4A4A; margin-bottom: 24px; }
+  .cyd-page .tag { display: inline-block; background: #E63946; color: #fff; font-weight: 700; font-size: 0.8rem; padding: 4px 10px; border-radius: 999px; letter-spacing: 0.5px; text-transform: uppercase; margin-bottom: 12px; }
+
+  /* Flash card — the hero call-to-action */
+  .cyd-flash-card { background: #FFFDF7; border: 2px solid #E63946; border-radius: 10px; padding: 28px 24px; margin: 18px 0 28px; text-align: center; }
+  .cyd-flash-card h2 { border: none; margin: 0 0 8px; font-size: 1.5rem; }
+  .cyd-flash-card .req { color: #6B7280; font-size: 0.95rem; margin-bottom: 18px; }
+  .cyd-flash-card esp-web-install-button { --esp-tools-button-background: #E63946; --esp-tools-button-color: #FFFFFF; --esp-tools-button-border-radius: 6px; }
+  .cyd-flash-card .activate-btn { appearance: none; border: 0; border-radius: 6px; background: #E63946; color: #FFFFFF; font-size: 1.15rem; font-weight: 800; padding: 16px 32px; cursor: pointer; letter-spacing: 0.3px; }
+  .cyd-flash-card .activate-btn:hover { background: #c92f3d; }
+  .cyd-flash-card .unsupported { display: block; margin-top: 14px; color: #B45309; font-weight: 600; }
+
+  /* Warning callout */
+  .cyd-warn { border-left: 4px solid #E63946; background: #FFF5F5; padding: 12px 16px; margin: 14px 0; border-radius: 4px; color: #4A2C2C; }
+
+  /* Side-by-side screenshots */
+  .cyd-screens { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; margin: 14px 0; }
+  .cyd-screens figure { margin: 0; }
+  .cyd-screens img { width: 100%; height: auto; border: 1px solid #E5E0D6; border-radius: 6px; }
+  .cyd-screens figcaption { text-align: center; font-size: 0.9rem; color: #6B7280; margin-top: 6px; }
+  @media (max-width: 600px) { .cyd-screens { grid-template-columns: 1fr; } }
+
+  /* Feature grid */
+  .cyd-features { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; margin: 14px 0; }
+  .cyd-features .f { background: #FFFDF7; border: 1px solid #E5E0D6; border-radius: 6px; padding: 14px; }
+  .cyd-features .f strong { color: #E63946; }
+
+  /* Source / buy footer cards */
+  .cyd-cards { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin: 18px 0; }
+  .cyd-cards .card { border: 1px solid #E5E0D6; border-radius: 8px; padding: 18px; background: #FFFDF7; }
+  .cyd-cards .card h3 { margin-top: 0; }
+  @media (max-width: 600px) { .cyd-cards { grid-template-columns: 1fr; } }
+
+  .cyd-page details { border: 1px solid #E5E0D6; border-radius: 6px; padding: 10px 14px; margin: 14px 0; background: #FFFDF7; }
+  .cyd-page summary { cursor: pointer; font-weight: 700; }
+
+  /* Hero banner */
+  .cyd-hero { margin: 18px 0 24px; border-radius: 10px; overflow: hidden; }
+  .cyd-hero img { width: 100%; height: auto; display: block; }
+</style>
+
+<script type="module" src="https://unpkg.com/esp-web-tools@10/dist/web/install-button.js?module"></script>
+
+<div class="cyd-page">
+
+  <span class="tag">New Tutorial</span>
+  <h1>PulseSensor on the Cheap Yellow Display</h1>
+  <p class="lede"><strong>Try it now:</strong> Plug your ESP32 CYD into USB, click <strong>Install</strong> below, then wire up your PulseSensor. Live heartbeat on a 320&times;240 TFT in under two minutes &mdash; with sound, light, and touch volume. No app to install, no WiFi, no IDE. Just Chrome, Edge, or Brave.</p>
+
+  <div class="cyd-hero">
+    <img src="https://raw.githubusercontent.com/WorldFamousElectronics/PulseSensor_CYD/main/docs/readme-banner.svg" alt="CYD Pulse Dashboard — flash it, wire it, watch your pulse become data" />
+  </div>
+
+  <p><em>This software is an educational biofeedback demo and is not intended for medical use.</em></p>
+
+  <!-- ============ FLASH CARD ============ -->
+  <div class="cyd-flash-card">
+    <h2>⚡ Flash Your CYD</h2>
+    <p class="req">Plug your CYD into USB. Use <strong>Chrome, Edge, or Brave</strong> on a computer (mobile browsers don't support WebSerial yet).</p>
+    <esp-web-install-button manifest="https://worldfamouselectronics.github.io/PulseSensor_CYD/manifest.json">
+      <button slot="activate" class="activate-btn">Install PulseSensor CYD Dashboard</button>
+      <span slot="unsupported" class="unsupported">⚠️ This browser doesn't support WebSerial. Open this page in Chrome, Edge, or Brave on a desktop or laptop.</span>
+      <span slot="not-allowed" class="unsupported">⚠️ WebSerial blocked. Make sure the page is loaded over HTTPS.</span>
+    </esp-web-install-button>
+    <p class="req" style="margin-top:18px;margin-bottom:0;">First time? After you click Install, your browser will ask which serial port to use. Pick the one labeled with your CYD's USB-serial chip (often <code>CP210x</code> or <code>CH340</code>).</p>
+  </div>
+
+  <!-- ============ WIRING ============ -->
+  <h2>Wire Your PulseSensor</h2>
+  <p>The PulseSensor uses three color-coded wires. Connect them to the CYD's external header (the long pin row labeled <strong>P3</strong>) and 3.3V on <strong>CN1</strong>.</p>
+
+  <table>
+    <thead>
+      <tr><th>PulseSensor Wire</th><th>CYD Connection</th></tr>
+    </thead>
+    <tbody>
+      <tr><td><strong style="color:#E63946;">Red</strong> (+V)</td><td><code>3.3V</code> on CN1</td></tr>
+      <tr><td><strong>Black</strong> (GND)</td><td><code>GND</code> on P3 or CN1</td></tr>
+      <tr><td><strong>Purple</strong> (Signal)</td><td><code>GPIO 35</code> on P3</td></tr>
+    </tbody>
+  </table>
+
+  <div class="cyd-warn"><strong>Important:</strong> Use 3.3V, not 5V. The PulseSensor signal must go to <code>GPIO 35</code> on this CYD board. The firmware reads from that pin.</div>
+
+  <!-- ============ HOLD THE SENSOR ============ -->
+  <h2>How to Hold the Sensor</h2>
+  <div class="cyd-features">
+    <div class="f"><strong>Fingertip.</strong> Pad of index or middle finger. Light, steady contact &mdash; don't squeeze. Keep your hand still.</div>
+    <div class="f"><strong>Earlobe.</strong> Clip gently. Often the cleanest signal &mdash; less muscle interference.</div>
+    <div class="f"><strong>For steadier readings.</strong> Use the <a href="https://pulsesensor.com/products/gold-stablizer-ring">Gold Stabilizer Ring</a> or the <a href="https://pulsesensor.com/pages/sensor-holder-and-light-shield">Sensor Holder &amp; Light Shield</a>.</div>
+  </div>
+
+  <!-- ============ WHAT YOU'LL SEE ============ -->
+  <h2>What You'll See</h2>
+  <p>After you flash and wire up, press your finger lightly on the sensor. You'll see two states:</p>
+
+  <div class="cyd-screens">
+    <figure>
+      <img src="https://raw.githubusercontent.com/WorldFamousElectronics/PulseSensor_CYD/main/docs/screenshots/searching.svg" alt="CYD screen searching for signal: cyan waveform, SIGNAL SEARCH header" />
+      <figcaption>Searching for signal &mdash; cyan waveform</figcaption>
+    </figure>
+    <figure>
+      <img src="https://raw.githubusercontent.com/WorldFamousElectronics/PulseSensor_CYD/main/docs/screenshots/locked.svg" alt="CYD screen locked on qualified beat: white waveform, BPM, IBI displayed" />
+      <figcaption>Locked on qualified beat &mdash; white waveform</figcaption>
+    </figure>
+  </div>
+
+  <p>The single dashboard shows:</p>
+  <ul>
+    <li><code>SIGNAL SEARCH</code> while the firmware is looking for reliable beats, then <code>QUALIFIED BEAT</code> once the quality meter locks at 10/12.</li>
+    <li>A centered <strong>animated heart</strong> in the header whose outline follows the live trace color.</li>
+    <li>A live <strong>scrolling line graph</strong> in the middle &mdash; cyan while searching, white when locked.</li>
+    <li>Three lower panels: <strong>BPM</strong>, <strong>IBI</strong> (milliseconds between beats), and <strong>signal quality</strong>.</li>
+    <li><code>R#</code> in the quality panel shows how many auto re-arms the detector has done.</li>
+    <li>A pulse amplitude meter and dotted threshold guide so you can see why a beat did or didn't qualify.</li>
+  </ul>
+
+  <!-- ============ FEATURES ============ -->
+  <h2>Features</h2>
+  <p>Four feedback channels &mdash; screen, light, sound, and touch &mdash; turn the CYD into a complete biofeedback teaching tool.</p>
+
+  <div class="cyd-features">
+    <div class="f"><strong>Screen.</strong> Waveform, BPM, IBI, quality, and lock state on a 320&times;240 ILI9341 TFT.</div>
+    <div class="f"><strong>Light.</strong> The CYD's rear red LED blinks and fades on every qualified beat.</div>
+    <div class="f"><strong>Sound.</strong> Short heartbeat tone on the onboard speaker (GPIO 26) on each qualified beat.</div>
+    <div class="f"><strong>Touch.</strong> Header buttons let you change speaker volume in 10 steps. Default 1/10.</div>
+    <div class="f"><strong>Auto re-arm.</strong> If the waveform looks alive but the detector isn't producing beats, the firmware quietly resets it.</div>
+    <div class="f"><strong>Change-driven UI.</strong> Only the parts of the screen that change get redrawn &mdash; no flicker.</div>
+  </div>
+
+  <!-- ============ PLAYGROUND TIE-INS ============ -->
+  <h2>PulseSensor Playground Tie-Ins</h2>
+  <p>Every reading on the screen comes directly from the <a href="https://pulsesensor.com/pages/installing-our-playground-for-pulsesensor-arduino">PulseSensor Playground</a> library, so what you see on the CYD is what you'd see in your own Arduino sketches.</p>
+
+  <table>
+    <thead>
+      <tr><th>What you see on screen</th><th>Playground call behind it</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>Live waveform</td><td><code>getLatestSample()</code></td></tr>
+      <tr><td>Heart pulse / LED blink / tone</td><td><code>sawStartOfBeat()</code></td></tr>
+      <tr><td>"Inside beat" indicator</td><td><code>isInsideBeat()</code></td></tr>
+      <tr><td>BPM number</td><td><code>getBeatsPerMinute()</code></td></tr>
+      <tr><td>IBI number</td><td><code>getInterBeatIntervalMs()</code></td></tr>
+      <tr><td>Amplitude meter</td><td><code>getPulseAmplitude()</code></td></tr>
+      <tr><td>Dotted threshold line</td><td><code>setThreshold(550)</code></td></tr>
+    </tbody>
+  </table>
+
+  <p>The 12-step quality meter rises on qualified beats and falls gently on questionable ones. Lock happens at <code>10/12</code>.</p>
+
+  <!-- ============ SUCCESS LOOKS LIKE ============ -->
+  <div class="cyd-warn" style="border-left-color:#00b89a;background:#F0FFF8;color:#0a3a2a;">
+    <strong>Success looks like:</strong>
+    <ul style="margin:8px 0 0;">
+      <li><strong>Smooth waveform.</strong> Clear peaks matching your heartbeat &mdash; cyan first, then white once locked.</li>
+      <li><strong>BPM stabilizes.</strong> Settles to 60&ndash;100 within 5&ndash;10 seconds.</li>
+      <li><strong>Heart pulses.</strong> The header heart and rear red LED flash on every qualified beat.</li>
+      <li><strong>Sound + light.</strong> Short heartbeat tone on each qualified beat.</li>
+    </ul>
+  </div>
+
+  <!-- ============ TROUBLESHOOTING ============ -->
+  <h2>Quick Troubleshooting</h2>
+  <table>
+    <thead>
+      <tr><th>Problem</th><th>Fix</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>Install button does nothing</td><td>Use Chrome, Edge, or Brave on a desktop or laptop. Mobile browsers don't support WebSerial yet.</td></tr>
+      <tr><td>No serial port appears in the picker</td><td>Try a different USB cable &mdash; many micro-USB cables are charge-only. Plug directly into your computer, not a hub.</td></tr>
+      <tr><td>Flashes but screen stays blank</td><td>The CYD's backlight is on GPIO 21. If it's truly dark, you may have a different CYD variant. Open an <a href="https://github.com/WorldFamousElectronics/PulseSensor_CYD/issues">issue</a> with your board photo.</td></tr>
+      <tr><td>Flat waveform</td><td>Confirm the purple wire is on <code>GPIO 35</code> (not 36, not 34). Use 3.3V, not 5V.</td></tr>
+      <tr><td>Erratic readings</td><td>Use gentle, steady finger pressure. Insulate the back of the sensor. Try the <a href="https://pulsesensor.com/products/gold-stablizer-ring">Stabilizer Ring</a> for the cleanest signal.</td></tr>
+      <tr><td>BPM stays at 0</td><td>Give it 5&ndash;10 seconds. The detector needs a few clean beats before it reports BPM.</td></tr>
+    </tbody>
+  </table>
+
+  <!-- ============ SOURCE & BUY ============ -->
+  <h2>Get the Source / Get a Sensor</h2>
+
+  <p>Want the same live data in your browser instead of on a screen? Try the <a href="https://pulsesensor.com/pages/pulsesensor-and-webserial"><strong>PulseSensor + WebSerial</strong></a> tutorial &mdash; same sensor, no display needed, dashboard runs in Chrome.</p>
+
+  <div class="cyd-cards">
+    <div class="card">
+      <h3>📂 The Source Code</h3>
+      <p>The firmware is intentionally one Arduino <code>.ino</code> file so you can open, read, and modify it in the Arduino IDE.</p>
+      <p><a href="https://github.com/WorldFamousElectronics/PulseSensor_CYD"><strong>github.com/WorldFamousElectronics/PulseSensor_CYD</strong></a></p>
+      <p>MIT licensed. PRs welcome.</p>
+    </div>
+    <div class="card">
+      <h3>🛒 Need a PulseSensor?</h3>
+      <p>The PulseSensor Kit ships with a TPU Stabilizer Ring, color-coded cable, ear clip, finger strap, and vinyl insulation dots.</p>
+      <p><a href="https://pulsesensor.com/products/pulse-sensor-amped"><strong>Get the Kit &mdash; $30</strong></a></p>
+    </div>
+  </div>
+
+  <!-- ============ HARDWARE DETAILS (collapsed) ============ -->
+  <details>
+    <summary>Hardware details and pinout (for advanced users)</summary>
+    <p>The firmware targets the <strong>ESP32-2432S028</strong> CYD &mdash; the most common variant sold as "Cheap Yellow Display" with an ILI9341 320&times;240 TFT and XPT2046 resistive touch.</p>
+    <pre><code>PULSE_PIN       = 35
+BACKLIGHT       = 21
+LED_RED_PIN     = 4
+LED_GREEN_PIN   = 16
+LED_BLUE_PIN    = 17
+SPEAKER_PIN     = 26
+TOUCH_IRQ       = 36
+TOUCH_MISO      = 39
+TOUCH_MOSI      = 32
+TOUCH_SCLK      = 25
+TOUCH_CS        = 33</code></pre>
+    <p><strong>Why GPIO 35?</strong> The PulseSensor signal pin was discovered with a small analog pin scanner on a connected CYD. On this revision the signal was visible on <code>IO35</code>, not the originally documented <code>GPIO 36</code>. The scanner is kept as its own diagnostic sketch: <a href="https://github.com/yury-g/CYD_Analog_Pin_Scanner">CYD_Analog_Pin_Scanner</a>.</p>
+    <p><strong>ESP32 analog quirk.</strong> PulseSensorPlayground's detector expects 10-bit analog samples (<code>0..1023</code>), but ESP32 defaults to 12-bit (<code>0..4095</code>). The firmware calls <code>analogReadResolution(10)</code> at startup to keep the library's beat-detection math in the range it expects.</p>
+  </details>
+
+  <details>
+    <summary>Build from source in Arduino IDE</summary>
+    <ol>
+      <li>Download <code>PulseSensor_CYD.ino</code> from <a href="https://github.com/WorldFamousElectronics/PulseSensor_CYD">the repo</a>.</li>
+      <li>Make a folder named <code>PulseSensor_CYD</code>. Put the <code>.ino</code> inside it.</li>
+      <li>Open it in Arduino IDE 2.x.</li>
+      <li>Install the ESP32 board package (Boards Manager).</li>
+      <li>Install three libraries: <code>TFT_eSPI</code>, <code>PulseSensor Playground</code>, <code>XPT2046_Touchscreen</code>.</li>
+      <li>Configure <code>TFT_eSPI</code> for the CYD display (the repo's <code>flash-cyd.sh</code> script shows the exact compile flags &mdash; preferred over editing the global <code>User_Setup.h</code>).</li>
+      <li>Select your ESP32 board and upload at <code>115200</code> baud.</li>
+    </ol>
+  </details>
+
+  <p style="margin-top: 32px; color: #6B7280; font-size: 0.9rem;">Made by <a href="https://pulsesensor.com/pages/about-us">World Famous Electronics</a>. Source on <a href="https://github.com/WorldFamousElectronics/PulseSensor_CYD">GitHub</a>. MIT licensed. Heartbeats in your project, lickety-split. ♥</p>
+
+</div>
+
+<!-- ============ END CYD PAGE ============ -->

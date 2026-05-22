@@ -1,8 +1,8 @@
+.pio/
 build/
-*.bin
 *.elf
 *.hex
 *.map
-.DS_Store
 *.bak
-!docs/flasher/firmware/*.bin
+.DS_Store
+**/.DS_Store

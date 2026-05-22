@@ -1,5 +1,5 @@
 {
-  "name": "CYD Pulse Dashboard",
+  "name": "PulseSensor CYD Dashboard",
   "version": "1.2.0",
   "new_install_prompt_erase": true,
   "builds": [

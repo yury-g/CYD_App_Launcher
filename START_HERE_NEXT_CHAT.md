@@ -31,12 +31,12 @@ Read this file first, then read `CODEX_HANDOFF.md`.
 The CYD was flashed and confirmed working on 2026-05-22 through this code state:
 
 ```text
-11f95a8 Improve dashboard palette contrast 20260522
+1679ed3 Tune dashboard feedback and portrait layout 20260522-132601-EDT
 ```
 
-That commit is newer than the tag named `last-working-20260519-114323-EDT`. The `last-working` tag is still useful as a checkpoint, but the best development base is the current branch head after the 2026-05-22 wrap-up.
+This commit is newer than `11f95a8` and is the latest hardware-tested working source state from the 2026-05-22 CYD session. The older tag named `last-working-20260519-114323-EDT` is still useful as a checkpoint, but the best development base is now the current branch head after the 2026-05-22 feedback/portrait wrap-up.
 
-The user reported the dashboard worked well. The rotate-control builds were flashed and verified on the connected CYD. Serial monitor showed the full orientation cycle:
+The user reported the dashboard worked well. The rotate-control builds were flashed and verified on the connected CYD. Serial monitor showed the full orientation cycle earlier in the day:
 
 ```text
 screenRotation=0
@@ -45,7 +45,16 @@ screenRotation=2
 screenRotation=1
 ```
 
-The latest palette build was also flashed and exercised through acquisition and locked states.
+The latest feedback/portrait builds were also flashed and exercised on the connected CYD. The user confirmed:
+
+- Rear LED default blue glow is gone.
+- Rear LED heartbeat effect is accurate and live.
+- Rear LED now has a more dramatic envelope: short peak hold plus gradual fade.
+- Rear LED pulses yellow while locking and red once locked.
+- SIG quality bars and SIG panel outline use high-visibility yellow while locking and green once locked.
+- Muted gray labels were replaced with white for real-CYD readability.
+- Portrait layout now uses almost the full vertical screen.
+- Portrait BPM/IBI numbers were enlarged.
 
 ## Important Repo Map
 
@@ -137,7 +146,9 @@ signal=0 amp=100 bpm=0 ibi=0 locked=0 quality=0
 - Main graph has a cyan dotted threshold line plus `THR 550`.
 - Persistent labels and grid lines are bright enough for the real CYD display.
 - Bottom-right signal box is minimal: `SIG GPIO35` plus quality bars.
-- Signal acquisition uses blue; locked/acquired signal uses green.
+- Signal acquisition still uses blue for the waveform/searching state.
+- SIG quality feedback uses yellow while locking and green once locked.
+- Rear LED pulses yellow while locking and red once locked, with a dramatic smooth fade.
 - Sound has a rising signal-quality harmony while locking and the normal beat chime after lock.
 - Lock false positives are reduced by requiring four consecutive qualified beats, healthy live range, and low recent clipping.
 - The red heart has a cyan outline.
@@ -177,6 +188,8 @@ b64b02a 2026-05-19 white PulseSensor.com header
 58be524 2026-05-22 changed rotate button to a graphic icon
 11f95a8 2026-05-22 improved palette contrast and blue/green signal state
 214e0f7 2026-05-22 refreshed README screenshots and archived older screenshot design history
+ef9a5bd 2026-05-22 updated handoff for rotation/palette screenshot wrap-up
+1679ed3 2026-05-22 tuned LED feedback, SIG yellow/green quality colors, portrait layout, white labels, and beat-dot explainer docs
 ```
 
 ## Screenshot Notes
@@ -186,6 +199,12 @@ Current horizontal README screenshots live in:
 ```text
 docs/screenshots/searching.svg
 docs/screenshots/locked.svg
+```
+
+Beat-dot explanation visual added during the 2026-05-22 feedback session:
+
+```text
+docs/screenshots/beat-dot-explainer.svg
 ```
 
 Older screenshots were retired to:
@@ -205,7 +224,7 @@ Use repo yury-g/CYD_App_Launcher, branch codex/finger-coach-dashboard-20260519-1
 
 Start by reading START_HERE_NEXT_CHAT.md and CODEX_HANDOFF.md. Treat yury-g/CYD_App_Launcher as the internal development home. Do not push experiments to WorldFamousElectronics/PulseSensor_CYD unless I explicitly approve a public release.
 
-The current best hardware-tested code state is 11f95a8, with screenshot/docs updates after it. It was flashed successfully on 2026-05-22 to /dev/cu.usbserial-110. Preserve default volume 1, GPIO35 PulseSensor input, the top-right rotate icon button, four-orientation rotation cycle, portrait layout, blue acquisition state, green locked state, brighter persistent labels/grid lines, the minimal SIG GPIO35 quality panel, stricter false-positive tuning, and the one-screen dashboard.
+The current best hardware-tested code state is 1679ed3, with handoff/docs updates after it. It was flashed successfully on 2026-05-22 to /dev/cu.usbserial-110. Preserve default volume 1, GPIO35 PulseSensor input, the top-right rotate icon button, four-orientation rotation cycle, improved portrait layout, blue waveform acquisition state, yellow SIG/LED locking feedback, green locked SIG state, red locked heartbeat LED fade, white labels, brighter grid lines, the minimal SIG GPIO35 quality panel, stricter false-positive tuning, and the one-screen dashboard.
 
 Make small changes, build with PlatformIO, flash to the CYD when asked, then preserve hardware-tested states with timestamped commits/tags on launcher.
 ```

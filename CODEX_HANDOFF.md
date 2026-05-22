@@ -49,10 +49,20 @@ Ground for sensors   -> GND
 Current working HEAD before this handoff note:
 
 ```text
-214e0f7 Refresh README screenshots for palette update 20260522
+1679ed3 Tune dashboard feedback and portrait layout 20260522-132601-EDT
 ```
 
-2026-05-22 EDT: the latest code state was built and flashed successfully to the connected CYD on `/dev/cu.usbserial-110`. The serial monitor showed live firmware output and confirmed the full orientation cycle with `screenRotation=0`, `screenRotation=3`, `screenRotation=2`, and `screenRotation=1`. The palette build was exercised through acquisition and locked states.
+2026-05-22 EDT: the latest code state was built and flashed successfully to the connected CYD on `/dev/cu.usbserial-110`. The serial monitor showed live firmware output and earlier confirmed the full orientation cycle with `screenRotation=0`, `screenRotation=3`, `screenRotation=2`, and `screenRotation=1`. The feedback/portrait builds were exercised on hardware with user-visible confirmation.
+
+Latest user-confirmed hardware behavior:
+
+- Rear RGB LED is off by default; the previous unwanted blue default glow is gone.
+- Rear LED pulses yellow while locking and red after lock.
+- Rear LED pulse is beat-accurate but more dramatic: short peak hold and gradual fade.
+- SIG panel outline and bars use high-visibility yellow while locking and green when locked.
+- Gray/dim labels were replaced with white for CYD readability.
+- Portrait layout uses the lower screen area, with taller graph/panels and larger BPM/IBI numbers.
+- Beat-dot explainer visual lives at `docs/screenshots/beat-dot-explainer.svg`.
 
 Important local/GitHub tags on the internal repo:
 
@@ -64,9 +74,10 @@ header-white-20260519-120416-EDT
 restore-gpio35-after-gpio22-loop-20260519-124815-EDT
 dual-pulse-pin-finding-20260519-130451-EDT
 rotate-control-20260522-121644-EDT
+last-working-20260522-132601-EDT
 ```
 
-Important: the tag named `last-working-20260519-114323-EDT` is a useful checkpoint, but the best current development base is the current branch head after the 2026-05-22 wrap-up. The latest hardware-flashed code commit before screenshot/docs cleanup is `11f95a8`.
+Important: the tag named `last-working-20260519-114323-EDT` is a useful older checkpoint, but the best current development base is the current branch head after the 2026-05-22 feedback/portrait wrap-up. The latest hardware-flashed code commit before handoff/docs cleanup is `1679ed3`.
 
 These refs were intentionally removed from the public repo after being accidentally pushed there:
 
@@ -97,9 +108,14 @@ What is currently kept:
 - Main graph has a cyan dotted threshold line plus `THR 550`.
 - Bottom-right signal box is minimal: `SIG GPIO35` plus quality bars only.
 - Persistent labels and grid lines use a brighter palette for real-CYD legibility.
-- Signal acquisition is blue; locked/acquired signal is green.
+- Waveform/searching acquisition is blue/cyan.
+- SIG quality feedback is yellow while locking and green once locked.
+- Rear LED is off by default, pulses yellow while locking, and pulses red after lock.
+- Rear LED uses a more dramatic beat-accurate envelope: short peak hold and smooth gradual fade.
 - Sound has a rising signal-quality harmony while locking and the normal beat chime after lock.
 - Default speaker volume starts at `1` via `#define VOLUME_START 1`.
+- Portrait layout uses nearly the full vertical screen and has larger BPM/IBI numbers.
+- Formerly muted/dim labels are white for CYD readability.
 - Lock false positives were reduced by requiring:
   - 4 consecutive qualified beats
   - healthy live signal range
@@ -145,6 +161,12 @@ The current README screenshots are regenerated horizontal SVG recreations of the
 ```text
 docs/screenshots/searching.svg
 docs/screenshots/locked.svg
+```
+
+Beat-dot explanation visual:
+
+```text
+docs/screenshots/beat-dot-explainer.svg
 ```
 
 The older pre-rotation/pre-palette screenshots were retired for design-version history:
@@ -211,7 +233,7 @@ codex/finger-coach-dashboard-20260519-111641-EDT
 
 Read START_HERE_NEXT_CHAT.md and CODEX_HANDOFF.md first. Treat yury-g/CYD_App_Launcher as the memory brain and active internal dev home. Do not push experiments to WorldFamousElectronics/PulseSensor_CYD unless I explicitly approve a public release.
 
-The current hardware-tested code state is 11f95a8, with screenshot/docs wrap-up commits after it. Preserve default volume 1, GPIO35 PulseSensor input, the top-right rotate icon button, four-orientation cycle, portrait layout, brighter persistent labels/grid lines, blue acquisition state, green locked state, the minimal SIG GPIO35 quality panel, stricter false-positive tuning, and the one-screen dashboard.
+The current hardware-tested code state is 1679ed3, with handoff/docs wrap-up commits after it. Preserve default volume 1, GPIO35 PulseSensor input, the top-right rotate icon button, four-orientation cycle, improved portrait layout, brighter persistent labels/grid lines, blue/cyan waveform acquisition state, yellow locking SIG/LED feedback, green locked SIG feedback, red locked heartbeat LED fade, the minimal SIG GPIO35 quality panel, stricter false-positive tuning, and the one-screen dashboard.
 
 Make small changes, build with PlatformIO, flash to the CYD when asked, and preserve hardware-tested states with timestamped commits/tags on the internal repo.
 ```

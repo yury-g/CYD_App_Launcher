@@ -14,6 +14,8 @@ Quick start for future chats: read `START_HERE_NEXT_CHAT.md` first, then this fi
 
 Important naming note: `yury-g/CYD_App_Launcher` is the development origin/source of truth for this ongoing work. `WorldFamousElectronics/PulseSensor_CYD` is the public publishing destination for polished customer/user releases only. If a local checkout has a remote named `origin` pointing at `WorldFamousElectronics/PulseSensor_CYD`, do not use that remote for development pushes unless the user explicitly approves a public release.
 
+Repository metadata note: the GitHub description for `yury-g/CYD_App_Launcher` was corrected on 2026-05-22 to say `ESP32-2432S028` without a trailing `R`. Keep the board label as `ESP32-2432S028` in repo metadata, README, and code comments unless future hardware testing proves otherwise.
+
 Local remotes used in the original workspace:
 
 ```text

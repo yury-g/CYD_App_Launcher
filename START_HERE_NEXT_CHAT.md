@@ -71,6 +71,8 @@ The public/customer-facing repo line is useful for release reference, but the ha
 
 Important naming note for future chats: even if a local Git remote is named `origin` and points at `WorldFamousElectronics/PulseSensor_CYD`, do not treat that public repo as the development origin/source of truth. For this project, `yury-g/CYD_App_Launcher` is the development home and memory brain. `WorldFamousElectronics/PulseSensor_CYD` is publish-only for polished customer/user releases, and must not receive pushes unless the user explicitly approves a public release.
 
+Repository metadata note: the `yury-g/CYD_App_Launcher` GitHub description should say `ESP32-2432S028` without a trailing `R`. The connected/tested CYD is documented as `ESP32-2432S028`, and the old `ESP32-2432S028R` label should not be reintroduced unless future hardware testing proves it.
+
 ## Hardware-Tested Notes
 
 Connected CYD port used successfully on 2026-05-22:

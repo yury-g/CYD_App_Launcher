@@ -869,15 +869,17 @@ void drawRotateControl() {
   tft.fillRoundRect(rotateButtonX, rotateButtonY, rotateButtonSize, rotateButtonSize, 4, COLOR_PANEL);
   tft.drawRoundRect(rotateButtonX, rotateButtonY, rotateButtonSize, rotateButtonSize, 4, COLOR_GRID);
 
-  tft.setTextSize(1);
-  tft.setTextColor(COLOR_CYAN, COLOR_PANEL);
-  tft.setCursor(rotateButtonX + 6, rotateButtonY + 3);
-  tft.print("R");
-  tft.drawFastHLine(rotateButtonX + 5, rotateButtonY + 14, 12, COLOR_CYAN);
-  tft.drawFastVLine(rotateButtonX + 16, rotateButtonY + 10, 5, COLOR_CYAN);
-  tft.fillTriangle(rotateButtonX + 16, rotateButtonY + 8,
-                   rotateButtonX + 20, rotateButtonY + 12,
-                   rotateButtonX + 16, rotateButtonY + 16,
+  int cx = rotateButtonX + rotateButtonSize / 2;
+  int cy = rotateButtonY + rotateButtonSize / 2;
+
+  tft.drawCircle(cx, cy, 7, COLOR_CYAN);
+  tft.drawCircle(cx, cy, 6, COLOR_CYAN_DARK);
+  tft.fillRect(cx - 8, cy - 9, 8, 7, COLOR_PANEL);
+  tft.drawFastHLine(cx - 1, cy - 7, 7, COLOR_CYAN);
+  tft.drawFastVLine(cx + 5, cy - 7, 6, COLOR_CYAN);
+  tft.fillTriangle(cx + 2, cy - 9,
+                   cx + 8, cy - 7,
+                   cx + 5, cy - 2,
                    COLOR_CYAN);
 }
 

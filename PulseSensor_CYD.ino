@@ -75,15 +75,13 @@
 
 #define SPEAKER_BITS 10
 #define BEAT_CHIME_STEP_COUNT 4
-#define HEART_CENTER_X 160
-#define HEART_CENTER_Y 22
 #define HEART_MIN_SIZE 8
 #define HEART_MAX_SIZE 15
 #define VOLUME_MIN 0
 #define VOLUME_MAX 10
 #define VOLUME_START 1
 #define SCREEN_ROTATION_DEFAULT 1
-#define SCREEN_ROTATION_FLIPPED 3
+#define SCREEN_ROTATION_COUNT 4
 
 // ===== TOUCH CALIBRATION =====
 
@@ -94,26 +92,9 @@
 
 // ===== SCREEN LAYOUT =====
 
-#define SCREEN_WIDTH 320
-#define SCREEN_HEIGHT 240
-
-#define GRAPH_X 8
-#define GRAPH_Y 48
-#define GRAPH_W 304
-#define GRAPH_H 112
-
-#define PANEL_Y 170
-#define PANEL_H 62
-
-#define ROTATE_BUTTON_X 190
-#define ROTATE_BUTTON_Y 9
-#define ROTATE_BUTTON_SIZE 22
-#define VOL_LABEL_X 216
-#define VOL_MINUS_X 240
-#define VOL_VALUE_X 268
-#define VOL_PLUS_X 294
-#define VOL_Y 9
-#define VOL_BUTTON_SIZE 22
+#define LANDSCAPE_WIDTH 320
+#define LANDSCAPE_HEIGHT 240
+#define CONTROL_BUTTON_SIZE 22
 
 // ===== COLORS (RGB565) =====
 
@@ -151,6 +132,7 @@ PulseSensorPlayground pulseSensor;
 const uint16_t BEAT_CHIME_FREQUENCIES[BEAT_CHIME_STEP_COUNT] = {262, 392, 523, 659};
 const uint8_t BEAT_CHIME_DUTIES[BEAT_CHIME_STEP_COUNT] = {56, 42, 30, 18};
 const uint16_t BEAT_CHIME_DURATIONS_MS[BEAT_CHIME_STEP_COUNT] = {58, 66, 82, 118};
+const uint8_t SCREEN_ROTATIONS[SCREEN_ROTATION_COUNT] = {1, 0, 3, 2};
 
 const uint16_t SIGNAL_HARMONY_FREQUENCIES[] = {523, 659, 784, 988, 1175};
 const uint8_t SIGNAL_HARMONY_DUTIES[] = {48, 40, 30};
@@ -199,6 +181,7 @@ unsigned long beatChimeNextStepTime = 0;
 bool beatHeartNeedsRedraw = true;
 uint8_t speakerVolume = VOLUME_START;
 uint8_t screenRotation = SCREEN_ROTATION_DEFAULT;
+uint8_t screenRotationIndex = 0;
 
 bool signalHarmonyPlaying = false;
 uint8_t signalHarmonyStep = 0;
@@ -208,7 +191,44 @@ unsigned long signalHarmonyNextStepTime = 0;
 // ===== GRAPH STATE =====
 
 int graphX = 0;
-int lastGraphY = GRAPH_Y + GRAPH_H / 2;
+int lastGraphY = 104;
+
+// ===== LAYOUT STATE =====
+
+bool portraitLayout = false;
+int screenWidth = LANDSCAPE_WIDTH;
+int screenHeight = LANDSCAPE_HEIGHT;
+int headerHeight = 42;
+int heartCenterX = 160;
+int heartCenterY = 22;
+
+int graphLeft = 8;
+int graphTop = 48;
+int graphWidth = 304;
+int graphHeight = 112;
+
+int bpmPanelX = 8;
+int bpmPanelY = 170;
+int bpmPanelW = 102;
+int bpmPanelH = 62;
+int ibiPanelX = 118;
+int ibiPanelY = 170;
+int ibiPanelW = 102;
+int ibiPanelH = 62;
+int signalPanelX = 228;
+int signalPanelY = 170;
+int signalPanelW = 84;
+int signalPanelH = 62;
+
+int rotateButtonX = 294;
+int rotateButtonY = 9;
+int rotateButtonSize = CONTROL_BUTTON_SIZE;
+int volumeLabelX = 186;
+int volumeMinusX = 214;
+int volumeValueX = 242;
+int volumePlusX = 266;
+int volumeY = 9;
+int volumeButtonSize = CONTROL_BUTTON_SIZE;
 
 // ===== RED LED FADE STATE =====
 
@@ -230,6 +250,7 @@ bool handleRotateTouch(int16_t x, int16_t y);
 bool handleVolumeTouch(int16_t x, int16_t y);
 void rotateScreen();
 void applyScreenRotation();
+void configureLayout();
 void resetDashboardState();
 void cydLedcAttach(uint8_t pin, uint8_t channel, uint32_t frequency, uint8_t resolution);
 void cydLedcWrite(uint8_t pin, uint8_t channel, uint32_t duty);
@@ -263,7 +284,7 @@ void drawThresholdMarker(int localX);
 int signalToGraphY(int signal);
 void drawWaveform();
 void drawPanels();
-void drawMetricPanel(int x, const char* label, int value, const char* unit, bool valid);
+void drawMetricPanel(int x, int y, int w, int h, const char* label, int value, const char* unit, bool valid);
 void drawSignalPanel();
 void drawQualitySegments(int x, int y);
 void drawAmplitudeMeter(int x, int y, int amplitude);
@@ -366,32 +387,40 @@ void readTouchControls() {
 }
 
 void mapTouchPoint(const TS_Point& point, int16_t* x, int16_t* y) {
-  int16_t mappedX = constrain(map(point.x, TOUCH_MIN_X, TOUCH_MAX_X, 1, SCREEN_WIDTH), 0, SCREEN_WIDTH - 1);
-  int16_t mappedY = constrain(map(point.y, TOUCH_MIN_Y, TOUCH_MAX_Y, 1, SCREEN_HEIGHT), 0, SCREEN_HEIGHT - 1);
+  int16_t landscapeX = constrain(map(point.x, TOUCH_MIN_X, TOUCH_MAX_X, 1, LANDSCAPE_WIDTH), 0, LANDSCAPE_WIDTH - 1);
+  int16_t landscapeY = constrain(map(point.y, TOUCH_MIN_Y, TOUCH_MAX_Y, 1, LANDSCAPE_HEIGHT), 0, LANDSCAPE_HEIGHT - 1);
+  int16_t mappedX = landscapeX;
+  int16_t mappedY = landscapeY;
 
-  if (screenRotation == SCREEN_ROTATION_FLIPPED) {
-    mappedX = SCREEN_WIDTH - 1 - mappedX;
-    mappedY = SCREEN_HEIGHT - 1 - mappedY;
+  if (screenRotation == 0) {
+    mappedX = LANDSCAPE_HEIGHT - 1 - landscapeY;
+    mappedY = landscapeX;
+  } else if (screenRotation == 2) {
+    mappedX = landscapeY;
+    mappedY = LANDSCAPE_WIDTH - 1 - landscapeX;
+  } else if (screenRotation == 3) {
+    mappedX = LANDSCAPE_WIDTH - 1 - landscapeX;
+    mappedY = LANDSCAPE_HEIGHT - 1 - landscapeY;
   }
 
-  *x = mappedX;
-  *y = mappedY;
+  *x = constrain(mappedX, 0, screenWidth - 1);
+  *y = constrain(mappedY, 0, screenHeight - 1);
 }
 
 bool handleRotateTouch(int16_t x, int16_t y) {
-  if (y < ROTATE_BUTTON_Y - 8 || y > ROTATE_BUTTON_Y + ROTATE_BUTTON_SIZE + 8) return false;
-  if (x < ROTATE_BUTTON_X - 8 || x > ROTATE_BUTTON_X + ROTATE_BUTTON_SIZE + 8) return false;
+  if (y < rotateButtonY - 8 || y > rotateButtonY + rotateButtonSize + 8) return false;
+  if (x < rotateButtonX - 8 || x > rotateButtonX + rotateButtonSize + 8) return false;
 
   rotateScreen();
   return true;
 }
 
 bool handleVolumeTouch(int16_t x, int16_t y) {
-  if (y < VOL_Y - 8 || y > VOL_Y + VOL_BUTTON_SIZE + 8) return false;
+  if (y < volumeY - 8 || y > volumeY + volumeButtonSize + 8) return false;
 
-  if (x >= VOL_MINUS_X - 8 && x <= VOL_MINUS_X + VOL_BUTTON_SIZE + 8) {
+  if (x >= volumeMinusX - 8 && x <= volumeMinusX + volumeButtonSize + 8) {
     if (speakerVolume > VOLUME_MIN) speakerVolume--;
-  } else if (x >= VOL_PLUS_X - 8 && x <= VOL_PLUS_X + VOL_BUTTON_SIZE + 8) {
+  } else if (x >= volumePlusX - 8 && x <= volumePlusX + volumeButtonSize + 8) {
     if (speakerVolume < VOLUME_MAX) speakerVolume++;
   } else {
     return false;
@@ -405,7 +434,8 @@ bool handleVolumeTouch(int16_t x, int16_t y) {
 }
 
 void rotateScreen() {
-  screenRotation = screenRotation == SCREEN_ROTATION_DEFAULT ? SCREEN_ROTATION_FLIPPED : SCREEN_ROTATION_DEFAULT;
+  screenRotationIndex = (screenRotationIndex + 1) % SCREEN_ROTATION_COUNT;
+  screenRotation = SCREEN_ROTATIONS[screenRotationIndex];
   Serial.printf("screenRotation=%u\n", screenRotation);
   applyScreenRotation();
   resetDashboardState();
@@ -414,6 +444,78 @@ void rotateScreen() {
 
 void applyScreenRotation() {
   tft.setRotation(screenRotation);
+  configureLayout();
+}
+
+void configureLayout() {
+  screenWidth = tft.width();
+  screenHeight = tft.height();
+  portraitLayout = screenHeight > screenWidth;
+
+  rotateButtonSize = CONTROL_BUTTON_SIZE;
+  volumeButtonSize = CONTROL_BUTTON_SIZE;
+
+  if (portraitLayout) {
+    headerHeight = 58;
+    heartCenterX = 40;
+    heartCenterY = 42;
+
+    graphLeft = 8;
+    graphTop = 66;
+    graphWidth = screenWidth - 16;
+    graphHeight = 132;
+
+    bpmPanelX = 8;
+    bpmPanelY = 208;
+    bpmPanelW = 68;
+    bpmPanelH = 48;
+    ibiPanelX = 84;
+    ibiPanelY = 208;
+    ibiPanelW = 68;
+    ibiPanelH = 48;
+    signalPanelX = 160;
+    signalPanelY = 208;
+    signalPanelW = 72;
+    signalPanelH = 48;
+
+    rotateButtonX = screenWidth - rotateButtonSize - 4;
+    rotateButtonY = 4;
+    volumePlusX = rotateButtonX - volumeButtonSize - 8;
+    volumeValueX = volumePlusX - 24;
+    volumeMinusX = volumeValueX - volumeButtonSize - 2;
+    volumeLabelX = volumeMinusX - 28;
+    volumeY = 4;
+  } else {
+    headerHeight = 42;
+    heartCenterX = screenWidth / 2;
+    heartCenterY = 22;
+
+    graphLeft = 8;
+    graphTop = 48;
+    graphWidth = screenWidth - 16;
+    graphHeight = 112;
+
+    bpmPanelX = 8;
+    bpmPanelY = 170;
+    bpmPanelW = 102;
+    bpmPanelH = 62;
+    ibiPanelX = 118;
+    ibiPanelY = 170;
+    ibiPanelW = 102;
+    ibiPanelH = 62;
+    signalPanelX = 228;
+    signalPanelY = 170;
+    signalPanelW = 84;
+    signalPanelH = 62;
+
+    rotateButtonX = screenWidth - rotateButtonSize - 4;
+    rotateButtonY = 9;
+    volumePlusX = rotateButtonX - volumeButtonSize - 6;
+    volumeValueX = volumePlusX - 24;
+    volumeMinusX = volumeValueX - volumeButtonSize - 2;
+    volumeLabelX = volumeMinusX - 28;
+    volumeY = 9;
+  }
 }
 
 void resetDashboardState() {
@@ -746,36 +848,36 @@ void drawDashboardIfChanged() {
 }
 
 void drawHeader() {
-  tft.fillRect(0, 0, SCREEN_WIDTH, 42, COLOR_BG);
-  tft.drawFastHLine(0, 41, SCREEN_WIDTH, COLOR_GRID);
+  tft.fillRect(0, 0, screenWidth, headerHeight, COLOR_BG);
+  tft.drawFastHLine(0, headerHeight - 1, screenWidth, COLOR_GRID);
   beatHeartNeedsRedraw = true;
 
   tft.setTextSize(1);
   tft.setTextColor(COLOR_TEXT, COLOR_BG);
-  tft.setCursor(10, 8);
+  tft.setCursor(10, portraitLayout ? 7 : 8);
   tft.print("PulseSensor.com");
-  drawRotateControl();
   drawVolumeControl();
+  drawRotateControl();
 
   tft.setTextColor(COLOR_TEXT, COLOR_BG);
   tft.setTextSize(1);
-  tft.setCursor(10, 25);
+  tft.setCursor(portraitLayout ? 62 : 10, portraitLayout ? 47 : 25);
   tft.print(signalCoachText());
 }
 
 void drawRotateControl() {
-  tft.fillRoundRect(ROTATE_BUTTON_X, ROTATE_BUTTON_Y, ROTATE_BUTTON_SIZE, ROTATE_BUTTON_SIZE, 4, COLOR_PANEL);
-  tft.drawRoundRect(ROTATE_BUTTON_X, ROTATE_BUTTON_Y, ROTATE_BUTTON_SIZE, ROTATE_BUTTON_SIZE, 4, COLOR_GRID);
+  tft.fillRoundRect(rotateButtonX, rotateButtonY, rotateButtonSize, rotateButtonSize, 4, COLOR_PANEL);
+  tft.drawRoundRect(rotateButtonX, rotateButtonY, rotateButtonSize, rotateButtonSize, 4, COLOR_GRID);
 
   tft.setTextSize(1);
   tft.setTextColor(COLOR_CYAN, COLOR_PANEL);
-  tft.setCursor(ROTATE_BUTTON_X + 6, ROTATE_BUTTON_Y + 3);
+  tft.setCursor(rotateButtonX + 6, rotateButtonY + 3);
   tft.print("R");
-  tft.drawFastHLine(ROTATE_BUTTON_X + 5, ROTATE_BUTTON_Y + 14, 12, COLOR_CYAN);
-  tft.drawFastVLine(ROTATE_BUTTON_X + 16, ROTATE_BUTTON_Y + 10, 5, COLOR_CYAN);
-  tft.fillTriangle(ROTATE_BUTTON_X + 16, ROTATE_BUTTON_Y + 8,
-                   ROTATE_BUTTON_X + 20, ROTATE_BUTTON_Y + 12,
-                   ROTATE_BUTTON_X + 16, ROTATE_BUTTON_Y + 16,
+  tft.drawFastHLine(rotateButtonX + 5, rotateButtonY + 14, 12, COLOR_CYAN);
+  tft.drawFastVLine(rotateButtonX + 16, rotateButtonY + 10, 5, COLOR_CYAN);
+  tft.fillTriangle(rotateButtonX + 16, rotateButtonY + 8,
+                   rotateButtonX + 20, rotateButtonY + 12,
+                   rotateButtonX + 16, rotateButtonY + 16,
                    COLOR_CYAN);
 }
 
@@ -783,58 +885,63 @@ void drawVolumeControl() {
   char volumeText[4];
   snprintf(volumeText, sizeof(volumeText), "%u", speakerVolume);
 
-  tft.fillRect(VOL_LABEL_X, 4, SCREEN_WIDTH - VOL_LABEL_X, 34, COLOR_BG);
+  tft.fillRect(volumeLabelX, volumeY - 5, rotateButtonX - volumeLabelX - 2, volumeButtonSize + 14, COLOR_BG);
   tft.setTextSize(1);
   tft.setTextColor(COLOR_CYAN, COLOR_BG);
-  tft.setCursor(VOL_LABEL_X, 17);
+  tft.setCursor(volumeLabelX, volumeY + 8);
   tft.print("VOL");
 
-  tft.fillRoundRect(VOL_MINUS_X, VOL_Y, VOL_BUTTON_SIZE, VOL_BUTTON_SIZE, 4, COLOR_PANEL);
-  tft.drawRoundRect(VOL_MINUS_X, VOL_Y, VOL_BUTTON_SIZE, VOL_BUTTON_SIZE, 4, COLOR_GRID);
-  tft.fillRoundRect(VOL_PLUS_X, VOL_Y, VOL_BUTTON_SIZE, VOL_BUTTON_SIZE, 4, COLOR_PANEL);
-  tft.drawRoundRect(VOL_PLUS_X, VOL_Y, VOL_BUTTON_SIZE, VOL_BUTTON_SIZE, 4, COLOR_GRID);
+  tft.fillRoundRect(volumeMinusX, volumeY, volumeButtonSize, volumeButtonSize, 4, COLOR_PANEL);
+  tft.drawRoundRect(volumeMinusX, volumeY, volumeButtonSize, volumeButtonSize, 4, COLOR_GRID);
+  tft.fillRoundRect(volumePlusX, volumeY, volumeButtonSize, volumeButtonSize, 4, COLOR_PANEL);
+  tft.drawRoundRect(volumePlusX, volumeY, volumeButtonSize, volumeButtonSize, 4, COLOR_GRID);
 
   tft.setTextColor(COLOR_TEXT, COLOR_PANEL);
-  drawCenteredText("-", VOL_MINUS_X, VOL_Y + 5, VOL_BUTTON_SIZE, 2, COLOR_TEXT, COLOR_PANEL);
-  drawCenteredText("+", VOL_PLUS_X, VOL_Y + 5, VOL_BUTTON_SIZE, 2, COLOR_TEXT, COLOR_PANEL);
-  drawCenteredText(volumeText, VOL_VALUE_X, VOL_Y + 7, 26, 1, COLOR_TEXT, COLOR_BG);
+  drawCenteredText("-", volumeMinusX, volumeY + 5, volumeButtonSize, 2, COLOR_TEXT, COLOR_PANEL);
+  drawCenteredText("+", volumePlusX, volumeY + 5, volumeButtonSize, 2, COLOR_TEXT, COLOR_PANEL);
+  drawCenteredText(volumeText, volumeValueX, volumeY + 7, 22, 1, COLOR_TEXT, COLOR_BG);
 }
 
 void drawGraphFrame() {
-  tft.fillRoundRect(GRAPH_X - 2, GRAPH_Y - 2, GRAPH_W + 4, GRAPH_H + 4, 6, COLOR_PANEL_DARK);
-  tft.drawRoundRect(GRAPH_X - 2, GRAPH_Y - 2, GRAPH_W + 4, GRAPH_H + 4, 6, COLOR_GRID);
-  tft.fillRect(GRAPH_X, GRAPH_Y, GRAPH_W, GRAPH_H, COLOR_BG);
+  tft.fillRoundRect(graphLeft - 2, graphTop - 2, graphWidth + 4, graphHeight + 4, 6, COLOR_PANEL_DARK);
+  tft.drawRoundRect(graphLeft - 2, graphTop - 2, graphWidth + 4, graphHeight + 4, 6, COLOR_GRID);
+  tft.fillRect(graphLeft, graphTop, graphWidth, graphHeight, COLOR_BG);
 
-  for (int x = 0; x <= GRAPH_W; x += 38) {
-    tft.drawFastVLine(GRAPH_X + x, GRAPH_Y, GRAPH_H, COLOR_GRID_SOFT);
+  int verticalGridStep = portraitLayout ? 28 : 38;
+  int horizontalGridStep = portraitLayout ? 33 : 28;
+
+  for (int x = 0; x <= graphWidth; x += verticalGridStep) {
+    tft.drawFastVLine(graphLeft + x, graphTop, graphHeight, COLOR_GRID_SOFT);
   }
-  for (int y = 0; y <= GRAPH_H; y += 28) {
-    tft.drawFastHLine(GRAPH_X, GRAPH_Y + y, GRAPH_W, COLOR_GRID_SOFT);
+  for (int y = 0; y <= graphHeight; y += horizontalGridStep) {
+    tft.drawFastHLine(graphLeft, graphTop + y, graphWidth, COLOR_GRID_SOFT);
   }
-  for (int x = 0; x < GRAPH_W; x += 6) {
+  for (int x = 0; x < graphWidth; x += 6) {
     drawThresholdMarker(x);
   }
 
   tft.setTextSize(1);
   tft.setTextColor(COLOR_MUTED, COLOR_BG);
-  tft.setCursor(GRAPH_X + 6, GRAPH_Y + 5);
+  tft.setCursor(graphLeft + 6, graphTop + 5);
   tft.print("LIVE LINE");
 
-  tft.setCursor(GRAPH_X + GRAPH_W - 48, GRAPH_Y + 5);
+  tft.setCursor(graphLeft + graphWidth - 48, graphTop + 5);
   tft.print("THR ");
   tft.print(PULSE_THRESHOLD);
 }
 
 void drawGraphColumnBackground(int localX) {
-  int screenX = GRAPH_X + localX;
-  tft.drawFastVLine(screenX, GRAPH_Y, GRAPH_H, COLOR_BG);
+  int screenX = graphLeft + localX;
+  int verticalGridStep = portraitLayout ? 28 : 38;
+  int horizontalGridStep = portraitLayout ? 33 : 28;
+  tft.drawFastVLine(screenX, graphTop, graphHeight, COLOR_BG);
 
-  if (localX % 38 == 0) {
-    tft.drawFastVLine(screenX, GRAPH_Y, GRAPH_H, COLOR_GRID_SOFT);
+  if (localX % verticalGridStep == 0) {
+    tft.drawFastVLine(screenX, graphTop, graphHeight, COLOR_GRID_SOFT);
   }
 
-  for (int y = 0; y <= GRAPH_H; y += 28) {
-    tft.drawPixel(screenX, GRAPH_Y + y, COLOR_GRID_SOFT);
+  for (int y = 0; y <= graphHeight; y += horizontalGridStep) {
+    tft.drawPixel(screenX, graphTop + y, COLOR_GRID_SOFT);
   }
 
   drawThresholdMarker(localX);
@@ -844,17 +951,17 @@ void drawThresholdMarker(int localX) {
   int y = signalToGraphY(PULSE_THRESHOLD);
 
   if (localX % 6 == 0) {
-    tft.drawPixel(GRAPH_X + localX, y, COLOR_SCREEN_BEAT);
+    tft.drawPixel(graphLeft + localX, y, COLOR_SCREEN_BEAT);
   }
 }
 
 int signalToGraphY(int signal) {
   if (minSignal == maxSignal) {
-    return GRAPH_Y + GRAPH_H / 2;
+    return graphTop + graphHeight / 2;
   }
 
-  int y = map(signal, minSignal, maxSignal, GRAPH_Y + GRAPH_H - 8, GRAPH_Y + 8);
-  return constrain(y, GRAPH_Y + 8, GRAPH_Y + GRAPH_H - 8);
+  int y = map(signal, minSignal, maxSignal, graphTop + graphHeight - 8, graphTop + 8);
+  return constrain(y, graphTop + 8, graphTop + graphHeight - 8);
 }
 
 // ===== LIVE GRAPH =====
@@ -866,25 +973,25 @@ void drawWaveform() {
   int y = signalToGraphY(currentSignal);
 
   drawGraphColumnBackground(graphX);
-  drawGraphColumnBackground((graphX + 1) % GRAPH_W);
-  drawGraphColumnBackground((graphX + 2) % GRAPH_W);
+  drawGraphColumnBackground((graphX + 1) % graphWidth);
+  drawGraphColumnBackground((graphX + 2) % graphWidth);
 
   uint16_t waveColor = liveTraceColor();
 
   if (graphX > 0) {
-    tft.drawLine(GRAPH_X + graphX - 1, lastGraphY, GRAPH_X + graphX, y, waveColor);
-    tft.drawPixel(GRAPH_X + graphX, y - 1, waveColor);
-    tft.drawPixel(GRAPH_X + graphX, y + 1, waveColor);
+    tft.drawLine(graphLeft + graphX - 1, lastGraphY, graphLeft + graphX, y, waveColor);
+    tft.drawPixel(graphLeft + graphX, y - 1, waveColor);
+    tft.drawPixel(graphLeft + graphX, y + 1, waveColor);
   }
 
   if (ledBrightness > 180) {
-    tft.fillCircle(GRAPH_X + graphX, y, 3, COLOR_SCREEN_BEAT);
+    tft.fillCircle(graphLeft + graphX, y, 3, COLOR_SCREEN_BEAT);
   }
 
   lastGraphY = y;
   graphX++;
 
-  if (graphX >= GRAPH_W) {
+  if (graphX >= graphWidth) {
     graphX = 0;
     lastGraphY = y;
     drawGraphFrame();
@@ -894,31 +1001,30 @@ void drawWaveform() {
 // ===== DASHBOARD PANELS =====
 
 void drawPanels() {
-  drawMetricPanel(8, "BPM", displayBPM, "", lockedSignal);
-  drawMetricPanel(118, "IBI", displayIBI, "ms", lockedSignal);
+  drawMetricPanel(bpmPanelX, bpmPanelY, bpmPanelW, bpmPanelH, "BPM", displayBPM, "", lockedSignal);
+  drawMetricPanel(ibiPanelX, ibiPanelY, ibiPanelW, ibiPanelH, "IBI", displayIBI, "ms", lockedSignal);
   drawSignalPanel();
 }
 
-void drawMetricPanel(int x, const char* label, int value, const char* unit, bool valid) {
-  const int w = 102;
-  tft.fillRoundRect(x, PANEL_Y, w, PANEL_H, 6, COLOR_PANEL);
-  tft.drawRoundRect(x, PANEL_Y, w, PANEL_H, 6, valid ? COLOR_TEAL : COLOR_GRID);
+void drawMetricPanel(int x, int y, int w, int h, const char* label, int value, const char* unit, bool valid) {
+  tft.fillRoundRect(x, y, w, h, 6, COLOR_PANEL);
+  tft.drawRoundRect(x, y, w, h, 6, valid ? COLOR_TEAL : COLOR_GRID);
 
   tft.setTextSize(1);
   tft.setTextColor(COLOR_MUTED, COLOR_PANEL);
-  tft.setCursor(x + 10, PANEL_Y + 9);
+  tft.setCursor(x + 8, y + 8);
   tft.print(label);
 
-  tft.setTextSize(4);
+  tft.setTextSize(portraitLayout ? 2 : 4);
   tft.setTextColor(valid ? COLOR_TEXT : COLOR_MUTED, COLOR_PANEL);
-  tft.setCursor(x + 10, PANEL_Y + 25);
+  tft.setCursor(x + 8, y + (portraitLayout ? 25 : 25));
 
   if (valid) {
     if (strcmp(label, "BPM") == 0) {
-      tft.printf("%3d", value);
+      tft.printf(portraitLayout ? "%2d" : "%3d", value);
     } else {
-      tft.setTextSize(3);
-      tft.printf("%3d", value);
+      tft.setTextSize(portraitLayout ? 2 : 3);
+      tft.printf(portraitLayout ? "%2d" : "%3d", value);
     }
   } else {
     tft.print("--");
@@ -927,39 +1033,46 @@ void drawMetricPanel(int x, const char* label, int value, const char* unit, bool
   if (valid && unit[0] != '\0') {
     tft.setTextSize(1);
     tft.setTextColor(COLOR_MUTED, COLOR_PANEL);
-    tft.setCursor(x + 72, PANEL_Y + 45);
+    tft.setCursor(x + (portraitLayout ? 43 : 72), y + h - 17);
     tft.print(unit);
   }
 }
 
 void drawSignalPanel() {
-  const int x = 228;
-  const int w = 84;
   char pinLabel[8];
 
   snprintf(pinLabel, sizeof(pinLabel), "GPIO%d", PULSE_PIN);
 
-  tft.fillRoundRect(x, PANEL_Y, w, PANEL_H, 6, COLOR_PANEL);
-  tft.drawRoundRect(x, PANEL_Y, w, PANEL_H, 6, lockedSignal ? COLOR_SCREEN_BEAT : COLOR_GRID);
+  tft.fillRoundRect(signalPanelX, signalPanelY, signalPanelW, signalPanelH, 6, COLOR_PANEL);
+  tft.drawRoundRect(signalPanelX, signalPanelY, signalPanelW, signalPanelH, 6, lockedSignal ? COLOR_SCREEN_BEAT : COLOR_GRID);
 
   tft.setTextSize(1);
   tft.setTextColor(COLOR_MUTED, COLOR_PANEL);
-  tft.setCursor(x + 9, PANEL_Y + 8);
-  tft.print("SIG ");
-  tft.print(pinLabel);
+  tft.setCursor(signalPanelX + 8, signalPanelY + 8);
+  tft.print(portraitLayout ? "SIG" : "SIG ");
+  if (!portraitLayout) {
+    tft.print(pinLabel);
+  }
 
-  drawQualitySegments(x + 9, PANEL_Y + 28);
+  if (portraitLayout) {
+    tft.setCursor(signalPanelX + 8, signalPanelY + 20);
+    tft.print(pinLabel);
+    drawQualitySegments(signalPanelX + 8, signalPanelY + 34);
+  } else {
+    drawQualitySegments(signalPanelX + 9, signalPanelY + 28);
+  }
 }
 
 void drawQualitySegments(int x, int y) {
-  const int segmentW = 4;
+  const int segmentW = portraitLayout ? 3 : 4;
   const int segmentGap = 2;
+  const int segmentH = portraitLayout ? 8 : 14;
   for (int i = 0; i < SIGNAL_QUALITY_STEPS; i++) {
     uint16_t color = COLOR_GRID;
     if (i < signalQuality) {
       color = i < LOCK_QUALITY_STEPS ? COLOR_AMBER : COLOR_TEAL;
     }
-    tft.fillRect(x + i * (segmentW + segmentGap), y, segmentW, 14, color);
+    tft.fillRect(x + i * (segmentW + segmentGap), y, segmentW, segmentH, color);
   }
 }
 
@@ -993,8 +1106,8 @@ void drawBeatHeart() {
 
   if (!beatHeartNeedsRedraw && size == lastSize && ledBrightness == lastBrightness) return;
 
-  const int centerX = HEART_CENTER_X;
-  const int centerY = HEART_CENTER_Y;
+  const int centerX = heartCenterX;
+  const int centerY = heartCenterY;
   const int clearX = centerX - HEART_MAX_SIZE - 4;
   const int clearY = centerY - HEART_MAX_SIZE - 4;
   const int clearW = (HEART_MAX_SIZE + 4) * 2 + 1;

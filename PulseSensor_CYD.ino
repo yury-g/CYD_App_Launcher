@@ -104,7 +104,7 @@
 #define COLOR_GRID 0x39E7
 #define COLOR_GRID_SOFT 0x2945
 #define COLOR_TEXT 0xFFFF
-#define COLOR_MUTED 0xC638
+#define COLOR_MUTED COLOR_TEXT
 #define COLOR_CYAN 0x07FF
 #define COLOR_CYAN_DARK 0x0452
 #define COLOR_TEAL 0x05F3
@@ -113,7 +113,9 @@
 #define COLOR_RED 0xF800
 #define COLOR_RED_DARK 0x6000
 #define COLOR_SCREEN_BEAT COLOR_CYAN
-#define COLOR_AMBER 0xFBE0
+#define COLOR_HIGH_VIS_YELLOW 0xFFF2
+#define COLOR_AMBER COLOR_HIGH_VIS_YELLOW
+#define COLOR_SIGNAL_YELLOW COLOR_HIGH_VIS_YELLOW
 
 enum SignalCoachState {
   COACH_SIGNAL_SEARCH,
@@ -232,17 +234,38 @@ int volumePlusX = 266;
 int volumeY = 9;
 int volumeButtonSize = CONTROL_BUTTON_SIZE;
 
-// ===== RED LED FADE STATE =====
+// ===== REAR LED FADE STATE =====
+
+struct RearLedColor {
+  uint8_t red;
+  uint8_t green;
+  uint8_t blue;
+};
+
+const RearLedColor REAR_LED_OFF = {0, 0, 0};
+const RearLedColor REAR_LED_HEARTBEAT = {255, 0, 0};
+const RearLedColor REAR_LED_LOCKING = {255, 255, 0};
 
 int ledBrightness = 0;
-#define LED_FADE_SPEED 12
+bool ledPulseActive = false;
+unsigned long ledPulseStartTime = 0;
+int rearLedBrightness = 0;
+RearLedColor rearLedPulseColor = REAR_LED_HEARTBEAT;
+bool rearLedPulseActive = false;
+unsigned long rearLedPulseStartTime = 0;
+#define LED_UPDATE_MS 10
+#define LED_PEAK_HOLD_MS 90
+#define LED_FADE_MS 620
 
 // ===== FORWARD DECLARATIONS =====
 
 void setup();
 void loop();
 void setupLED();
-void setRedLED(int brightness);
+void setRearLedRaw(bool redOn, bool greenOn, bool blueOn);
+void setRearLedColor(RearLedColor color);
+void setRearLedPulseBrightness(int brightness);
+int ledPulseEnvelopeBrightness(unsigned long age);
 void updateLED();
 void setupSpeaker();
 void setupTouch();
@@ -264,6 +287,7 @@ uint16_t scaledSignalHarmonyDuty(uint8_t duty);
 void startSignalHarmony(int quality);
 void updateSignalHarmony();
 void stopSignalHarmony();
+void triggerRearLedPulse(RearLedColor color);
 void triggerBeatEffects();
 void setupPulseSensor();
 void readPulseSensor();
@@ -301,6 +325,8 @@ void setup() {
   delay(100);
   Serial.println("CYD one-screen PulseSensor dashboard");
 
+  setupLED();
+
   pinMode(BACKLIGHT, OUTPUT);
   digitalWrite(BACKLIGHT, HIGH);
 
@@ -308,7 +334,6 @@ void setup() {
   applyScreenRotation();
   tft.fillScreen(COLOR_BG);
 
-  setupLED();
   setupSpeaker();
   setupTouch();
   setupPulseSensor();
@@ -336,31 +361,76 @@ void loop() {
 // ===== HARDWARE SETUP =====
 
 void setupLED() {
-  // The CYD RGB LED is active-low.
+  // The CYD RGB LED is active-low. Red and green use PWM for smooth
+  // red/yellow pulse fades; blue stays raw-off for the dashboard.
+  pinMode(LED_RED_PIN, OUTPUT);
+  pinMode(LED_GREEN_PIN, OUTPUT);
+  pinMode(LED_BLUE_PIN, OUTPUT);
+  setRearLedRaw(false, false, false);
   cydLedcAttach(LED_RED_PIN, LED_RED_PWM_CH, 5000, 8);
   cydLedcAttach(LED_GREEN_PIN, LED_GREEN_PWM_CH, 5000, 8);
-  cydLedcAttach(LED_BLUE_PIN, LED_BLUE_PWM_CH, 5000, 8);
-
-  setRedLED(0);
-  cydLedcWrite(LED_GREEN_PIN, LED_GREEN_PWM_CH, 255);
-  cydLedcWrite(LED_BLUE_PIN, LED_BLUE_PWM_CH, 255);
+  setRearLedColor(REAR_LED_OFF);
 }
 
-void setRedLED(int brightness) {
+void setRearLedRaw(bool redOn, bool greenOn, bool blueOn) {
+  digitalWrite(LED_RED_PIN, redOn ? LOW : HIGH);
+  digitalWrite(LED_GREEN_PIN, greenOn ? LOW : HIGH);
+  digitalWrite(LED_BLUE_PIN, blueOn ? LOW : HIGH);
+}
+
+void setRearLedColor(RearLedColor color) {
+  color.red = constrain(color.red, 0, 255);
+  color.green = constrain(color.green, 0, 255);
+  color.blue = constrain(color.blue, 0, 255);
+  digitalWrite(LED_BLUE_PIN, color.blue > 0 ? LOW : HIGH);
+  cydLedcWrite(LED_RED_PIN, LED_RED_PWM_CH, 255 - color.red);
+  cydLedcWrite(LED_GREEN_PIN, LED_GREEN_PWM_CH, 255 - color.green);
+}
+
+void setRearLedPulseBrightness(int brightness) {
   brightness = constrain(brightness, 0, 255);
-  cydLedcWrite(LED_RED_PIN, LED_RED_PWM_CH, 255 - brightness);
+  RearLedColor color = {
+    (uint8_t)((rearLedPulseColor.red * brightness) / 255),
+    (uint8_t)((rearLedPulseColor.green * brightness) / 255),
+    (uint8_t)((rearLedPulseColor.blue * brightness) / 255)
+  };
+  setRearLedColor(color);
+}
+
+int ledPulseEnvelopeBrightness(unsigned long age) {
+  if (age <= LED_PEAK_HOLD_MS) return 255;
+
+  unsigned long fadeAge = age - LED_PEAK_HOLD_MS;
+  if (fadeAge >= LED_FADE_MS) return 0;
+
+  uint32_t progress = (fadeAge * 255UL) / LED_FADE_MS;
+  uint32_t smooth = (progress * progress * (765UL - (2UL * progress))) / (255UL * 255UL);
+  return 255 - smooth;
 }
 
 void updateLED() {
   static unsigned long lastUpdate = 0;
-  if (millis() - lastUpdate < 10) return;
+  unsigned long now = millis();
+  if (now - lastUpdate < LED_UPDATE_MS) return;
+  lastUpdate = now;
 
-  lastUpdate = millis();
-  if (ledBrightness > 0) {
-    ledBrightness -= LED_FADE_SPEED;
-    if (ledBrightness < 0) ledBrightness = 0;
+  if (rearLedPulseActive) {
+    unsigned long rearAge = now - rearLedPulseStartTime;
+    rearLedBrightness = ledPulseEnvelopeBrightness(rearAge);
+    if (rearLedBrightness == 0) {
+      rearLedPulseActive = false;
+    }
   }
-  setRedLED(ledBrightness);
+
+  if (ledPulseActive) {
+    unsigned long age = now - ledPulseStartTime;
+    ledBrightness = ledPulseEnvelopeBrightness(age);
+    if (ledBrightness == 0) {
+      ledPulseActive = false;
+    }
+  }
+
+  setRearLedPulseBrightness(rearLedBrightness);
 }
 
 void setupSpeaker() {
@@ -465,20 +535,20 @@ void configureLayout() {
     graphLeft = 8;
     graphTop = 66;
     graphWidth = screenWidth - 16;
-    graphHeight = 132;
+    graphHeight = 162;
 
     bpmPanelX = 8;
-    bpmPanelY = 208;
+    bpmPanelY = 240;
     bpmPanelW = 68;
-    bpmPanelH = 48;
+    bpmPanelH = 72;
     ibiPanelX = 84;
-    ibiPanelY = 208;
+    ibiPanelY = 240;
     ibiPanelW = 68;
-    ibiPanelH = 48;
+    ibiPanelH = 72;
     signalPanelX = 160;
-    signalPanelY = 208;
+    signalPanelY = 240;
     signalPanelW = 72;
-    signalPanelH = 48;
+    signalPanelH = 72;
 
     rotateButtonX = screenWidth - rotateButtonSize - 4;
     rotateButtonY = 4;
@@ -633,7 +703,18 @@ void cydLedcWriteTone(uint8_t pin, uint8_t channel, uint32_t frequency) {
 #endif
 }
 
+void triggerRearLedPulse(RearLedColor color) {
+  rearLedPulseColor = color;
+  rearLedPulseStartTime = millis();
+  rearLedPulseActive = true;
+  rearLedBrightness = 255;
+  setRearLedPulseBrightness(rearLedBrightness);
+}
+
 void triggerBeatEffects() {
+  triggerRearLedPulse(REAR_LED_HEARTBEAT);
+  ledPulseStartTime = millis();
+  ledPulseActive = true;
   ledBrightness = 255;
   beatHeartNeedsRedraw = true;
   startBeatChime();
@@ -690,9 +771,12 @@ void readPulseSensor() {
       startSignalHarmony(signalQuality);
     }
 
-    // Blink/fade the rear red LED only after the beat is qualified.
-    if (lockedSignal && qualified) {
-      triggerBeatEffects();
+    if (qualified) {
+      if (lockedSignal) {
+        triggerBeatEffects();
+      } else {
+        triggerRearLedPulse(REAR_LED_LOCKING);
+      }
     }
   }
 
@@ -1019,15 +1103,19 @@ void drawMetricPanel(int x, int y, int w, int h, const char* label, int value, c
   tft.setCursor(x + 8, y + 8);
   tft.print(label);
 
-  tft.setTextSize(portraitLayout ? 2 : 4);
+  uint8_t valueTextSize = portraitLayout ? 3 : 4;
+  if (portraitLayout && strcmp(label, "IBI") == 0 && value >= 1000) {
+    valueTextSize = 2;
+  }
+  tft.setTextSize(valueTextSize);
   tft.setTextColor(valid ? COLOR_TEXT : COLOR_MUTED, COLOR_PANEL);
-  tft.setCursor(x + 8, y + (portraitLayout ? 25 : 25));
+  tft.setCursor(x + 8, y + (portraitLayout ? 30 : 25));
 
   if (valid) {
     if (strcmp(label, "BPM") == 0) {
       tft.printf(portraitLayout ? "%2d" : "%3d", value);
     } else {
-      tft.setTextSize(portraitLayout ? 2 : 3);
+      tft.setTextSize(portraitLayout ? valueTextSize : 3);
       tft.printf(portraitLayout ? "%2d" : "%3d", value);
     }
   } else {
@@ -1048,7 +1136,7 @@ void drawSignalPanel() {
   snprintf(pinLabel, sizeof(pinLabel), "GPIO%d", PULSE_PIN);
 
   tft.fillRoundRect(signalPanelX, signalPanelY, signalPanelW, signalPanelH, 6, COLOR_PANEL);
-  tft.drawRoundRect(signalPanelX, signalPanelY, signalPanelW, signalPanelH, 6, lockedSignal ? COLOR_LOCK_GREEN : COLOR_ACQUIRE_BLUE);
+  tft.drawRoundRect(signalPanelX, signalPanelY, signalPanelW, signalPanelH, 6, lockedSignal ? COLOR_LOCK_GREEN : COLOR_SIGNAL_YELLOW);
 
   tft.setTextSize(1);
   tft.setTextColor(COLOR_MUTED, COLOR_PANEL);
@@ -1074,7 +1162,7 @@ void drawQualitySegments(int x, int y) {
   for (int i = 0; i < SIGNAL_QUALITY_STEPS; i++) {
     uint16_t color = COLOR_GRID;
     if (i < signalQuality) {
-      color = lockedSignal ? COLOR_LOCK_GREEN : COLOR_ACQUIRE_BLUE;
+      color = lockedSignal ? COLOR_LOCK_GREEN : COLOR_SIGNAL_YELLOW;
     }
     tft.fillRect(x + i * (segmentW + segmentGap), y, segmentW, segmentH, color);
   }

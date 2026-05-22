@@ -18,8 +18,8 @@ That page has a one-click web installer, wiring diagram, and the full tutorial. 
 
 | Channel | Feedback |
 | --- | --- |
-| Screen | Cyan waveform (searching) → white waveform (locked), dotted `THR 550` guide, BPM, IBI, compact `SIG GPIO35` quality bars |
-| Light | Onboard rear red LED blinks and fades on every qualified beat |
+| Screen | Cyan waveform (searching) → white waveform (locked), dotted `THR 550` guide, BPM, IBI, compact `SIG GPIO35` quality bars that move yellow → green |
+| Light | Rear LED pulses yellow while locking and red once locked, using the same smooth heartbeat fade |
 | Sound | Rising signal-quality harmony while locking, then short heartbeat tone on the CYD speaker (GPIO 26) |
 | Touch | Header buttons change speaker volume, default 1/10, and rotate the dashboard for different enclosures |
 | Heart | Centered animated red heart with cyan outline |
@@ -113,6 +113,17 @@ The 12-step quality meter is shown as bars in the compact `SIG GPIO35` panel. Lo
 
 The `SIG GPIO35` label is intentionally compact because a future revision may show two PulseSensor inputs side by side.
 
+### Feedback Color Language
+
+The dashboard uses a small, consistent color vocabulary so beginners can learn the state at a glance:
+
+- **Cyan:** live waveform and graph guide details.
+- **Yellow:** signal is promising and the detector is locking. The `SIG GPIO35` bars and rear LED both use yellow here.
+- **Green:** signal is locked. The `SIG GPIO35` box and bars turn green.
+- **Red:** confirmed heartbeat feedback. The rear LED and on-screen heart use red after lock.
+
+The rear LED is intentionally expressive rather than diagnostic. It should feel alive: yellow says "finding your beat," red says "got it." More detailed explanations belong in the docs, not on the tiny CYD screen.
+
 ---
 
 ## Quick Troubleshooting
@@ -172,6 +183,15 @@ Useful next ideas, only if they improve the student experience or the accuracy o
 
 - **Method Overlay:** tap the quality panel to cycle through the live Playground method names behind each reading.
 - **USB Serial Lab Mode:** optional Playground-style serial output for Arduino Serial Plotter or a WebSerial monitor.
+
+## Nice-To-Have UI Polish
+
+These are good follow-ups, but should stay secondary to the one-screen dashboard:
+
+- **Beat-dot legend:** add a tiny `DOT = BEAT` or equivalent label near the graph if it fits without clutter.
+- **Brand consistency:** keep `PulseSensor.com` large and readable in the first view, and make sure screenshots/docs always show the brand clearly.
+- **First-run affordance:** consider a simple idle prompt such as `PLACE FINGER` if new users need more guidance than `SIGNAL SEARCH`.
+- **Keep teaching copy off-device:** use the README, Shopify page, and screenshots for explanations; keep the CYD UI instrument-like and readable.
 
 ## Avoid For Now
 

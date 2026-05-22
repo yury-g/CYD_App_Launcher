@@ -69,6 +69,8 @@ Use `launcher` for internal development and experiment history. Do not push acti
 
 The public/customer-facing repo line is useful for release reference, but the hardware-tested working branch is on `launcher`.
 
+Important naming note for future chats: even if a local Git remote is named `origin` and points at `WorldFamousElectronics/PulseSensor_CYD`, do not treat that public repo as the development origin/source of truth. For this project, `yury-g/CYD_App_Launcher` is the development home and memory brain. `WorldFamousElectronics/PulseSensor_CYD` is publish-only for polished customer/user releases, and must not receive pushes unless the user explicitly approves a public release.
+
 ## Hardware-Tested Notes
 
 Connected CYD port used successfully on 2026-05-22:

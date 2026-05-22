@@ -12,6 +12,8 @@ Quick start for future chats: read `START_HERE_NEXT_CHAT.md` first, then this fi
 - Public/customer-facing repo: `WorldFamousElectronics/PulseSensor_CYD`
 - Do not push active experiments to `WorldFamousElectronics/PulseSensor_CYD` until the user explicitly says the work is ready for public release.
 
+Important naming note: `yury-g/CYD_App_Launcher` is the development origin/source of truth for this ongoing work. `WorldFamousElectronics/PulseSensor_CYD` is the public publishing destination for polished customer/user releases only. If a local checkout has a remote named `origin` pointing at `WorldFamousElectronics/PulseSensor_CYD`, do not use that remote for development pushes unless the user explicitly approves a public release.
+
 Local remotes used in the original workspace:
 
 ```text

@@ -1,8 +1,8 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="640" height="480" viewBox="0 0 320 240" role="img" aria-label="CYD Pulse Dashboard locked screen">
+<svg xmlns="http://www.w3.org/2000/svg" width="640" height="480" viewBox="0 0 320 240" role="img" aria-label="CYD Pulse Dashboard horizontal locked screen">
   <rect width="320" height="240" fill="#000000"/>
   <rect x="0" y="0" width="320" height="42" fill="#000000"/>
-  <line x1="0" y1="41" x2="320" y2="41" stroke="#191c19"/>
-  <text x="10" y="16" fill="#8c8e8c" font-family="Arial, sans-serif" font-size="8">PulseSensor.com</text>
+  <line x1="0" y1="41" x2="320" y2="41" stroke="#394039"/>
+  <text x="10" y="16" fill="#ffffff" font-family="Arial, sans-serif" font-size="8">PulseSensor.com</text>
   <circle cx="152" cy="17" r="8" fill="#00ffff"/>
   <circle cx="168" cy="17" r="8" fill="#00ffff"/>
   <path d="M143 18 L177 18 L160 39 Z" fill="#00ffff"/>
@@ -11,47 +11,50 @@
   <path d="M145 19 L175 19 L160 37 Z" fill="#ff0000"/>
   <text x="10" y="33" fill="#ffffff" font-family="Arial, sans-serif" font-size="8">QUALIFIED BEAT</text>
 
-  <rect x="198" y="4" width="120" height="34" fill="#000000"/>
-  <text x="201" y="25" fill="#00ffff" font-family="Arial, sans-serif" font-size="8">VOL</text>
-  <rect x="226" y="9" width="22" height="22" rx="4" fill="#080808" stroke="#191c19"/>
-  <rect x="292" y="9" width="22" height="22" rx="4" fill="#080808" stroke="#191c19"/>
-  <text x="231" y="30" fill="#ffffff" font-family="Arial, sans-serif" font-size="16">-</text>
-  <text x="297" y="30" fill="#ffffff" font-family="Arial, sans-serif" font-size="16">+</text>
-  <text x="268" y="24" fill="#ffffff" font-family="Arial, sans-serif" font-size="8">1</text>
+  <text x="190" y="25" fill="#00ffff" font-family="Arial, sans-serif" font-size="8">VOL</text>
+  <rect x="218" y="9" width="22" height="22" rx="4" fill="#080808" stroke="#394039"/>
+  <rect x="266" y="9" width="22" height="22" rx="4" fill="#080808" stroke="#394039"/>
+  <text x="223" y="30" fill="#ffffff" font-family="Arial, sans-serif" font-size="16">-</text>
+  <text x="271" y="30" fill="#ffffff" font-family="Arial, sans-serif" font-size="16">+</text>
+  <text x="250" y="24" fill="#ffffff" font-family="Arial, sans-serif" font-size="8">1</text>
+  <rect x="294" y="9" width="22" height="22" rx="4" fill="#080808" stroke="#394039"/>
+  <path d="M305 17a7 7 0 1 0 6 10" fill="none" stroke="#00ffff" stroke-width="2"/>
+  <path d="M306 14h7v7" fill="none" stroke="#00ffff" stroke-width="2"/>
+  <path d="M310 12l7 2-3 6z" fill="#00ffff"/>
 
-  <rect x="6" y="46" width="308" height="116" rx="6" fill="#008200" stroke="#191c19"/>
+  <rect x="6" y="46" width="308" height="116" rx="6" fill="#000800" stroke="#394039"/>
   <rect x="8" y="48" width="304" height="112" fill="#000000"/>
-  <g stroke="#101410">
+  <g stroke="#293029">
     <path d="M8 48V160 M46 48V160 M84 48V160 M122 48V160 M160 48V160 M198 48V160 M236 48V160 M274 48V160 M312 48V160"/>
     <path d="M8 48H312 M8 76H312 M8 104H312 M8 132H312 M8 160H312"/>
   </g>
-  <text x="14" y="61" fill="#8c8e8c" font-family="Arial, sans-serif" font-size="8">LIVE LINE</text>
-  <text x="264" y="61" fill="#8c8e8c" font-family="Arial, sans-serif" font-size="8">THR 550</text>
+  <text x="14" y="61" fill="#c6c7c6" font-family="Arial, sans-serif" font-size="8">LIVE LINE</text>
+  <text x="264" y="61" fill="#c6c7c6" font-family="Arial, sans-serif" font-size="8">THR 550</text>
   <line x1="8" y1="110" x2="312" y2="110" stroke="#00ffff" stroke-dasharray="1 5"/>
   <polyline points="8,124 18,121 28,118 38,110 48,86 58,58 68,73 78,112 88,128 98,125 108,121 118,111 128,88 138,60 148,75 158,113 168,129 178,126 188,122 198,112 208,90 218,62 228,76 238,114 248,130 258,126 268,121 278,110 288,86 298,60 312,78" fill="none" stroke="#ffffff" stroke-width="2"/>
   <circle cx="218" cy="62" r="3" fill="#00ffff"/>
 
-  <rect x="8" y="170" width="102" height="62" rx="6" fill="#080808" stroke="#00be9c"/>
-  <text x="18" y="188" fill="#8c8e8c" font-family="Arial, sans-serif" font-size="8">BPM</text>
+  <rect x="8" y="170" width="102" height="62" rx="6" fill="#080808" stroke="#05f3c0"/>
+  <text x="18" y="188" fill="#c6c7c6" font-family="Arial, sans-serif" font-size="8">BPM</text>
   <text x="18" y="222" fill="#ffffff" font-family="Arial, sans-serif" font-size="32" font-weight="700"> 72</text>
-  <rect x="118" y="170" width="102" height="62" rx="6" fill="#080808" stroke="#00be9c"/>
-  <text x="128" y="188" fill="#8c8e8c" font-family="Arial, sans-serif" font-size="8">IBI</text>
+  <rect x="118" y="170" width="102" height="62" rx="6" fill="#080808" stroke="#05f3c0"/>
+  <text x="128" y="188" fill="#c6c7c6" font-family="Arial, sans-serif" font-size="8">IBI</text>
   <text x="128" y="218" fill="#ffffff" font-family="Arial, sans-serif" font-size="24" font-weight="700">833</text>
-  <text x="190" y="224" fill="#8c8e8c" font-family="Arial, sans-serif" font-size="8">ms</text>
-  <rect x="228" y="170" width="84" height="62" rx="6" fill="#080808" stroke="#00ffff"/>
-  <text x="237" y="187" fill="#8c8e8c" font-family="Arial, sans-serif" font-size="8">SIG GPIO35</text>
+  <text x="190" y="224" fill="#c6c7c6" font-family="Arial, sans-serif" font-size="8">ms</text>
+  <rect x="228" y="170" width="84" height="62" rx="6" fill="#080808" stroke="#00ff00"/>
+  <text x="237" y="187" fill="#c6c7c6" font-family="Arial, sans-serif" font-size="8">SIG GPIO35</text>
   <g>
-    <rect x="237" y="198" width="4" height="14" fill="#ff7d00"/>
-    <rect x="243" y="198" width="4" height="14" fill="#ff7d00"/>
-    <rect x="249" y="198" width="4" height="14" fill="#ff7d00"/>
-    <rect x="255" y="198" width="4" height="14" fill="#ff7d00"/>
-    <rect x="261" y="198" width="4" height="14" fill="#ff7d00"/>
-    <rect x="267" y="198" width="4" height="14" fill="#ff7d00"/>
-    <rect x="273" y="198" width="4" height="14" fill="#ff7d00"/>
-    <rect x="279" y="198" width="4" height="14" fill="#ff7d00"/>
-    <rect x="285" y="198" width="4" height="14" fill="#ff7d00"/>
-    <rect x="291" y="198" width="4" height="14" fill="#ff7d00"/>
-    <rect x="297" y="198" width="4" height="14" fill="#00be9c"/>
-    <rect x="303" y="198" width="4" height="14" fill="#00be9c"/>
+    <rect x="237" y="198" width="4" height="14" fill="#00ff00"/>
+    <rect x="243" y="198" width="4" height="14" fill="#00ff00"/>
+    <rect x="249" y="198" width="4" height="14" fill="#00ff00"/>
+    <rect x="255" y="198" width="4" height="14" fill="#00ff00"/>
+    <rect x="261" y="198" width="4" height="14" fill="#00ff00"/>
+    <rect x="267" y="198" width="4" height="14" fill="#00ff00"/>
+    <rect x="273" y="198" width="4" height="14" fill="#00ff00"/>
+    <rect x="279" y="198" width="4" height="14" fill="#00ff00"/>
+    <rect x="285" y="198" width="4" height="14" fill="#00ff00"/>
+    <rect x="291" y="198" width="4" height="14" fill="#00ff00"/>
+    <rect x="297" y="198" width="4" height="14" fill="#00ff00"/>
+    <rect x="303" y="198" width="4" height="14" fill="#00ff00"/>
   </g>
 </svg>

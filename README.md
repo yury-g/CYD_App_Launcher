@@ -21,8 +21,12 @@ That page has a one-click web installer, wiring diagram, and the full tutorial. 
 | Screen | Cyan waveform (searching) → white waveform (locked), dotted `THR 550` guide, BPM, IBI, compact `SIG GPIO35` quality bars |
 | Light | Onboard rear red LED blinks and fades on every qualified beat |
 | Sound | Rising signal-quality harmony while locking, then short heartbeat tone on the CYD speaker (GPIO 26) |
-| Touch | Header buttons change speaker volume, default 1/10 |
+| Touch | Header buttons change speaker volume, default 1/10, and rotate the dashboard for different enclosures |
 | Heart | Centered animated red heart with cyan outline |
+
+Current horizontal dashboard:
+
+![Current horizontal CYD dashboard](docs/screenshots/locked.svg)
 
 | Searching for signal | Locked on qualified beat |
 | --- | --- |
@@ -195,6 +199,8 @@ Use the PlatformIO local flash path above while iterating on source. Regenerate 
 
 The checked-in screenshots are SVG recreations of the CYD screen in `docs/screenshots/`. Update them whenever the on-device layout changes.
 
+Older screenshot sets are kept under `docs/screenshots/history/` as design-version history.
+
 ## Development Checkpoints
 
 The current hardware-tested branch is:
@@ -208,6 +214,7 @@ Timestamped local tags record the iteration path:
 - `last-working-20260519-114323-EDT` — one-screen dashboard with threshold label before false-positive tuning.
 - `false-positive-tune-20260519-114323-EDT` — re-applied stricter signal lock: four consecutive qualified beats, healthy live range, and low recent clipping.
 - `signal-box-minimal-20260519-114712-EDT` — compact `SIG GPIO35` quality-bar panel.
+- `rotate-control-20260522-121644-EDT` — hardware-tested top-row screen rotation control.
 
 See `docs/experiment-log.md` for the rejected Signal Dashboard / Finger Coach side quest. The only UI idea carried forward from that experiment is the dotted threshold line plus `THR 550` label.
 

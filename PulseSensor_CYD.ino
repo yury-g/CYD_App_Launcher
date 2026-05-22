@@ -82,6 +82,8 @@
 #define VOLUME_MIN 0
 #define VOLUME_MAX 10
 #define VOLUME_START 1
+#define SCREEN_ROTATION_DEFAULT 1
+#define SCREEN_ROTATION_FLIPPED 3
 
 // ===== TOUCH CALIBRATION =====
 
@@ -103,9 +105,13 @@
 #define PANEL_Y 170
 #define PANEL_H 62
 
-#define VOL_MINUS_X 226
-#define VOL_VALUE_X 258
-#define VOL_PLUS_X 292
+#define ROTATE_BUTTON_X 190
+#define ROTATE_BUTTON_Y 9
+#define ROTATE_BUTTON_SIZE 22
+#define VOL_LABEL_X 216
+#define VOL_MINUS_X 240
+#define VOL_VALUE_X 268
+#define VOL_PLUS_X 294
 #define VOL_Y 9
 #define VOL_BUTTON_SIZE 22
 
@@ -164,7 +170,7 @@ unsigned long lastQualifiedBeatTime = 0;
 unsigned long lastGraphDraw = 0;
 unsigned long lastSerialPrint = 0;
 unsigned long lastDetectorRearmTime = 0;
-unsigned long lastVolumeTouchTime = 0;
+unsigned long lastControlTouchTime = 0;
 unsigned long lastSignalHarmonyTime = 0;
 
 bool lockedSignal = false;
@@ -192,6 +198,7 @@ uint8_t beatChimeStep = 0;
 unsigned long beatChimeNextStepTime = 0;
 bool beatHeartNeedsRedraw = true;
 uint8_t speakerVolume = VOLUME_START;
+uint8_t screenRotation = SCREEN_ROTATION_DEFAULT;
 
 bool signalHarmonyPlaying = false;
 uint8_t signalHarmonyStep = 0;
@@ -218,7 +225,12 @@ void updateLED();
 void setupSpeaker();
 void setupTouch();
 void readTouchControls();
+void mapTouchPoint(const TS_Point& point, int16_t* x, int16_t* y);
+bool handleRotateTouch(int16_t x, int16_t y);
 bool handleVolumeTouch(int16_t x, int16_t y);
+void rotateScreen();
+void applyScreenRotation();
+void resetDashboardState();
 void cydLedcAttach(uint8_t pin, uint8_t channel, uint32_t frequency, uint8_t resolution);
 void cydLedcWrite(uint8_t pin, uint8_t channel, uint32_t duty);
 void cydLedcWriteTone(uint8_t pin, uint8_t channel, uint32_t frequency);
@@ -243,6 +255,7 @@ void updateSignalRange();
 void drawStaticScreen();
 void drawDashboardIfChanged();
 void drawHeader();
+void drawRotateControl();
 void drawVolumeControl();
 void drawGraphFrame();
 void drawGraphColumnBackground(int localX);
@@ -269,7 +282,7 @@ void setup() {
   digitalWrite(BACKLIGHT, HIGH);
 
   tft.init();
-  tft.setRotation(1);
+  applyScreenRotation();
   tft.fillScreen(COLOR_BG);
 
   setupLED();
@@ -340,15 +353,37 @@ void setupTouch() {
 
 void readTouchControls() {
   if (!touch.touched()) return;
-  if (millis() - lastVolumeTouchTime < 180) return;
+  if (millis() - lastControlTouchTime < 180) return;
 
   TS_Point point = touch.getPoint();
-  int16_t x = constrain(map(point.x, TOUCH_MIN_X, TOUCH_MAX_X, 1, SCREEN_WIDTH), 0, SCREEN_WIDTH - 1);
-  int16_t y = constrain(map(point.y, TOUCH_MIN_Y, TOUCH_MAX_Y, 1, SCREEN_HEIGHT), 0, SCREEN_HEIGHT - 1);
+  int16_t x;
+  int16_t y;
+  mapTouchPoint(point, &x, &y);
 
-  if (handleVolumeTouch(x, y)) {
-    lastVolumeTouchTime = millis();
+  if (handleRotateTouch(x, y) || handleVolumeTouch(x, y)) {
+    lastControlTouchTime = millis();
   }
+}
+
+void mapTouchPoint(const TS_Point& point, int16_t* x, int16_t* y) {
+  int16_t mappedX = constrain(map(point.x, TOUCH_MIN_X, TOUCH_MAX_X, 1, SCREEN_WIDTH), 0, SCREEN_WIDTH - 1);
+  int16_t mappedY = constrain(map(point.y, TOUCH_MIN_Y, TOUCH_MAX_Y, 1, SCREEN_HEIGHT), 0, SCREEN_HEIGHT - 1);
+
+  if (screenRotation == SCREEN_ROTATION_FLIPPED) {
+    mappedX = SCREEN_WIDTH - 1 - mappedX;
+    mappedY = SCREEN_HEIGHT - 1 - mappedY;
+  }
+
+  *x = mappedX;
+  *y = mappedY;
+}
+
+bool handleRotateTouch(int16_t x, int16_t y) {
+  if (y < ROTATE_BUTTON_Y - 8 || y > ROTATE_BUTTON_Y + ROTATE_BUTTON_SIZE + 8) return false;
+  if (x < ROTATE_BUTTON_X - 8 || x > ROTATE_BUTTON_X + ROTATE_BUTTON_SIZE + 8) return false;
+
+  rotateScreen();
+  return true;
 }
 
 bool handleVolumeTouch(int16_t x, int16_t y) {
@@ -367,6 +402,33 @@ bool handleVolumeTouch(int16_t x, int16_t y) {
     cydLedcWrite(SPEAKER_PIN, SPEAKER_PWM_CH, scaledChimeDuty(beatChimeStep));
   }
   return true;
+}
+
+void rotateScreen() {
+  screenRotation = screenRotation == SCREEN_ROTATION_DEFAULT ? SCREEN_ROTATION_FLIPPED : SCREEN_ROTATION_DEFAULT;
+  Serial.printf("screenRotation=%u\n", screenRotation);
+  applyScreenRotation();
+  resetDashboardState();
+  drawStaticScreen();
+}
+
+void applyScreenRotation() {
+  tft.setRotation(screenRotation);
+}
+
+void resetDashboardState() {
+  dashboardDrawn = false;
+  previousDisplayBPM = -1;
+  previousDisplayIBI = -1;
+  previousPulseAmplitude = -1;
+  previousSignalQuality = -1;
+  previousRearmCount = -1;
+  previousSignalCoachState = -1;
+  previousDashboardLockedSignal = false;
+  beatHeartNeedsRedraw = true;
+  graphX = 0;
+  lastGraphY = signalToGraphY(currentSignal);
+  lastGraphDraw = 0;
 }
 
 uint16_t scaledChimeDuty(uint8_t step) {
@@ -692,6 +754,7 @@ void drawHeader() {
   tft.setTextColor(COLOR_TEXT, COLOR_BG);
   tft.setCursor(10, 8);
   tft.print("PulseSensor.com");
+  drawRotateControl();
   drawVolumeControl();
 
   tft.setTextColor(COLOR_TEXT, COLOR_BG);
@@ -700,14 +763,30 @@ void drawHeader() {
   tft.print(signalCoachText());
 }
 
+void drawRotateControl() {
+  tft.fillRoundRect(ROTATE_BUTTON_X, ROTATE_BUTTON_Y, ROTATE_BUTTON_SIZE, ROTATE_BUTTON_SIZE, 4, COLOR_PANEL);
+  tft.drawRoundRect(ROTATE_BUTTON_X, ROTATE_BUTTON_Y, ROTATE_BUTTON_SIZE, ROTATE_BUTTON_SIZE, 4, COLOR_GRID);
+
+  tft.setTextSize(1);
+  tft.setTextColor(COLOR_CYAN, COLOR_PANEL);
+  tft.setCursor(ROTATE_BUTTON_X + 6, ROTATE_BUTTON_Y + 3);
+  tft.print("R");
+  tft.drawFastHLine(ROTATE_BUTTON_X + 5, ROTATE_BUTTON_Y + 14, 12, COLOR_CYAN);
+  tft.drawFastVLine(ROTATE_BUTTON_X + 16, ROTATE_BUTTON_Y + 10, 5, COLOR_CYAN);
+  tft.fillTriangle(ROTATE_BUTTON_X + 16, ROTATE_BUTTON_Y + 8,
+                   ROTATE_BUTTON_X + 20, ROTATE_BUTTON_Y + 12,
+                   ROTATE_BUTTON_X + 16, ROTATE_BUTTON_Y + 16,
+                   COLOR_CYAN);
+}
+
 void drawVolumeControl() {
   char volumeText[4];
   snprintf(volumeText, sizeof(volumeText), "%u", speakerVolume);
 
-  tft.fillRect(198, 4, 120, 34, COLOR_BG);
+  tft.fillRect(VOL_LABEL_X, 4, SCREEN_WIDTH - VOL_LABEL_X, 34, COLOR_BG);
   tft.setTextSize(1);
   tft.setTextColor(COLOR_CYAN, COLOR_BG);
-  tft.setCursor(201, 17);
+  tft.setCursor(VOL_LABEL_X, 17);
   tft.print("VOL");
 
   tft.fillRoundRect(VOL_MINUS_X, VOL_Y, VOL_BUTTON_SIZE, VOL_BUTTON_SIZE, 4, COLOR_PANEL);

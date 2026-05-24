@@ -40,6 +40,55 @@ User-visible behavior:
 Verdict:
 ```
 
+## 2026-05-24 - Foreground Timing Sanity
+
+Firmware under test: `0.4.19-peak-cadence`
+
+Commit under test:
+
+```text
+8824d51 Refresh project memory for peak cadence handoff 20260524-150800-EDT
+```
+
+Temporary instrumentation:
+
+- Set `PERF_DIAGNOSTICS` to `1` locally.
+- Flashed to `/dev/cu.usbserial-3120`.
+- Upload detected ESP32-D0WD-V3 MAC `f4:2d:c9:9d:af:cc`.
+- Restored `PERF_DIAGNOSTICS` to `0` after the timing capture.
+
+Observation:
+
+- The code path still calls `readPulseSensor()` as the first meaningful work in
+  `loop()`.
+- On the live Pulse dashboard, serial diagnostics showed about
+  `11747-33674` foreground loops/reads per second, `449-467` changed raw
+  samples per second, max read gaps around `15-29 ms`, and the largest draw
+  labels were short dashboard redraws around `11-26 ms`.
+- The raw serial stream acquired and re-acquired lock during the test, with
+  live ranges roughly `118-236`, clipping score `0`, and strict accepted beats
+  producing plausible BPM/IBI values.
+- A temporary start-in-Origin diagnostic flash showed the heavier story sprite
+  renderer costs more foreground time: about `27178-29611` loops/reads per
+  second, `231-253` changed raw samples per second, and `origin` redraws around
+  `37-39 ms`, with max read gaps up to about `60 ms`.
+- PulseSensor Playground keeps the beat flag latched until
+  `sawStartOfBeat()` reads it, so these Origin redraw gaps should not drop a
+  beat event by themselves. They do reduce foreground raw/serial refresh
+  cadence while the user is on Origin Story.
+
+Verdict:
+
+- Current Pulse dashboard timing is a reasonable upgrade candidate: the live
+  screen preserves fast foreground reads and near-500 Hz changed-sample cadence
+  while keeping `readPulseSensor()` first.
+- Origin Story remains the highest-cost non-Pulse screen. It should stay
+  second-class: if future hardware use shows sensing feels worse while parked
+  on Origin, slow or pause its sprite animation before touching beat math.
+- Sensor body position/contact method was not visually confirmed during this
+  Codex-side timing run, so this is a foreground timing sanity record, not a
+  final body-position hardware verdict.
+
 ## 2026-05-24 - Lock Retention Grace
 
 Firmware: `0.4.17-lock-hold-grace`

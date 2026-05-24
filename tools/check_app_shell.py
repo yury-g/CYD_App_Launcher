@@ -122,6 +122,24 @@ for token in [
     if token in live_trace_body:
         raise SystemExit("Waveform color should not use a separate acquisition palette")
 
+required_lock_hold_tokens = {
+    "#define LOCK_QUALIFIED_BEATS 4": "Strict acquisition should still require four qualified beats",
+    "#define LOCK_GRACE_BAD_BEATS 2": "Balanced lock hold should tolerate two unqualified beats after lock",
+    "#define LOCK_HOLD_GRACE_MS 2200": "Balanced lock hold should have a 2200 ms grace window",
+    "int unqualifiedBeatStreak = 0;": "Lock hold should track unqualified beats after lock",
+    'const char* lastLockDropReason = "none";': "Lock drops should record a lightweight serial reason",
+    "wasLocked && unqualifiedBeatStreak <= LOCK_GRACE_BAD_BEATS": "Locked signal should survive brief bad-beat movement",
+    "now - lastQualifiedBeatTime <= LOCK_HOLD_GRACE_MS": "Locked signal should survive a brief post-lock timing gap",
+    'dropSignalLock("grace expired");': "Grace-expired lock drops should be tracked",
+    'dropSignalLock("no beat timeout");': "Timeout lock drops should be tracked",
+}
+for token, message in required_lock_hold_tokens.items():
+    if token not in source:
+        raise SystemExit(message)
+
+if "drop=%s" not in source or "unqualifiedBeatStreak" not in source[source.index("Serial.printf(\"signal="):source.index("// ===== HARDWARE SETUP =====")]:
+    raise SystemExit("Serial signal telemetry should include lock-hold drop and streak fields")
+
 app_nav_start = source.index("bool handleAppNavTouch(int16_t x, int16_t y) {")
 app_nav_end = source.index("bool handleRotateTouch(int16_t x, int16_t y) {", app_nav_start)
 app_nav_body = source[app_nav_start:app_nav_end]

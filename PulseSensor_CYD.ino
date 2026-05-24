@@ -63,6 +63,8 @@
 #define SIGNAL_QUALITY_STEPS 12
 #define LOCK_QUALITY_STEPS 10
 #define LOCK_QUALIFIED_BEATS 4
+#define LOCK_GRACE_BAD_BEATS 2
+#define LOCK_HOLD_GRACE_MS 2200
 #define REARM_SIGNAL_RANGE 120
 #define REARM_NO_BEAT_MS 2200
 #define REARM_COOLDOWN_MS 3500
@@ -104,10 +106,10 @@
 
 // ===== APP SHELL =====
 
-#define APP_VERSION "0.4.16-matched-sig-wave"
+#define APP_VERSION "0.4.17-lock-hold-grace"
 #define APP_FIRMWARE_DATE "2026-05-24"
 #define APP_BUILD_RAM_USAGE "RAM 7.3%"
-#define APP_BUILD_FLASH_USAGE "Flash 28.7%"
+#define APP_BUILD_FLASH_USAGE "Flash 28.8%"
 #define TOOLBAR_BUTTON_WIDTH 44
 #define TOOLBAR_BUTTON_HEIGHT 28
 #define APP_BUTTON_WIDTH TOOLBAR_BUTTON_WIDTH
@@ -338,8 +340,10 @@ bool pulseSensorReady = false;
 bool insideBeatWindow = false;
 int signalQuality = 0;
 int qualifiedBeatStreak = 0;
+int unqualifiedBeatStreak = 0;
 int clippedSampleScore = 0;
 int rearmCount = 0;
+const char* lastLockDropReason = "none";
 
 bool dashboardDrawn = false;
 int previousDisplayBPM = -1;
@@ -568,6 +572,7 @@ bool isQualifiedBeat(int bpm, int ibi, int amplitude);
 void updateClippingScore();
 int acquisitionScoreForCurrentSignal();
 void updateSignalAcquisitionScore();
+void dropSignalLock(const char* reason);
 int signalCoachState();
 const char* signalCoachText();
 int amplitudeMeterSegments(int amplitude);
@@ -754,9 +759,12 @@ void loop() {
                       pinScannerStatusText(scannerActiveIndex));
       }
     } else {
-      Serial.printf("signal=%d amp=%d bpm=%d ibi=%d locked=%d quality=%d\n",
+      Serial.printf("signal=%d amp=%d bpm=%d ibi=%d locked=%d quality=%d range=%d clip=%d qStreak=%d badStreak=%d drop=%s\n",
                     currentSignal, pulseAmplitude, displayBPM, displayIBI,
-                    lockedSignal ? 1 : 0, signalQuality);
+                    lockedSignal ? 1 : 0, signalQuality,
+                    maxSignal - minSignal, clippedSampleScore,
+                    qualifiedBeatStreak, unqualifiedBeatStreak,
+                    lastLockDropReason);
     }
   }
 }
@@ -1541,20 +1549,33 @@ void readPulseSensor() {
 #if PERF_DIAGNOSTICS
     notePerfBeatEvent();
 #endif
+    unsigned long now = millis();
+    bool wasLocked = lockedSignal;
     int bpm = pulseSensor.getBeatsPerMinute();
     int ibi = pulseSensor.getInterBeatIntervalMs();
     bool qualified = isQualifiedBeat(bpm, ibi, pulseAmplitude);
 
-    lastBeatTime = millis();
+    lastBeatTime = now;
 
     if (qualified) {
       displayBPM = bpm;
       displayIBI = ibi;
-      lastQualifiedBeatTime = millis();
+      lastQualifiedBeatTime = now;
+      unqualifiedBeatStreak = 0;
+      lastLockDropReason = "none";
       qualifiedBeatStreak++;
       if (qualifiedBeatStreak > LOCK_QUALIFIED_BEATS) qualifiedBeatStreak = LOCK_QUALIFIED_BEATS;
+    } else if (wasLocked) {
+      unqualifiedBeatStreak++;
+      if (wasLocked && unqualifiedBeatStreak <= LOCK_GRACE_BAD_BEATS &&
+          now - lastQualifiedBeatTime <= LOCK_HOLD_GRACE_MS) {
+        qualifiedBeatStreak = LOCK_QUALIFIED_BEATS;
+      } else {
+        dropSignalLock("grace expired");
+      }
     } else {
       qualifiedBeatStreak = 0;
+      unqualifiedBeatStreak = 0;
     }
 
     lockedSignal = qualifiedBeatStreak >= LOCK_QUALIFIED_BEATS;
@@ -1569,12 +1590,13 @@ void readPulseSensor() {
     }
   }
 
-  if (millis() - lastQualifiedBeatTime > NO_BEAT_TIMEOUT) {
-    lockedSignal = false;
-    qualifiedBeatStreak = 0;
-    displayBPM = 0;
-    displayIBI = 0;
-    updateSignalAcquisitionScore();
+  unsigned long now = millis();
+  if (lockedSignal && now - lastQualifiedBeatTime > LOCK_HOLD_GRACE_MS) {
+    dropSignalLock("grace expired");
+  }
+
+  if (now - lastQualifiedBeatTime > NO_BEAT_TIMEOUT) {
+    dropSignalLock("no beat timeout");
   }
 
 #if PERF_DIAGNOSTICS
@@ -1734,6 +1756,24 @@ void updateSignalAcquisitionScore() {
   }
 }
 
+void dropSignalLock(const char* reason) {
+  bool hadSignalState = lockedSignal ||
+                        displayBPM > 0 ||
+                        displayIBI > 0 ||
+                        qualifiedBeatStreak > 0 ||
+                        unqualifiedBeatStreak > 0;
+  if (hadSignalState) {
+    lastLockDropReason = reason;
+  }
+
+  lockedSignal = false;
+  qualifiedBeatStreak = 0;
+  unqualifiedBeatStreak = 0;
+  displayBPM = 0;
+  displayIBI = 0;
+  updateSignalAcquisitionScore();
+}
+
 int signalCoachState() {
   int liveRange = maxSignal - minSignal;
 
@@ -1795,9 +1835,11 @@ void rearmPulseDetector(const char* reason) {
   signalQuality = 0;
   lastSignalHarmonyQuality = 0;
   qualifiedBeatStreak = 0;
+  unqualifiedBeatStreak = 0;
   displayBPM = 0;
   displayIBI = 0;
   lockedSignal = false;
+  lastLockDropReason = reason;
   rearmCount++;
 }
 

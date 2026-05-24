@@ -56,6 +56,10 @@ Branch verdict:
   ADC viewport instead of rolling auto-scale, and beat effects no longer draw
   circles over the raw trace. Beat math and diagnostics still use live rolling
   range.
+- Hardware comparison note: after re-soldering the purple signal wire, the user
+  liked `0.4.24-front-id` best so far with earlobe placement because it worked
+  well and made the algorithm/BPM/IBI behavior visible once beats were detected.
+  Keep it as an important A/B reference against `0.4.25-stable-wave`.
 - Next baseline check: flash current internal `main` and compare. If `main`
   also rails, investigate sensor pressure/placement, power/ground, wiring,
   GPIO35 behavior, and alternate signal pins before changing beat math.

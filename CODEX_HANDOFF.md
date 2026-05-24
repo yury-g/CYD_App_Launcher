@@ -48,6 +48,7 @@ Latest hardware status:
 - `0.4.23-clip-guard` only made the failure visible and safe: while railed, serial showed `quality=0`, `p2p=0`, `locked=0`, `BPM=0`, `IBI=0`, `rawDiag=0`, and no re-arm spam.
 - `0.4.25-stable-wave` keeps the same signal behavior and adds `APP_VERSION` plus `APP_FIRMWARE_DATE` directly under `PulseSensor.com` on the first Pulse dashboard screen for fast hardware/version tracking.
 - `0.4.25-stable-wave` stabilizes waveform drawing with a fixed ADC viewport and removes beat-effect circles from the raw trace. BPM/IBI qualification, acquisition scoring, clipping guards, and diagnostics still use the live rolling range.
+- Hardware comparison note: after the purple signal wire was re-soldered, the user liked `0.4.24-front-id` best so far with earlobe placement. It worked well and made the algorithm/BPM/IBI behavior visible once beats were detected, so keep it as an important A/B reference against later waveform experiments.
 - Next action is to flash current internal `main` and compare. If `main` also rails, investigate physical/electrical causes before touching beat math.
 - Built with PlatformIO in release env `cyd` and diagnostic env `cyd_diag`.
 - Release build defaults raw CSV diagnostics off and reports `0.4.25-stable-wave`; diagnostic build enables 50 Hz `rawDiag` CSV and reports `0.4.25-stable-wave-log`.

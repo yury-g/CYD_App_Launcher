@@ -68,6 +68,17 @@ Design:
   clipping guards, acquisition thresholds, BPM/IBI qualification, or diagnostic
   serial fields.
 
+Hardware preference note:
+
+- After the purple signal wire was re-soldered and `0.4.24-front-id` was
+  flashed from rollback tag `good-working-0.4.24-front-id-20260524`, the user
+  reported this was their favorite behavior so far with earlobe placement.
+- The user specifically liked that, once a beat was detected, the screen made
+  the algorithm/BPM/IBI behavior visible enough to watch the math settle while
+  the signal stayed usable.
+- Keep `0.4.24-front-id` as an important comparison point when judging later
+  waveform-drawing experiments.
+
 ## 2026-05-24 - Stable Waveform Viewport
 
 Firmware: `0.4.25-stable-wave` release, `0.4.25-stable-wave-log` diagnostic

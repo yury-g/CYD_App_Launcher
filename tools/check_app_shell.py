@@ -69,6 +69,12 @@ if "handleVolumeTouch" in read_touch_body:
     raise SystemExit("Pulse touch handling still uses top-bar volume controls")
 if "handleRotateTouch(x, y)" in read_touch_body:
     raise SystemExit("Rotate touch is still exposed as a persistent top-bar control")
+if "handleAppNavTouch(x, y)" not in read_touch_body:
+    raise SystemExit("App navigation should be checked before tap-to-reacquire")
+if "handlePulseReacquireTouch" not in read_touch_body:
+    raise SystemExit("Pulse dashboard needs tap-to-reacquire outside app navigation")
+if read_touch_body.find("handlePulseReacquireTouch") < read_touch_body.find("handleAppNavTouch"):
+    raise SystemExit("Tap-to-reacquire must not claim app navigation touches")
 
 loop_start = source.index("void loop() {")
 loop_end = source.index("// ===== HARDWARE SETUP =====", loop_start)
@@ -89,6 +95,20 @@ for token in [
     token_pos = loop_body.find(token)
     if token_pos >= 0 and token_pos < first_read:
         raise SystemExit(f"PulseSensor sampling is blocked by {token}")
+
+pulse_reacquire_start = source.index("bool handlePulseReacquireTouch(int16_t x, int16_t y) {")
+pulse_reacquire_end = source.index("bool handleSettingsTouch", pulse_reacquire_start)
+pulse_reacquire_body = source[pulse_reacquire_start:pulse_reacquire_end]
+for token in [
+    'rearmPulseDetector("manual touch reacquire");',
+    "resetSignalAcquisitionWindow();",
+    "resetDashboardState();",
+    "drawStaticScreen();",
+]:
+    if token not in pulse_reacquire_body:
+        raise SystemExit("Tap-to-reacquire is missing signal reset behavior")
+if "y < headerHeight + CONTROL_TOUCH_PAD" not in pulse_reacquire_body:
+    raise SystemExit("Tap-to-reacquire should stay out of the app-navigation/header area")
 
 app_nav_start = source.index("bool handleAppNavTouch(int16_t x, int16_t y) {")
 app_nav_end = source.index("bool handleRotateTouch(int16_t x, int16_t y) {", app_nav_start)

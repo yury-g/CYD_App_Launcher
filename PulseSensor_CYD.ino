@@ -99,7 +99,7 @@
 
 // ===== APP SHELL =====
 
-#define APP_VERSION "0.4.13-signal-perf-safe"
+#define APP_VERSION "0.4.14-tap-reacquire"
 #define APP_FIRMWARE_DATE "2026-05-24"
 #define APP_BUILD_RAM_USAGE "RAM 7.3%"
 #define APP_BUILD_FLASH_USAGE "Flash 28.7%"
@@ -504,6 +504,7 @@ void mapTouchPoint(const TS_Point& point, int16_t* x, int16_t* y);
 bool handleAppNavTouch(int16_t x, int16_t y);
 bool handleRotateTouch(int16_t x, int16_t y);
 bool handleVolumeTouch(int16_t x, int16_t y);
+bool handlePulseReacquireTouch(int16_t x, int16_t y);
 bool handleSettingsTouch(int16_t x, int16_t y);
 bool handleSettingsScrollTouch(int16_t x, int16_t y);
 bool handleSettingsDisplayModeTouch(int16_t x, int16_t y);
@@ -564,6 +565,7 @@ const char* signalCoachText();
 int amplitudeMeterSegments(int amplitude);
 void maybeRearmDetector();
 void rearmPulseDetector(const char* reason);
+void resetSignalAcquisitionWindow();
 void updateSignalRange();
 void drawActiveApp();
 void drawStaticScreen();
@@ -847,6 +849,7 @@ void readTouchControls() {
   mapTouchPoint(point, &x, &y);
 
   if (handleAppNavTouch(x, y) ||
+      (currentApp == APP_PULSE && handlePulseReacquireTouch(x, y)) ||
       (currentApp == APP_SETTINGS && handleSettingsTouch(x, y)) ||
       (currentApp == APP_PIN_SCANNER && handlePinScannerTouch(x, y))) {
     lastControlTouchTime = millis();
@@ -934,6 +937,17 @@ bool handleVolumeTouch(int16_t x, int16_t y) {
   if (beatTonePlaying) {
     cydLedcWrite(SPEAKER_PIN, SPEAKER_PWM_CH, scaledChimeDuty(beatChimeStep));
   }
+  return true;
+}
+
+bool handlePulseReacquireTouch(int16_t x, int16_t y) {
+  if (currentApp != APP_PULSE) return false;
+  if (y < headerHeight + CONTROL_TOUCH_PAD) return false;
+
+  rearmPulseDetector("manual touch reacquire");
+  resetSignalAcquisitionWindow();
+  resetDashboardState();
+  drawStaticScreen();
   return true;
 }
 
@@ -1727,12 +1741,29 @@ void rearmPulseDetector(const char* reason) {
 
   lastDetectorRearmTime = millis();
   lastBeatTime = millis();
+  lastQualifiedBeatTime = millis();
   signalQuality = 0;
   qualifiedBeatStreak = 0;
   displayBPM = 0;
   displayIBI = 0;
   lockedSignal = false;
   rearmCount++;
+}
+
+void resetSignalAcquisitionWindow() {
+  beatTonePlaying = false;
+  stopSignalHarmony();
+  cydLedcWrite(SPEAKER_PIN, SPEAKER_PWM_CH, 0);
+  cydLedcWriteTone(SPEAKER_PIN, SPEAKER_PWM_CH, 0);
+  minSignal = currentSignal - 40;
+  maxSignal = currentSignal + 40;
+  clippedSampleScore = 0;
+  insideBeatWindow = false;
+  rearLedPulseActive = false;
+  ledPulseActive = false;
+  rearLedBrightness = 0;
+  ledBrightness = 0;
+  setRearLedColor(REAR_LED_OFF);
 }
 
 void updateSignalRange() {

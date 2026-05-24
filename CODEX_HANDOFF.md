@@ -31,7 +31,7 @@ Current firmware/UI code commit:
 Current firmware version:
 
 ```text
-0.4.13-signal-perf-safe
+0.4.14-tap-reacquire
 ```
 
 Latest hardware status:
@@ -79,6 +79,8 @@ Current UI specifics:
 - `Your App Here` stays second-to-last.
 - `Origin Story` stays last.
 - Signal-performance pass: `readPulseSensor()` still starts `loop()`, PulseSensor Playground remains on its ESP32 500 Hz timer interrupt, the live graph wrap no longer redraws the whole graph frame, BPM/IBI/SIG panels redraw independently, and `PERF_DIAGNOSTICS` is available but disabled by default.
+- Tap-to-reacquire is available on the Pulse dashboard below the navigation/header for the case where a learner sees a good waveform but BPM/IBI/qualified-beat detection is stuck in false negatives.
+- Signal-first development guidance now lives in `docs/signal-first-architecture.md`.
 
 ## Current App Shell Status
 

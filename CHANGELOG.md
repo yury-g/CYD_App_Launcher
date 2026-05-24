@@ -1,6 +1,7 @@
 # CYD App Launcher — Student Version — Changelog
 
 ## Unreleased
+- 2026-05-24 cross-machine resume helper: added `tools/flash_current_favorite.py` and a guard check so a fresh clone or future AI session can flash the current favorite `0.4.24-front-id` state from the repo itself, with explicit protection against accidentally flashing an experiment branch.
 - 2026-05-24 stopping point: user stopped development after the apparent long-run signal regression cleared without code changes when earlobe placement improved; current device favorite remains `0.4.24-front-id` from internal `main`, and future sessions should first flash/check that state before inventing new beat math.
 - 2026-05-24 first-screen version identity: added `APP_VERSION` and `APP_FIRMWARE_DATE` directly under `PulseSensor.com` on the Pulse dashboard header, updated the render mock, and added a guard so future experiment branches keep the version/date visible on the first screen for hardware testing; firmware version is `0.4.24-front-id`.
 - 2026-05-24 failed experiment closure: closed `codex/signal-core-polish-publish-prep-20260524` as a non-merge branch. The branch produced useful diagnostics and a clipping UI guard, but the broader peak-to-peak/acquisition experiment did not restore a trustworthy live pulse experience on hardware. The attached CYD showed weird rail-to-rail waveform behavior (`signal` bouncing/clipping at `0`/`1023`, `clip=100`, unusable BPM/IBI), so the next baseline check should come from current `main`, not this branch.

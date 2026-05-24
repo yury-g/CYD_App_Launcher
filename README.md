@@ -240,6 +240,21 @@ pio run -e cyd -t upload --upload-port /dev/cu.usbserial-3120
 
 This branch includes a `platformio.ini` for repeatable local builds and uploads. For internal signal logging, build and upload `cyd_diag` instead of `cyd`.
 
+### Internal Resume Flash Helper
+
+For a fresh internal development machine or a new AI session, use the helper
+below to flash the current favorite hardware state from a clean clone. It guards
+against accidentally flashing an experiment branch when the intended comparison
+state is `0.4.24-front-id`.
+
+```bash
+python3 tools/flash_current_favorite.py --port /dev/cu.usbserial-3120
+```
+
+If the connected CYD uses a different port, pass that port instead. The helper
+expects the internal repo `yury-g/CYD_App_Launcher`, favorite ref
+`good-working-0.4.24-front-id-20260524`, and firmware `0.4.24-front-id`.
+
 ### Option B — Public one-click web installer
 
 Go to **[pulsesensor.com/pages/cyd](https://pulsesensor.com/pages/cyd)** in Chrome, Edge, or Brave on a desktop or laptop. Plug in your CYD over USB. Click **Install**.

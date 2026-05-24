@@ -25,7 +25,7 @@ codex/app4-pin-scanner-perf-safe-20260524
 Current firmware/UI code commit:
 
 ```text
-a793756 Add lock hold grace for long pulse runs 20260524-141500-EDT
+1460be0 Enlarge landscape Settings fallback text 20260524-140900-EDT
 ```
 
 Latest signal-behavior log commit:
@@ -37,7 +37,7 @@ Latest signal-behavior log commit:
 Current firmware version:
 
 ```text
-0.4.17-lock-hold-grace
+0.4.18-settings-text
 ```
 
 Latest hardware status:
@@ -82,6 +82,7 @@ Current UI specifics:
 - Settings-only icon rotation.
 - Settings plain rows use left-label/right-value alignment.
 - Settings control rows keep a second value line to avoid control overlap.
+- Settings long values that would have fallen back to tiny text now use normal size-2 two-line label/value rows in horizontal rotation; tiny Settings value text remains available only for vertical rotation.
 - Settings includes runtime memory and build memory rows.
 - App 4 Pin Scanner starts idle, scans only one tapped row, and is limited to GPIO35, GPIO22, GPIO21, and GPIO27.
 - `Your App Here` stays second-to-last.

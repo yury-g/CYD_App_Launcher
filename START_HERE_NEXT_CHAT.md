@@ -23,7 +23,7 @@ codex/app4-pin-scanner-perf-safe-20260524
 Current firmware/UI code commit:
 
 ```text
-a793756 Add lock hold grace for long pulse runs 20260524-141500-EDT
+1460be0 Enlarge landscape Settings fallback text 20260524-140900-EDT
 ```
 
 Latest signal-behavior log commit:
@@ -35,7 +35,7 @@ Latest signal-behavior log commit:
 Current firmware version on the attached CYD:
 
 ```text
-0.4.17-lock-hold-grace
+0.4.18-settings-text
 ```
 
 Connected CYD used for the latest flash:
@@ -55,15 +55,13 @@ PATH=/Users/mininarwhal/Documents/Codex/2026-05-23/i-have-a-cyd-connected-can/.v
 PATH=/Users/mininarwhal/Documents/Codex/2026-05-23/i-have-a-cyd-connected-can/.venv-pio/bin:$PATH PLATFORMIO_CORE_DIR=/Users/mininarwhal/Documents/Codex/2026-05-23/i-have-a-cyd-connected-can/.platformio pio run -e cyd -t upload --upload-port /dev/cu.usbserial-3120
 python3 tools/render_settings_mock.py
 python3 tools/render_monochrome_mock.py
-python3 tools/render_display_mode_mock.py
-python3 tools/update_screenshot_contact_sheet.py
 ```
 
 Build memory from PlatformIO:
 
 ```text
 RAM:   7.3% (23780 / 327680 bytes)
-Flash: 28.8% (377645 / 1310720 bytes)
+Flash: 28.8% (377781 / 1310720 bytes)
 ```
 
 Rollback anchors before lock-hold work:
@@ -86,6 +84,7 @@ Visual/UI status:
 - Settings plain data rows now use left-justified labels and right-justified values.
 - Settings rows with controls keep two-line label/value text to avoid overlap.
 - Settings font was bumped back to size 2 with 40px rows.
+- Settings long values that would have fallen back to tiny text now use normal size-2 two-line label/value rows in horizontal rotation; tiny Settings value text remains available only for vertical rotation.
 - Four display modes are present: `M DARK`, `M LIGHT`, `C DARK`, and `C LIGHT`.
 - App 4 Pin Scanner is manual, starts idle, and only scans the tapped row for GPIO35, GPIO22, GPIO21, or GPIO27.
 - Signal-performance pass found and fixed avoidable foreground stalls: the live graph no longer redraws the full frame on waveform wrap, BPM/IBI/SIG panels redraw independently, and opt-in `PERF_DIAGNOSTICS` serial timing remains available in firmware but is off by default.

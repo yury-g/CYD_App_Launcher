@@ -91,7 +91,7 @@
 
 // ===== APP SHELL =====
 
-#define APP_VERSION "0.4.4-origin-readable"
+#define APP_VERSION "0.4.5-origin-visible"
 #define APP_FIRMWARE_DATE "2026-05-24"
 #define TOOLBAR_BUTTON_WIDTH 44
 #define TOOLBAR_BUTTON_HEIGHT 28
@@ -507,6 +507,9 @@ void drawPlaceholderApp(const char* title, const char* message);
 void drawPlaceholderText(const char* message, uint16_t color);
 void drawApp3OriginCrawl();
 bool ensureApp3CrawlSprite(int w, int h);
+void drawApp3OriginCrawlDirectFallback(uint16_t bg, uint16_t gold, uint16_t dimGold,
+                                       int crawlTop, int crawlBottom, int lineHeight,
+                                       int baseY);
 void drawApp3Starfield();
 void drawRotateControl();
 void drawRotateIcon(int x, int y, int w, int h, uint16_t color, uint16_t bg);
@@ -1717,18 +1720,21 @@ void drawApp3OriginCrawl() {
     drawAppNavControls();
   }
 
-  if (!ensureApp3CrawlSprite(screenWidth, contentH)) return;
-
-  app3CrawlSprite.fillSprite(bg);
-  drawApp3Starfield();
-
   int crawlTop = 6;
   int crawlBottom = contentH - 4;
   int lineHeight = 24;
   unsigned long elapsed = now - app3CrawlStartTime;
   int travel = APP3_ORIGIN_CRAWL_LINE_COUNT * lineHeight + (crawlBottom - crawlTop) + 40;
   int offset = (elapsed / 105) % travel;
-  int baseY = crawlBottom - offset;
+  int baseY = crawlBottom - lineHeight - offset;
+
+  if (!ensureApp3CrawlSprite(screenWidth, contentH)) {
+    drawApp3OriginCrawlDirectFallback(bg, gold, dimGold, crawlTop, crawlBottom, lineHeight, baseY);
+    return;
+  }
+
+  app3CrawlSprite.fillSprite(bg);
+  drawApp3Starfield();
 
   app3CrawlSprite.setTextSize(APP3_CRAWL_TEXT_SIZE);
   for (int i = 0; i < APP3_ORIGIN_CRAWL_LINE_COUNT; i++) {
@@ -1757,11 +1763,31 @@ bool ensureApp3CrawlSprite(int w, int h) {
     app3CrawlSpriteReady = false;
   }
 
-  app3CrawlSprite.setColorDepth(16);
+  app3CrawlSprite.setColorDepth(8);
   app3CrawlSpriteReady = app3CrawlSprite.createSprite(w, h) != nullptr;
   app3CrawlSpriteW = app3CrawlSpriteReady ? w : 0;
   app3CrawlSpriteH = app3CrawlSpriteReady ? h : 0;
   return app3CrawlSpriteReady;
+}
+
+void drawApp3OriginCrawlDirectFallback(uint16_t bg, uint16_t gold, uint16_t dimGold,
+                                       int crawlTop, int crawlBottom, int lineHeight,
+                                       int baseY) {
+  tft.fillRect(0, headerHeight, screenWidth, screenHeight - headerHeight, bg);
+  tft.setTextSize(APP3_CRAWL_TEXT_SIZE);
+  for (int i = 0; i < APP3_ORIGIN_CRAWL_LINE_COUNT; i++) {
+    const char* line = APP3_ORIGIN_CRAWL_LINES[i];
+    if (line[0] == '\0') continue;
+    int localY = baseY + i * lineHeight;
+    if (localY < crawlTop || localY > crawlBottom - lineHeight) continue;
+
+    uint16_t color = i < 3 ? gold : dimGold;
+    int textW = strlen(line) * 6 * APP3_CRAWL_TEXT_SIZE;
+    int x = max(0, (screenWidth - textW) / 2);
+    tft.setTextColor(color, bg);
+    tft.setCursor(x, headerHeight + localY);
+    tft.print(line);
+  }
 }
 
 void drawApp3Starfield() {

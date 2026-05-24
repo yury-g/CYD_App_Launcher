@@ -1,6 +1,7 @@
 # CYD App Launcher — Student Version — Changelog
 
 ## Unreleased
+- 2026-05-24 09:25:59 EDT Origin Story blank-screen fix: changed the crawl sprite to lower-memory 8-bit color, made the first crawl line visible immediately, and added a direct large-text fallback renderer if sprite allocation fails; firmware version is `0.4.5-origin-visible`.
 - 2026-05-24 09:22:21 EDT Origin Story hardware pass: enlarged the scrolling crawl text to 2x, reflowed the copy into CYD-width lines, moved the animated crawl into an offscreen `TFT_eSprite` to reduce direct clear/redraw flicker, and bumped firmware version to `0.4.4-origin-readable`.
 - 2026-05-24 09:17:17 EDT App 3 naming pass: changed the on-device and mockup title from `APP 3 ORIGIN CRAWL` to `Origin Story` to fit the science-fiction app theme.
 - 2026-05-24 09:15:15 EDT App 3 origin-crawl firmware pass: replaced App 3's bouncing placeholder on-device with a black starfield and scrolling PulseSensor origin crawl, extended the original CYD speaker fanfare to a tracked 15-second loop, and bumped firmware version to `0.4.3-app3-crawl`.

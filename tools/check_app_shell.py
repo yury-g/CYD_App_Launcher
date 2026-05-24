@@ -114,6 +114,9 @@ required_large_controls = {
     "ensureApp3CrawlSprite": "Origin Story crawl sprite is not managed for rotation changes",
     "app3CrawlSprite.pushSprite": "Origin Story crawl frames are not pushed from an offscreen sprite",
     "app3CrawlSprite.setTextSize(APP3_CRAWL_TEXT_SIZE)": "Origin Story crawl does not use the enlarged text size",
+    "app3CrawlSprite.setColorDepth(8)": "Origin Story crawl sprite is not using lower-memory 8-bit color",
+    "drawApp3OriginCrawlDirectFallback": "Origin Story crawl has no visible fallback if sprite allocation fails",
+    "int baseY = crawlBottom - lineHeight - offset;": "Origin Story crawl starts below the visible area",
 }
 for token, message in required_large_controls.items():
     if token not in source:
@@ -148,7 +151,7 @@ if "drawApp3OriginCrawl();" not in app3_branch_body:
     raise SystemExit("App 3 does not render the origin crawl")
 
 app3_fn_start = source.index("void drawApp3OriginCrawl() {")
-app3_fn_end = source.index("void drawApp3Starfield", app3_fn_start)
+app3_fn_end = source.index("bool ensureApp3CrawlSprite", app3_fn_start)
 app3_fn_body = source[app3_fn_start:app3_fn_end]
 if "tft.fillRect(0, headerHeight" in app3_fn_body:
     raise SystemExit("Origin Story crawl clears the live TFT area directly, causing flicker")

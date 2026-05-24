@@ -1,6 +1,12 @@
 # CYD App Launcher — Student Version — Changelog
 
 ## Unreleased
+- 2026-05-24 app-shell branch: widened Settings bottom scroll buttons so up/down split the full bottom bar width for easier finger navigation.
+- 2026-05-24 app-shell branch: visually rendered and redesigned App 1 Pulse dashboard metric tiles to use the same yellow/green high-contrast language with black text.
+- 2026-05-24 app-shell branch: changed Settings rows to alternating Pulse dashboard yellow/green backgrounds with black text for stronger row separation on the CYD.
+- 2026-05-24 app-shell branch: enlarged Settings page text, converted Settings to a scrollable row list, and gave Settings controls larger row-local touch targets for easier finger taps.
+- 2026-05-24 app-shell branch: enlarged the visible app navigation and persistent rotate controls from 22x22 to 44x28 for easier finger touch on the CYD.
+- 2026-05-24 app-shell branch: tuned compact toolbar touch ergonomics so app navigation and persistent rotate controls use midpoint-split hit targets instead of overlapping padded rectangles; Settings color swatches use the same nearest-swatch approach.
 - Linked the `Why GPIO 35` note to the standalone `CYD_Analog_Pin_Scanner` diagnostic repo.
 - 2026-05-19 11:39 EDT hardware experiment: tried expanded Signal Dashboard / Finger Coach UI with lock-game visuals and coaching sounds on branch `codex/finger-coach-dashboard-20260519-111641-EDT`; rejected for IRL use because the CYD display felt too busy and the active bottom panel flickered / over-drew. Kept only the useful graph threshold affordance: cyan dotted threshold line plus `THR 550` label.
 - Restored the working one-screen dashboard layout and added a small signal-quality harmony tied to bottom-right `SIGNAL` quality progress.

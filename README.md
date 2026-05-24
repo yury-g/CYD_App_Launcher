@@ -32,6 +32,32 @@ Current horizontal dashboard:
 | --- | --- |
 | ![Searching signal screen](docs/screenshots/searching.svg) | ![Locked qualified beat screen](docs/screenshots/locked.svg) |
 
+## Current App Shell Development Preview
+
+This branch is continuing the app shell work on `codex/settings-app-shell-20260523`. It keeps the Pulse dashboard as App 1, adds placeholder App 2 / App 3 pages, and moves settings into a dedicated scrollable Settings screen with larger finger-friendly controls.
+
+### App 1: Pulse Dashboard Render
+
+| Landscape searching | Landscape locked |
+| --- | --- |
+| ![Pulse app landscape searching render](docs/screenshots/pulse-render/pulse-landscape-searching.png) | ![Pulse app landscape locked render](docs/screenshots/pulse-render/pulse-landscape-locked.png) |
+
+| Portrait searching | Portrait locked |
+| --- | --- |
+| ![Pulse app portrait searching render](docs/screenshots/pulse-render/pulse-portrait-searching.png) | ![Pulse app portrait locked render](docs/screenshots/pulse-render/pulse-portrait-locked.png) |
+
+### Settings Screen Render
+
+| Landscape top | Landscape middle | Landscape bottom |
+| --- | --- | --- |
+| ![Settings landscape top render](docs/screenshots/settings-render/settings-landscape-top.png) | ![Settings landscape middle render](docs/screenshots/settings-render/settings-landscape-middle.png) | ![Settings landscape bottom render](docs/screenshots/settings-render/settings-landscape-bottom.png) |
+
+| Portrait top | Portrait middle | Portrait bottom |
+| --- | --- | --- |
+| ![Settings portrait top render](docs/screenshots/settings-render/settings-portrait-top.png) | ![Settings portrait middle render](docs/screenshots/settings-render/settings-portrait-middle.png) | ![Settings portrait bottom render](docs/screenshots/settings-render/settings-portrait-bottom.png) |
+
+The render helpers are in `tools/render_pulse_app_mock.py` and `tools/render_settings_mock.py`. They are intentionally lightweight PNG mockups used for quick UI iteration before flashing the CYD.
+
 ---
 
 ## Wire The PulseSensor
@@ -219,6 +245,13 @@ Use the PlatformIO local flash path above while iterating on source. Regenerate 
 
 The checked-in screenshots are SVG recreations of the CYD screen in `docs/screenshots/`. Update them whenever the on-device layout changes.
 
+The app shell branch also includes PNG render previews in:
+
+```text
+docs/screenshots/pulse-render/
+docs/screenshots/settings-render/
+```
+
 Older screenshot sets are kept under `docs/screenshots/history/` as design-version history.
 
 ## Development Checkpoints
@@ -226,7 +259,7 @@ Older screenshot sets are kept under `docs/screenshots/history/` as design-versi
 The current hardware-tested branch is:
 
 ```text
-codex/finger-coach-dashboard-20260519-111641-EDT
+codex/settings-app-shell-20260523
 ```
 
 Timestamped local tags record the iteration path:
@@ -235,6 +268,8 @@ Timestamped local tags record the iteration path:
 - `false-positive-tune-20260519-114323-EDT` — re-applied stricter signal lock: four consecutive qualified beats, healthy live range, and low recent clipping.
 - `signal-box-minimal-20260519-114712-EDT` — compact `SIG GPIO35` quality-bar panel.
 - `rotate-control-20260522-121644-EDT` — hardware-tested top-row screen rotation control.
+
+Current app-shell continuation notes live in `START_HERE_NEXT_CHAT.md` and `CODEX_HANDOFF.md`.
 
 See `docs/experiment-log.md` for the rejected Signal Dashboard / Finger Coach side quest. The only UI idea carried forward from that experiment is the dotted threshold line plus `THR 550` label.
 

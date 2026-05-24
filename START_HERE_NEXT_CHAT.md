@@ -1,8 +1,34 @@
 # Start Here Next Chat
 
-Last updated: 2026-05-22 EDT
+Last updated: 2026-05-24 EDT
 
 This file is the first breadcrumb for continuing internal PulseSensor CYD dashboard development in a new Codex chat with no previous chat history.
+
+## Current App Shell Branch
+
+Use this branch for the current app shell work:
+
+```text
+codex/settings-app-shell-20260523
+```
+
+Current local working path from the 2026-05-24 continuation:
+
+```text
+/Users/mininarwhal/Documents/Codex/2026-05-23/i-have-a-cyd-connected-can/CYD_App_Launcher_current-clean
+```
+
+The branch adds an app shell around the Pulse dashboard:
+
+- App 1 is the Pulse dashboard.
+- App 2 and App 3 are animated placeholders.
+- Settings includes Volume, Rotation, WiFi/Bluetooth placeholders, LED Control, color swatches, About, Version, and Firmware date.
+- Volume now lives in Settings only.
+- App navigation sits next to the persistent rotate button and uses the same visible button size.
+- Firmware date shown in Settings is `2026-05-24`.
+- Guard script: `python3 tools/check_app_shell.py`.
+
+2026-05-24 hardware note: the app-shell firmware was built and flashed to `/dev/cu.usbserial-3120` on the connected ESP32-D0WD-V3 CYD, MAC `f4:65:0b:a9:f2:e8`. Touch ergonomics fixes changed compact toolbar routing to split adjacent app-nav/rotate hit targets at their midpoints, enlarged the visible app-nav and rotate controls from 22x22 to 44x28, converted Settings to a scrollable large-text row list with bigger row-local touch controls, widened Settings bottom scroll buttons to split the full bottom bar, changed Settings rows to alternating yellow/green Pulse dashboard backgrounds with black text, and redesigned App 1 metric tiles to use the same yellow/green high-contrast language.
 
 ## Use This Repo And Branch
 
@@ -15,13 +41,13 @@ yury-g/CYD_App_Launcher
 Active branch:
 
 ```text
-codex/finger-coach-dashboard-20260519-111641-EDT
+codex/settings-app-shell-20260523
 ```
 
 Local working path used on the Mac:
 
 ```text
-/Users/narwhal2/Documents/Codex-CYD/PulseSensor_CYD
+/Users/mininarwhal/Documents/Codex/2026-05-23/i-have-a-cyd-connected-can/CYD_App_Launcher_current-clean
 ```
 
 Read this file first, then read `CODEX_HANDOFF.md`.
@@ -218,13 +244,13 @@ docs/screenshots/history/20260522-before-rotation-palette/
 Paste this into a fresh Codex chat:
 
 ```text
-We are continuing internal development of the PulseSensor CYD dashboard.
+We are continuing internal development of the CYD app shell branch.
 
-Use repo yury-g/CYD_App_Launcher, branch codex/finger-coach-dashboard-20260519-111641-EDT.
+Use repo yury-g/CYD_App_Launcher, branch codex/settings-app-shell-20260523.
 
 Start by reading START_HERE_NEXT_CHAT.md and CODEX_HANDOFF.md. Treat yury-g/CYD_App_Launcher as the internal development home. Do not push experiments to WorldFamousElectronics/PulseSensor_CYD unless I explicitly approve a public release.
 
-The current best hardware-tested code state is 1679ed3, with handoff/docs updates after it. It was flashed successfully on 2026-05-22 to /dev/cu.usbserial-110. Preserve default volume 1, GPIO35 PulseSensor input, the top-right rotate icon button, four-orientation rotation cycle, improved portrait layout, blue waveform acquisition state, yellow SIG/LED locking feedback, green locked SIG state, red locked heartbeat LED fade, white labels, brighter grid lines, the minimal SIG GPIO35 quality panel, stricter false-positive tuning, and the one-screen dashboard.
+The current app-shell code state started from 7654183 and was continued on 2026-05-24. It was flashed successfully to /dev/cu.usbserial-3120, MAC f4:65:0b:a9:f2:e8. Preserve default volume 1, GPIO35 PulseSensor input, the persistent rotate icon button, four-orientation rotation cycle, Settings-only volume, app navigation attached to rotate, app placeholder pages, Settings firmware date 2026-05-24, midpoint-split touch targets for the compact toolbar, enlarged 44x28 app-nav/rotate controls, the scrollable large-text Settings list, full-width split Settings scroll buttons, yellow/green staggered Settings row backgrounds, and yellow/green App 1 metric tiles with black text.
 
-Make small changes, build with PlatformIO, flash to the CYD when asked, then preserve hardware-tested states with timestamped commits/tags on launcher.
+Make small changes, run python3 tools/check_app_shell.py, build with PlatformIO, flash to the CYD when asked, then preserve hardware-tested states with timestamped commits/tags on the internal repo.
 ```

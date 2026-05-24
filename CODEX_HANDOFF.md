@@ -48,7 +48,7 @@ Latest hardware status:
 - PlatformIO memory was `RAM 7.3%` and `Flash 28.8%`.
 - User confirmed the current UI looks great and is visually ready to publish back to `main`.
 
-Do not merge to `main` yet. Signal-performance code checks and serial sanity passes have been done, but the user should still do a real finger-on-sensor visual sanity pass before any main merge or public release.
+Do not merge to `main` yet. Signal-performance code checks and earlobe serial sanity passes have been done, but the user should still do real body-position-specific visual sanity passes before any main merge or public release.
 
 Performance priority:
 
@@ -57,6 +57,7 @@ Performance priority:
 - Preserve `readPulseSensor()` as the first meaningful work in `loop()`.
 - If signal behavior still feels off on hardware, re-enable `PERF_DIAGNOSTICS`, compare serial loop/read/draw timing, and keep reducing display work before touching beat math.
 - Roll back the lock-hold experiment with branch/tag `backup/pre-lock-hold-grace-20260524` if the real CYD behavior feels worse.
+- Always record sensor body position and mount/contact method in hardware notes. The `0.4.17-lock-hold-grace` serial sanity windows were earlobe tests because finger contact had stopped giving usable readings even though it worked well the previous day.
 
 Commits to compare:
 
@@ -91,7 +92,7 @@ Current UI specifics:
 - The live waveform and `SIG GPIO35` panel now share the same state colors: yellow while acquiring, then the locked signal color after signal lock.
 - Lock retention now follows "acquire strictly, hold gently": four consecutive qualified beats are still required for acquisition, but an already-locked signal can survive up to two unqualified beat events inside a 2200 ms window. BPM/IBI still update only on qualified beats.
 - Expanded serial telemetry now includes live range, clipping score, qualified streak, unqualified streak, and lock-drop reason.
-- Two 60-second serial sanity windows after flashing `0.4.17-lock-hold-grace` showed the lock-hold grace path active and bounded. Window 1 was 66.1% locked with `badStreak` max 2; window 2 was 94.2% locked with `badStreak` max 2. Details live in `docs/signal-behavior-log.md`.
+- Two 60-second earlobe serial sanity windows after flashing `0.4.17-lock-hold-grace` showed the lock-hold grace path active and bounded. Window 1 was 66.1% locked with `badStreak` max 2; window 2 was 94.2% locked with `badStreak` max 2. Details live in `docs/signal-behavior-log.md`.
 - Signal-first development guidance now lives in `docs/signal-first-architecture.md`.
 - Signal behavior lessons and upgrade/downgrade notes now live in `docs/signal-behavior-log.md`.
 

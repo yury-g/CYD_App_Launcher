@@ -30,6 +30,9 @@ close to the code when changing the firmware.
   normal live waveform or beat updates.
 - New apps must not pause or gate PulseSensor updates.
 - Diagnostic tools are welcome, but they must start idle and stay opt-in.
+- Hardware validation notes must record sensor body position and contact method.
+  Earlobe, finger, wrist, and loose contact can behave differently and should not
+  be compared without naming the condition.
 
 ## Program Logic Graph
 

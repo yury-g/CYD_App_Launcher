@@ -94,15 +94,15 @@ Visual/UI status:
 - The live waveform and `SIG GPIO35` panel now share the same state colors: yellow while acquiring, then the locked signal color after signal lock.
 - Lock retention now follows "acquire strictly, hold gently": four consecutive qualified beats are still required for acquisition, but an already-locked signal can survive up to two unqualified beat events inside a 2200 ms window. BPM/IBI still update only on qualified beats.
 - Expanded serial telemetry now includes live range, clipping score, qualified streak, unqualified streak, and lock-drop reason.
-- Two 60-second serial sanity windows after flashing `0.4.17-lock-hold-grace` showed the lock-hold grace path active and bounded. Window 1 was 66.1% locked with `badStreak` max 2; window 2 was 94.2% locked with `badStreak` max 2. Details live in `docs/signal-behavior-log.md`.
+- Two 60-second earlobe serial sanity windows after flashing `0.4.17-lock-hold-grace` showed the lock-hold grace path active and bounded. Window 1 was 66.1% locked with `badStreak` max 2; window 2 was 94.2% locked with `badStreak` max 2. Details live in `docs/signal-behavior-log.md`.
 - Signal-first development guidance now lives in `docs/signal-first-architecture.md`.
 - Signal behavior lessons and upgrade/downgrade notes now live in `docs/signal-behavior-log.md`.
 
 Pre-main blocker:
 
 - Do not merge to `main` yet.
-- Signal-performance code checks and serial sanity passes have been done, but the user should still do a real finger-on-sensor visual sanity pass before any main merge/public release.
-- Next chat should start with a finger-on-sensor hardware sanity pass on the real CYD: raw trace responsiveness, BPM, IBI, qualified-beat lock, app switching, Settings, Pin Scanner idle/active behavior, and Origin Story exit behavior.
+- Signal-performance code checks and earlobe serial sanity passes have been done, but the user should still do real body-position-specific visual sanity passes before any main merge/public release.
+- Next chat should start with hardware sanity on the real CYD and record sensor body position: finger if usable, earlobe if finger remains unreliable. Check raw trace responsiveness, BPM, IBI, qualified-beat lock, app switching, Settings, Pin Scanner idle/active behavior, and Origin Story exit behavior.
 - Keep PulseSensor performance first-class. Drawing, display modes, App 4, and Origin Story are secondary to fast raw `SIG GPIO35`, BPM, IBI, and qualified-beat math.
 
 ## Current App Shell Branch

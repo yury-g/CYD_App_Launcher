@@ -18,7 +18,7 @@ TOOLBAR_BUTTON_WIDTH = 44
 TOOLBAR_BUTTON_HEIGHT = 28
 APP_BUTTON_GAP = 2
 SETTINGS_ROW_H = 40
-SETTINGS_ROW_COUNT = 9
+SETTINGS_ROW_COUNT = 11
 
 try:
     FONT_1 = ImageFont.truetype("/System/Library/Fonts/Menlo.ttc", 10)
@@ -42,14 +42,12 @@ def draw_button(draw, x, y, w, label, active=False):
 
 
 def draw_nav(draw, width, y, active_settings=True):
-    rotate_x = width - TOOLBAR_BUTTON_WIDTH - 4
-    settings_x = rotate_x - TOOLBAR_BUTTON_WIDTH - APP_BUTTON_GAP
+    settings_x = width - TOOLBAR_BUTTON_WIDTH - 4
     next_x = settings_x - TOOLBAR_BUTTON_WIDTH - APP_BUTTON_GAP
     prev_x = next_x - TOOLBAR_BUTTON_WIDTH - APP_BUTTON_GAP
     draw_button(draw, prev_x, y, TOOLBAR_BUTTON_WIDTH, "<")
     draw_button(draw, next_x, y, TOOLBAR_BUTTON_WIDTH, ">")
     draw_button(draw, settings_x, y, TOOLBAR_BUTTON_WIDTH, "*", active_settings)
-    draw_button(draw, rotate_x, y, TOOLBAR_BUTTON_WIDTH, "R")
 
 
 def row_screen_y(header_h, scroll_y, row_index):
@@ -95,13 +93,15 @@ def render(width, height, scroll_y, filename):
     rows = [
         ("Volume", "1/10"),
         ("Rotation", "rot 1"),
+        ("Display", "C DARK"),
         ("WiFi", "setup later"),
         ("Bluetooth", "setup later"),
         ("LED Control", "beat pulse"),
         ("Color", "tap"),
         ("About", "PulseSensor CYD"),
-        ("Version", "0.3.0-app-shell"),
+        ("Version", "0.4.10-manual"),
         ("Firmware", "2026-05-24"),
+        ("Memory", "237K free"),
     ]
 
     for index, (label, value) in enumerate(rows):
@@ -116,9 +116,11 @@ def render(width, height, scroll_y, filename):
             draw_button(draw, settings_vol_plus_x, button_y, TOOLBAR_BUTTON_WIDTH, "+")
         elif index == 1:
             draw_button(draw, settings_rotate_x, button_y, 86, "ROT")
-        elif index == 4:
-            draw_button(draw, settings_led_x, button_y, 86, "BEAT", True)
+        elif index == 2:
+            draw_button(draw, settings_rotate_x, button_y, 86, "C DARK", True)
         elif index == 5:
+            draw_button(draw, settings_led_x, button_y, 86, "BEAT", True)
+        elif index == 6:
             for x, color, active in [
                 (swatch_red_x, COLOR_RED, True),
                 (swatch_yellow_x, COLOR_SIGNAL_YELLOW, False),

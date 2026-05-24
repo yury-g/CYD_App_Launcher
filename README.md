@@ -44,7 +44,25 @@ Beat-dot explainer:
 
 Use this section as the quick human-readable project log. See [CHANGELOG.md](CHANGELOG.md) for the full detailed history.
 
-### Current app-shell preview — 2026-05-24
+### App 4 pin-scanner experiment — 2026-05-24
+
+This branch adds the standalone CYD Analog Pin Scanner as App 4 inside the launcher:
+
+```text
+Branch: codex/app4-pin-scanner-20260524
+Firmware: 0.4.10-manual-pin-scanner
+Source scanner: yury-g/CYD_Analog_Pin_Scanner c203d85
+```
+
+- Added App 4 `Pin Scanner`, based on the standalone `CYD_Analog_Pin_Scanner` diagnostic sketch.
+- Lists `GPIO 35`, `GPIO 22`, `GPIO 21`, and `GPIO 27`, starts with scanning inactive, and lets you tap one pin row at a time.
+- Reads only ADC-capable test targets (`GPIO 35` and `GPIO 27`) and guards `GPIO 22` / `GPIO 21` with status text instead of calling `analogRead()` on them.
+- Keeps the Pulse app on 10-bit ADC reads and switches to 12-bit only while App 4 is active on an ADC-capable row.
+- Reordered the app flow so Settings is after Pulse, Pin Scanner is after Settings, `your app here` stays second-to-last, and `Origin Story` stays the final app screen.
+- Added a Settings `Memory` row showing free heap on the current device.
+- Added App 4 mockups for `M DARK`, `M LIGHT`, `C DARK`, and `C LIGHT`, plus a contact sheet under `docs/screenshots/app4-pin-scanner-render/`.
+
+### App-shell preview — 2026-05-24
 
 This is the current good development pause point for the app shell branch:
 
@@ -53,7 +71,7 @@ Branch: codex/monochrome-ui-treatment-20260524
 Head:   af2a5c2 Add screenshot contact sheet
 ```
 
-- Added a compact app shell around the Pulse dashboard: App 1 is the live Pulse dashboard, App 2 is a placeholder, and App 3 is `Origin Story`.
+- Added a compact app shell around the Pulse dashboard: App 1 is the live Pulse dashboard, App 2 is a placeholder, App 3 is `Origin Story`, and this App 4 branch adds `Pin Scanner`.
 - Added Settings-only controls for Volume, Rotation, Display, WiFi/Bluetooth placeholders, LED Control, LED swatches, About, Version, and Firmware date.
 - Added four display modes under Settings `Display`: `M DARK`, `M LIGHT`, `C DARK`, and `C LIGHT`.
 - Added high-contrast Settings rows, larger touch targets, render-preview tools, and the current screenshot sets for the new colors and Settings screen.
@@ -90,7 +108,7 @@ Head:   af2a5c2 Add screenshot contact sheet
 
 ## Current App Shell Development Preview
 
-This branch is the current app-shell development pause point on `codex/monochrome-ui-treatment-20260524`, branched from `codex/settings-app-shell-20260523`. It keeps the Pulse dashboard as App 1, adds placeholder App 2 plus the `Origin Story` App 3 crawl, and moves settings into a dedicated scrollable Settings screen with larger finger-friendly controls.
+This branch is the current App 4 experiment branch on `codex/app4-pin-scanner-20260524`. It builds on the app shell now merged to `main`, keeps the Pulse dashboard as App 1, keeps placeholder App 2 and the `Origin Story` App 3 crawl, adds `Pin Scanner` as App 4, and keeps settings in a dedicated scrollable Settings screen with larger finger-friendly controls.
 
 Use these images to review the new screens, colors, and Settings treatment before flashing another CYD. The current `Origin Story` content is intentionally placeholder text; keep the renderer and layout, then drop in revised crawl copy during a later text-edit pass.
 
@@ -118,7 +136,11 @@ Use these images to review the new screens, colors, and Settings treatment befor
 
 ![Origin Story crawl contact sheet](docs/screenshots/app3-origin-crawl-render/app3-origin-contact-sheet.png)
 
-The render helpers are in `tools/render_pulse_app_mock.py`, `tools/render_settings_mock.py`, and `tools/render_app3_origin_crawl_mock.py`. They are intentionally lightweight PNG mockups used for quick UI iteration before flashing the CYD.
+### App 4: Pin Scanner Render
+
+![Pin Scanner display-mode contact sheet](docs/screenshots/app4-pin-scanner-render/app4-pin-scanner-contact-sheet.png)
+
+The render helpers are in `tools/render_pulse_app_mock.py`, `tools/render_settings_mock.py`, `tools/render_app3_origin_crawl_mock.py`, and `tools/render_app4_pin_scanner_mock.py`. They are intentionally lightweight PNG mockups used for quick UI iteration before flashing the CYD. Refresh the GitHub screenshot folder contact sheet with `python3 tools/update_screenshot_contact_sheet.py`.
 
 ### Internal Design Memory: 2026-05-24 Display Modes
 
@@ -173,9 +195,9 @@ The 2026-05-24 pass explored a maximum-readability display treatment for no-glas
 
 ## Flash Your CYD
 
-### Option A — Current app-shell preview from source
+### Option A — Current App 4 preview from source
 
-Use this path on any computer when you want the current app shell, display modes, new Settings screen, and `Origin Story` app from this branch. This does not require a Codex session.
+Use this path on any computer when you want the current app shell, display modes, new Settings screen, `Origin Story`, and App 4 `Pin Scanner` from this branch. This does not require a Codex session.
 
 1. Install Git, Python 3, and PlatformIO:
 
@@ -183,20 +205,16 @@ Use this path on any computer when you want the current app shell, display modes
 python3 -m pip install --user platformio
 ```
 
-2. Clone this repo and check out the current app-shell branch:
+2. Clone this repo and check out the current App 4 branch:
 
 ```bash
 git clone https://github.com/yury-g/CYD_App_Launcher.git
 cd CYD_App_Launcher
-git checkout codex/monochrome-ui-treatment-20260524
+git checkout codex/app4-pin-scanner-20260524
 git log -1 --oneline
 ```
 
-The expected pause-point head is:
-
-```text
-af2a5c2 Add screenshot contact sheet
-```
+Confirm `git log -1 --oneline` shows the latest App 4 pin-scanner commit before flashing.
 
 3. Plug in one CYD and detect the serial port:
 
@@ -222,7 +240,7 @@ Go to **[pulsesensor.com/pages/cyd](https://pulsesensor.com/pages/cyd)** in Chro
 The same installer is also hosted from this repo:
 **[worldfamouselectronics.github.io/PulseSensor_CYD/](https://worldfamouselectronics.github.io/PulseSensor_CYD/)**
 
-Important: the public one-click installer is for the published tutorial firmware unless the checked-in `firmware/` binaries have been regenerated from the current app-shell branch. To test the new screens and display modes right now, use Option A.
+Important: the public one-click installer is for the published tutorial firmware unless the checked-in `firmware/` binaries have been regenerated from this branch. To test the new screens, display modes, and App 4 pin scanner right now, use Option A.
 
 ### Option C — Build in Arduino IDE
 
@@ -375,6 +393,7 @@ docs/screenshots/pulse-render/
 docs/screenshots/settings-render/
 docs/screenshots/monochrome-render/
 docs/screenshots/display-mode-render/
+docs/screenshots/app4-pin-scanner-render/
 ```
 
 Older screenshot sets are kept under `docs/screenshots/history/` as design-version history.
@@ -387,14 +406,16 @@ python3 tools/render_settings_mock.py
 python3 tools/render_monochrome_mock.py
 python3 tools/render_display_mode_mock.py
 python3 tools/render_app3_origin_crawl_mock.py
+python3 tools/render_app4_pin_scanner_mock.py
+python3 tools/update_screenshot_contact_sheet.py
 ```
 
 ## Development Checkpoints
 
-The current hardware-tested branch is:
+The current App 4 experiment branch is:
 
 ```text
-codex/monochrome-ui-treatment-20260524
+codex/app4-pin-scanner-20260524
 ```
 
 Timestamped local tags record the iteration path:

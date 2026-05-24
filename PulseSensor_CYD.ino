@@ -75,6 +75,7 @@
 
 #define SPEAKER_BITS 10
 #define BEAT_CHIME_STEP_COUNT 4
+#define APP3_CRAWL_FANFARE_STEP_COUNT 22
 #define HEART_MIN_SIZE 8
 #define HEART_MAX_SIZE 15
 #define VOLUME_MIN 0
@@ -85,7 +86,7 @@
 
 // ===== APP SHELL =====
 
-#define APP_VERSION "0.4.1-color-dark-start"
+#define APP_VERSION "0.4.2-app3-fanfare"
 #define APP_FIRMWARE_DATE "2026-05-24"
 #define TOOLBAR_BUTTON_WIDTH 44
 #define TOOLBAR_BUTTON_HEIGHT 28
@@ -184,6 +185,19 @@ const uint16_t SIGNAL_HARMONY_FREQUENCIES[] = {523, 659, 784, 988, 1175};
 const uint8_t SIGNAL_HARMONY_DUTIES[] = {48, 40, 30};
 const uint16_t SIGNAL_HARMONY_DURATIONS_MS[] = {72, 84, 128};
 
+const uint16_t APP3_CRAWL_FANFARE_FREQUENCIES[APP3_CRAWL_FANFARE_STEP_COUNT] = {
+  196, 0, 294, 0, 392, 0, 523, 0, 659, 784, 0,
+  196, 294, 392, 587, 392, 294, 220, 330, 440, 660, 0
+};
+const uint8_t APP3_CRAWL_FANFARE_DUTIES[APP3_CRAWL_FANFARE_STEP_COUNT] = {
+  42, 0, 40, 0, 38, 0, 34, 0, 30, 26, 0,
+  22, 18, 20, 18, 18, 16, 20, 18, 16, 14, 0
+};
+const uint16_t APP3_CRAWL_FANFARE_DURATIONS_MS[APP3_CRAWL_FANFARE_STEP_COUNT] = {
+  260, 45, 260, 45, 300, 55, 380, 65, 220, 520, 160,
+  180, 130, 180, 220, 160, 160, 260, 160, 180, 420, 260
+};
+
 // ===== LIVE SENSOR STATE =====
 
 int currentSignal = 512;
@@ -233,6 +247,10 @@ bool signalHarmonyPlaying = false;
 uint8_t signalHarmonyStep = 0;
 uint8_t signalHarmonyBaseNote = 0;
 unsigned long signalHarmonyNextStepTime = 0;
+
+bool app3CrawlFanfarePlaying = false;
+uint8_t app3CrawlFanfareStep = 0;
+unsigned long app3CrawlFanfareNextStepTime = 0;
 
 // ===== GRAPH STATE =====
 
@@ -381,6 +399,11 @@ uint16_t scaledSignalHarmonyDuty(uint8_t duty);
 void startSignalHarmony(int quality);
 void updateSignalHarmony();
 void stopSignalHarmony();
+uint16_t scaledApp3CrawlFanfareDuty(uint8_t duty);
+void startApp3CrawlFanfare();
+void updateApp3CrawlFanfare();
+void stopApp3CrawlFanfare();
+void playApp3CrawlFanfareStep();
 void triggerRearLedPulse(RearLedColor color);
 void triggerBeatEffects();
 void setupPulseSensor();
@@ -472,6 +495,7 @@ void loop() {
   updateLED();
   updateBeatChime();
   updateSignalHarmony();
+  updateApp3CrawlFanfare();
 
   if (currentApp == APP_PULSE) {
     drawBeatHeart();
@@ -821,13 +845,16 @@ void scrollSettingsBy(int delta) {
 void switchApp(AppId app) {
   if (app >= APP_COUNT) return;
   bool enteringSettings = currentApp != APP_SETTINGS && app == APP_SETTINGS;
+  bool enteringApp3 = currentApp != APP_PLACEHOLDER_2 && app == APP_PLACEHOLDER_2;
   currentApp = app;
   stopSignalHarmony();
+  if (!enteringApp3) stopApp3CrawlFanfare();
   dashboardDrawn = false;
   appNeedsRedraw = true;
   if (enteringSettings) settingsScrollY = 0;
   resetPlaceholderState();
   drawActiveApp();
+  if (enteringApp3) startApp3CrawlFanfare();
 }
 
 void nextApp() {
@@ -986,6 +1013,7 @@ uint16_t scaledChimeDuty(uint8_t step) {
 
 void startBeatChime() {
   stopSignalHarmony();
+  stopApp3CrawlFanfare();
   beatChimeStep = 0;
   cydLedcWriteTone(SPEAKER_PIN, SPEAKER_PWM_CH, BEAT_CHIME_FREQUENCIES[beatChimeStep]);
   cydLedcWrite(SPEAKER_PIN, SPEAKER_PWM_CH, scaledChimeDuty(beatChimeStep));
@@ -1050,6 +1078,54 @@ void stopSignalHarmony() {
   cydLedcWrite(SPEAKER_PIN, SPEAKER_PWM_CH, 0);
   cydLedcWriteTone(SPEAKER_PIN, SPEAKER_PWM_CH, 0);
   signalHarmonyPlaying = false;
+}
+
+uint16_t scaledApp3CrawlFanfareDuty(uint8_t duty) {
+  if (speakerVolume == 0 || duty == 0) return 0;
+  return max<uint16_t>((duty * speakerVolume) / VOLUME_MAX, 3);
+}
+
+void startApp3CrawlFanfare() {
+  if (speakerVolume == 0) return;
+  if (beatTonePlaying) {
+    beatTonePlaying = false;
+  }
+  stopSignalHarmony();
+  app3CrawlFanfarePlaying = true;
+  app3CrawlFanfareStep = 0;
+  playApp3CrawlFanfareStep();
+}
+
+void updateApp3CrawlFanfare() {
+  if (!app3CrawlFanfarePlaying || currentApp != APP_PLACEHOLDER_2) return;
+  if ((long)(millis() - app3CrawlFanfareNextStepTime) < 0) return;
+
+  app3CrawlFanfareStep++;
+  if (app3CrawlFanfareStep >= APP3_CRAWL_FANFARE_STEP_COUNT) {
+    app3CrawlFanfareStep = 11;
+  }
+  playApp3CrawlFanfareStep();
+}
+
+void stopApp3CrawlFanfare() {
+  if (!app3CrawlFanfarePlaying) return;
+  cydLedcWrite(SPEAKER_PIN, SPEAKER_PWM_CH, 0);
+  cydLedcWriteTone(SPEAKER_PIN, SPEAKER_PWM_CH, 0);
+  app3CrawlFanfarePlaying = false;
+}
+
+void playApp3CrawlFanfareStep() {
+  uint16_t frequency = APP3_CRAWL_FANFARE_FREQUENCIES[app3CrawlFanfareStep];
+  uint16_t duty = scaledApp3CrawlFanfareDuty(APP3_CRAWL_FANFARE_DUTIES[app3CrawlFanfareStep]);
+
+  if (frequency == 0 || duty == 0) {
+    cydLedcWrite(SPEAKER_PIN, SPEAKER_PWM_CH, 0);
+    cydLedcWriteTone(SPEAKER_PIN, SPEAKER_PWM_CH, 0);
+  } else {
+    cydLedcWriteTone(SPEAKER_PIN, SPEAKER_PWM_CH, frequency);
+    cydLedcWrite(SPEAKER_PIN, SPEAKER_PWM_CH, duty);
+  }
+  app3CrawlFanfareNextStepTime = millis() + APP3_CRAWL_FANFARE_DURATIONS_MS[app3CrawlFanfareStep];
 }
 
 void cydLedcAttach(uint8_t pin, uint8_t channel, uint32_t frequency, uint8_t resolution) {

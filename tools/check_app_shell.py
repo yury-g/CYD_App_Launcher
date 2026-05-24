@@ -100,6 +100,10 @@ required_large_controls = {
     "handleSettingsDisplayModeTouch": "Settings screen is missing display mode touch handling",
     "displayValueTextColor": "Settings value text is not separately colorable",
     "COLOR_LIGHT_NAV_FILL": "Color light app nav buttons are missing a high-contrast inactive fill",
+    "APP3_CRAWL_FANFARE_STEP_COUNT": "App 3 origin crawl fanfare is missing",
+    "startApp3CrawlFanfare": "App 3 origin crawl fanfare does not start on app entry",
+    "updateApp3CrawlFanfare": "App 3 origin crawl fanfare does not update from the main loop",
+    "stopApp3CrawlFanfare": "App 3 origin crawl fanfare does not stop when leaving App 3",
 }
 for token, message in required_large_controls.items():
     if token not in source:

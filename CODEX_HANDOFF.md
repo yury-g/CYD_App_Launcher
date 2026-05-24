@@ -6,7 +6,7 @@ This repository branch is the working memory for internal PulseSensor CYD experi
 
 Quick start for future chats: read `START_HERE_NEXT_CHAT.md` first, then this file.
 
-## Fresh Handoff: 2026-05-24 Signal-Core Polish Continuation
+## Fresh Handoff: 2026-05-24 Failed Signal-Core Experiment Closure
 
 This section supersedes older branch/path references below. Older notes remain as useful history.
 
@@ -25,13 +25,13 @@ codex/signal-core-polish-publish-prep-20260524
 Current firmware/UI code commit:
 
 ```text
-HEAD Add clipping quality guard 20260524
+HEAD Close failed signal core experiment 20260524
 ```
 
 Latest signal-behavior log commit:
 
 ```text
-HEAD Add clipping quality guard 20260524
+HEAD Close failed signal core experiment 20260524
 ```
 
 Current firmware version:
@@ -42,6 +42,11 @@ Current firmware version:
 
 Latest hardware status:
 
+- This branch is closed as a failed experiment and should not merge to `main`.
+- It produced useful diagnostics and one honest UI guard, but it did not restore a trustworthy live pulse experience on hardware.
+- The weird waveform behavior was real: the attached CYD showed rail-to-rail `SIG GPIO35` input with `signal` hitting `0`/`1023`, `range=1023`, `clip=100`, and unusable BPM/IBI.
+- `0.4.23-clip-guard` only made the failure visible and safe: while railed, serial showed `quality=0`, `p2p=0`, `locked=0`, `BPM=0`, `IBI=0`, `rawDiag=0`, and no re-arm spam.
+- Next action is to flash current internal `main` and compare. If `main` also rails, investigate physical/electrical causes before touching beat math.
 - Built with PlatformIO in release env `cyd` and diagnostic env `cyd_diag`.
 - Release build defaults raw CSV diagnostics off and reports `0.4.23-clip-guard`; diagnostic build enables 50 Hz `rawDiag` CSV and reports `0.4.23-clip-guard-log`.
 - Upload target remains `/dev/cu.usbserial-3120`; latest known attached CYD MAC is `f4:2d:c9:9d:af:cc`.
@@ -54,7 +59,7 @@ Latest hardware status:
 - The cleanest same-earlobe accuracy evidence remains the previous `0.4.21-signal-log` capture: 44.2 s, 47 firmware accepted beats, 47 independent raw peaks, firmware median IBI/BPM `918 ms / 65.3`, independent median IBI/BPM `920 ms / 65.2`, zero clip rows, zero motion/noise windows, and zero accepted short IBIs below 700 ms.
 - User confirmed the current UI looks great and is visually ready to publish back to `main`.
 
-Do not merge to `main` yet. Signal-performance code checks and earlobe serial sanity passes have been done, but the latest hardware signal remains saturated/railed. The user should still do one real stable-contact visual/signal sanity pass before any main merge or public release.
+Do not merge this branch to `main`. Use it as a diagnostic record and rollback source only.
 
 Performance priority:
 

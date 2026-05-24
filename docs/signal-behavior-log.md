@@ -27,6 +27,33 @@ Acquire strictly, hold gently.
   not compare finger, earlobe, wrist, or loose bench readings as if they are the
   same test condition.
 
+## 2026-05-24 - Failed Experiment Closure
+
+Branch: `codex/signal-core-polish-publish-prep-20260524`
+
+Verdict:
+
+- Treat this branch as a failed experiment and do not merge it to `main`.
+- The work produced useful tools and lessons: raw CSV diagnostics, an offline
+  analyzer, time-based clipping decay, motion/artifact guards, pre-lock cadence
+  consistency, a quieter release/diagnostic build split, and the
+  `0.4.23-clip-guard` false-progress fix.
+- The broader peak-to-peak/acquisition experiment did not restore a trustworthy
+  live hardware experience. The connected CYD showed weird rail-to-rail waveform
+  behavior with `signal` hitting `0`/`1023`, `range=1023`, `clip=100`, and no
+  usable BPM/IBI.
+- The clipping guard made the firmware honest about the failure by forcing
+  `quality=0`, `p2p=0`, no detector re-arm spam, and no accepted BPM/IBI while
+  the ADC was railed. It did not fix the underlying rail-to-rail input.
+
+Next baseline:
+
+- Flash current internal `main` and compare the connected CYD against this
+  failed branch before doing any more signal math.
+- If `main` also rails, investigate physical/electrical causes first: sensor
+  pressure and placement, power/ground, connector wiring, GPIO35 behavior, and
+  alternate known signal pins such as GPIO27.
+
 ## Test Record Template
 
 Use this shape for future hardware notes:

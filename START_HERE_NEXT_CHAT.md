@@ -4,7 +4,7 @@ Last updated: 2026-05-24 EDT
 
 This file is the first breadcrumb for continuing internal PulseSensor CYD dashboard development in a new Codex chat with no previous chat history.
 
-## Fresh Handoff: 2026-05-24 Signal-Core Polish Continuation
+## Fresh Handoff: 2026-05-24 Failed Signal-Core Experiment Closure
 
 This top section supersedes older branch/path references below. Older notes are preserved as history.
 
@@ -23,13 +23,13 @@ codex/signal-core-polish-publish-prep-20260524
 Current firmware/UI code commit:
 
 ```text
-HEAD Add clipping quality guard 20260524
+HEAD Close failed signal core experiment 20260524
 ```
 
 Latest signal-behavior log commit:
 
 ```text
-HEAD Add clipping quality guard 20260524
+HEAD Close failed signal core experiment 20260524
 ```
 
 Current firmware version on the attached CYD:
@@ -37,6 +37,21 @@ Current firmware version on the attached CYD:
 ```text
 0.4.23-clip-guard
 ```
+
+Branch verdict:
+
+- Treat `codex/signal-core-polish-publish-prep-20260524` as a failed experiment
+  and do not merge it to `main`.
+- It produced useful diagnostics and a clipping UI guard, but it did not restore
+  a trustworthy live pulse experience on the attached CYD.
+- The weird waveform behavior was real rail-to-rail input: `signal` hit
+  `0`/`1023`, `range=1023`, `clip=100`, and BPM/IBI were unusable.
+- `0.4.23-clip-guard` made that failure honest by showing `quality=0`,
+  `p2p=0`, no detector re-arm spam, and no accepted BPM/IBI while the ADC was
+  railed. It did not solve the underlying rail-to-rail input.
+- Next baseline check: flash current internal `main` and compare. If `main`
+  also rails, investigate sensor pressure/placement, power/ground, wiring,
+  GPIO35 behavior, and alternate signal pins before changing beat math.
 
 Connected CYD used for the latest flash:
 

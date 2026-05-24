@@ -300,8 +300,10 @@ def draw_pulse_preview(mode_key, locked):
             bar_color = p["lock_green"] if locked else p["signal_yellow"]
             for i in range(12):
                 bx = px + 9 + i * 6
-                fill = bar_color if i < 7 else p["inactive"]
-                draw.rectangle((bx, panel_y + 30, bx + 3, panel_y + 44), fill=fill)
+                if i < 7:
+                    draw.rectangle((bx, panel_y + 30, bx + 3, panel_y + 44), fill=bar_color)
+                elif not mode_key.startswith("mono"):
+                    draw.rectangle((bx, panel_y + 30, bx + 3, panel_y + 44), fill=p["inactive"])
 
     path = REVIEW_DIR / "screen-preview" / mode_key / f"pulse-landscape-{'locked' if locked else 'searching'}.png"
     path.parent.mkdir(parents=True, exist_ok=True)

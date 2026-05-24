@@ -51,6 +51,23 @@ if "handleVolumeTouch" in read_touch_body:
 if "handleRotateTouch(x, y)" in read_touch_body:
     raise SystemExit("Rotate touch is still exposed as a persistent top-bar control")
 
+loop_start = source.index("void loop() {")
+loop_end = source.index("// ===== HARDWARE SETUP =====", loop_start)
+loop_body = source[loop_start:loop_end]
+first_read = loop_body.find("readPulseSensor();")
+if first_read < 0:
+    raise SystemExit("Pulse loop no longer samples PulseSensor")
+for token in [
+    "readTouchControls();",
+    "updateLED();",
+    "updateBeatChime();",
+    "updateSignalHarmony();",
+    "updateApp3CrawlFanfare();",
+]:
+    token_pos = loop_body.find(token)
+    if token_pos >= 0 and token_pos < first_read:
+        raise SystemExit(f"PulseSensor sampling is blocked by {token}")
+
 app_nav_start = source.index("bool handleAppNavTouch(int16_t x, int16_t y) {")
 app_nav_end = source.index("bool handleRotateTouch(int16_t x, int16_t y) {", app_nav_start)
 app_nav_body = source[app_nav_start:app_nav_end]
@@ -150,6 +167,31 @@ if "drawAppNavControls();" not in settings_fn_body:
     raise SystemExit("Settings screen does not draw persistent nav controls")
 if "drawRotateControl();" in settings_fn_body:
     raise SystemExit("Settings screen still draws the removed top-bar rotate control")
+
+dashboard_fn_start = source.index("void drawDashboardIfChanged() {")
+dashboard_fn_end = source.index("void drawHeader()", dashboard_fn_start)
+dashboard_fn_body = source[dashboard_fn_start:dashboard_fn_end]
+if "drawGraphFrame();" in dashboard_fn_body:
+    raise SystemExit("Live Pulse dashboard updates still redraw the whole graph frame")
+if "drawSignalCoachStatus();" not in dashboard_fn_body:
+    raise SystemExit("Live Pulse dashboard status changes should use a small status redraw")
+
+if "bool shouldDrawInactiveQualitySegments() {" not in source:
+    raise SystemExit("SIG GPIO quality bars need a mode guard for inactive segments")
+
+inactive_quality_start = source.index("bool shouldDrawInactiveQualitySegments() {")
+inactive_quality_end = source.index("uint16_t beatColor()", inactive_quality_start)
+inactive_quality_body = source[inactive_quality_start:inactive_quality_end]
+if "return displayMode == DISPLAY_COLOR_DARK || displayMode == DISPLAY_COLOR_LIGHT;" not in inactive_quality_body:
+    raise SystemExit("Monochrome modes should not draw inactive SIG GPIO quality-bar backgrounds")
+
+quality_start = source.index("void drawQualitySegments(int x, int y) {")
+quality_end = source.index("void drawAmplitudeMeter", quality_start)
+quality_body = source[quality_start:quality_end]
+if "bool drawInactiveSegments = shouldDrawInactiveQualitySegments();" not in quality_body:
+    raise SystemExit("SIG GPIO quality bars are not checking whether inactive segments should draw")
+if "else if (drawInactiveSegments)" not in quality_body:
+    raise SystemExit("SIG GPIO quality bars should skip inactive segments when monochrome modes are active")
 
 app3_branch_start = source.index("} else if (currentApp == APP_PLACEHOLDER_2) {")
 app3_branch_end = source.index("\n  }", app3_branch_start)

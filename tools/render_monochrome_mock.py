@@ -174,7 +174,6 @@ def draw_metric_panel(draw, x, y, w, h, label, value, valid=False, unit=""):
 def draw_signal_panel(draw, x, y, w, h, locked=False):
     draw.rounded_rectangle((x, y, x + w, y + h), radius=6, fill=BLACK, outline=WHITE, width=2)
     ink = WHITE
-    empty = BLACK
     if not locked:
         draw_dotted_rect(draw, (x + 4, y + 4, x + w - 4, y + h - 4), WHITE, 5)
     draw.text((x + 8, y + 6), "SIG GPIO35", font=FONT_1, fill=ink)
@@ -185,8 +184,6 @@ def draw_signal_panel(draw, x, y, w, h, locked=False):
         bx = x + 9 + i * (segment_w + segment_gap)
         if i < 7:
             draw.rectangle((bx, y + 30, bx + segment_w - 1, y + 30 + segment_h), fill=ink)
-        else:
-            draw.rectangle((bx, y + 30, bx + segment_w - 1, y + 30 + segment_h), fill=empty, outline=ink)
 
 
 def render_pulse(width, height, locked, filename):

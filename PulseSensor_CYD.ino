@@ -94,7 +94,7 @@
 
 // ===== APP SHELL =====
 
-#define APP_VERSION "0.4.7-origin-perspective"
+#define APP_VERSION "0.4.9-mono-quality-bars"
 #define APP_FIRMWARE_DATE "2026-05-24"
 #define TOOLBAR_BUTTON_WIDTH 44
 #define TOOLBAR_BUTTON_HEIGHT 28
@@ -538,6 +538,7 @@ void drawRotateIcon(int x, int y, int w, int h, uint16_t color, uint16_t bg);
 void drawVolumeControl();
 void drawDottedHLine(int x, int y, int w, uint16_t color, int step, int thickness);
 void drawGraphFrame();
+void drawSignalCoachStatus();
 void drawGraphColumnBackground(int localX);
 void drawThresholdMarker(int localX);
 int signalToGraphY(int signal);
@@ -568,6 +569,7 @@ uint16_t buttonTextColor(bool active);
 uint16_t signalSearchColor();
 uint16_t signalLockColor();
 uint16_t inactiveColor();
+bool shouldDrawInactiveQualitySegments();
 uint16_t beatColor();
 uint16_t liveTraceColorForMode();
 
@@ -1487,7 +1489,7 @@ void drawDashboardIfChanged() {
 
   if (statusChanged) {
     drawHeader();
-    drawGraphFrame();
+    drawSignalCoachStatus();
   }
 
   if (panelsChanged) {
@@ -1938,12 +1940,21 @@ void drawGraphFrame() {
   tft.print("THR ");
   tft.print(PULSE_THRESHOLD);
 
+  drawSignalCoachStatus();
+}
+
+void drawSignalCoachStatus() {
   const char* status = signalCoachText();
   int statusW = strlen(status) * 6;
-  int statusX = graphLeft + graphWidth - statusW - 6;
-  int statusY = graphTop + graphHeight - 14;
-  tft.fillRect(statusX - 3, statusY - 2, statusW + 6, 12, screenBgColor());
-  tft.setCursor(statusX, statusY);
+  int statusAreaW = min(graphWidth - 12, 112);
+  int statusX = graphLeft + graphWidth - statusAreaW - 3;
+  int statusY = graphTop + graphHeight - 16;
+  int textX = statusX + max(0, statusAreaW - statusW - 3);
+
+  tft.fillRect(statusX, statusY, statusAreaW, 14, screenBgColor());
+  tft.setTextSize(1);
+  tft.setTextColor(textColor(), screenBgColor());
+  tft.setCursor(textX, statusY + 2);
   tft.print(status);
 }
 
@@ -2102,12 +2113,14 @@ void drawQualitySegments(int x, int y) {
   const int segmentW = portraitLayout ? 3 : 4;
   const int segmentGap = 2;
   const int segmentH = portraitLayout ? 8 : 14;
+  bool drawInactiveSegments = shouldDrawInactiveQualitySegments();
   for (int i = 0; i < SIGNAL_QUALITY_STEPS; i++) {
-    uint16_t color = inactiveColor();
     if (i < signalQuality) {
-      color = lockedSignal ? signalLockColor() : signalSearchColor();
+      uint16_t color = lockedSignal ? signalLockColor() : signalSearchColor();
+      tft.fillRect(x + i * (segmentW + segmentGap), y, segmentW, segmentH, color);
+    } else if (drawInactiveSegments) {
+      tft.fillRect(x + i * (segmentW + segmentGap), y, segmentW, segmentH, inactiveColor());
     }
-    tft.fillRect(x + i * (segmentW + segmentGap), y, segmentW, segmentH, color);
   }
 }
 
@@ -2285,6 +2298,10 @@ uint16_t inactiveColor() {
   if (displayMode == DISPLAY_COLOR_DARK) return COLOR_GRID;
   if (displayMode == DISPLAY_COLOR_LIGHT) return COLOR_LIGHT_INACTIVE;
   return textColor();
+}
+
+bool shouldDrawInactiveQualitySegments() {
+  return displayMode == DISPLAY_COLOR_DARK || displayMode == DISPLAY_COLOR_LIGHT;
 }
 
 uint16_t beatColor() {

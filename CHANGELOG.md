@@ -1,6 +1,8 @@
 # CYD App Launcher — Student Version — Changelog
 
 ## Unreleased
+- 2026-05-24 monochrome SIG quality-bar polish: removed inactive SIG GPIO quality-bar background segments from monochrome modes in firmware and matching render mockups while leaving color-mode inactive bar backgrounds intact; firmware version is `0.4.9-mono-quality-bars`.
+- 2026-05-24 app-switcher waveform-priority pass: stopped live Pulse dashboard status changes from redrawing the full graph frame, added a small coach-status redraw instead, and guarded the app-shell check so `readPulseSensor()` remains first in `loop()`; firmware version is `0.4.8-waveform-priority`.
 - 2026-05-24 app-shell pause documentation: expanded the README into a readable major-change log, added the current branch/head as the good app-shell pause point, included Origin Story render previews, and documented a non-Codex PlatformIO source-flash path for another computer.
 - 2026-05-24 09:34:48 EDT Origin Story hardware trial: doubled the crawl speed, added a horizontal vanishing line, and made crawl rows shrink to 1x text and fade into the black background as they approach the top horizon; firmware version is `0.4.7-origin-perspective`.
 - 2026-05-24 09:30:51 EDT Origin Story provenance pass: added OSHWA certification details for Pulse Sensor Amped (`US000075`, certified August 30, 2017), the `WorldFamousElectronics/PulseSensor_Amped_Arduino` GitHub repo, and current repo-love stats (`249` stars, `207` forks as of May 24, 2026); firmware version is `0.4.6-origin-oshw`.

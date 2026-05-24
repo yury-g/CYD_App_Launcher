@@ -83,6 +83,14 @@
 #define SCREEN_ROTATION_DEFAULT 1
 #define SCREEN_ROTATION_COUNT 4
 
+// ===== APP SHELL =====
+
+#define APP_VERSION "0.3.0-app-shell"
+#define APP_BUTTON_SIZE 20
+#define APP_BUTTON_GAP 4
+#define SETTINGS_ROW_H 25
+#define PLACEHOLDER_STEP_MS 35
+
 // ===== TOUCH CALIBRATION =====
 
 #define TOUCH_MIN_X 200
@@ -124,6 +132,14 @@ enum SignalCoachState {
   COACH_GOOD_WAVE,
   COACH_LOCKING,
   COACH_QUALIFIED
+};
+
+enum AppId {
+  APP_PULSE,
+  APP_PLACEHOLDER_1,
+  APP_PLACEHOLDER_2,
+  APP_SETTINGS,
+  APP_COUNT
 };
 
 // ===== GLOBAL OBJECTS =====
@@ -251,11 +267,38 @@ bool ledPulseActive = false;
 unsigned long ledPulseStartTime = 0;
 int rearLedBrightness = 0;
 RearLedColor rearLedPulseColor = REAR_LED_HEARTBEAT;
+RearLedColor heartbeatLedColor = REAR_LED_HEARTBEAT;
 bool rearLedPulseActive = false;
 unsigned long rearLedPulseStartTime = 0;
+bool beatLedEnabled = true;
 #define LED_UPDATE_MS 10
 #define LED_PEAK_HOLD_MS 90
 #define LED_FADE_MS 620
+
+// ===== APP SHELL STATE =====
+
+AppId currentApp = APP_PULSE;
+bool appNeedsRedraw = true;
+int appPrevButtonX = 122;
+int appNextButtonX = 146;
+int appSettingsButtonX = 170;
+int appButtonY = 9;
+
+int settingsVolMinusX = 150;
+int settingsVolPlusX = 202;
+int settingsRotateX = 150;
+int settingsLedX = 150;
+int settingsColorRedX = 150;
+int settingsColorYellowX = 178;
+int settingsColorCyanX = 206;
+
+int placeholderX = 24;
+int placeholderY = 90;
+int placeholderLastX = -1;
+int placeholderLastY = -1;
+int placeholderDx = 2;
+int placeholderDy = 2;
+unsigned long lastPlaceholderMove = 0;
 
 // ===== FORWARD DECLARATIONS =====
 
@@ -271,12 +314,18 @@ void setupSpeaker();
 void setupTouch();
 void readTouchControls();
 void mapTouchPoint(const TS_Point& point, int16_t* x, int16_t* y);
+bool handleAppNavTouch(int16_t x, int16_t y);
 bool handleRotateTouch(int16_t x, int16_t y);
 bool handleVolumeTouch(int16_t x, int16_t y);
+bool handleSettingsTouch(int16_t x, int16_t y);
+void switchApp(AppId app);
+void nextApp();
+void previousApp();
 void rotateScreen();
 void applyScreenRotation();
 void configureLayout();
 void resetDashboardState();
+void resetPlaceholderState();
 void cydLedcAttach(uint8_t pin, uint8_t channel, uint32_t frequency, uint8_t resolution);
 void cydLedcWrite(uint8_t pin, uint8_t channel, uint32_t duty);
 void cydLedcWriteTone(uint8_t pin, uint8_t channel, uint32_t frequency);
@@ -299,9 +348,16 @@ int amplitudeMeterSegments(int amplitude);
 void maybeRearmDetector();
 void rearmPulseDetector(const char* reason);
 void updateSignalRange();
+void drawActiveApp();
 void drawStaticScreen();
 void drawDashboardIfChanged();
 void drawHeader();
+void drawAppNavControls();
+void drawAppButton(int x, int y, const char* label, bool active);
+void drawSettingsScreen();
+void drawSettingsRow(int y, const char* label, const char* value);
+void drawPlaceholderApp(const char* title, const char* message);
+void drawPlaceholderText(const char* message, uint16_t color);
 void drawRotateControl();
 void drawVolumeControl();
 void drawGraphFrame();
@@ -337,7 +393,7 @@ void setup() {
   setupSpeaker();
   setupTouch();
   setupPulseSensor();
-  drawStaticScreen();
+  drawActiveApp();
 }
 
 void loop() {
@@ -346,9 +402,18 @@ void loop() {
   updateLED();
   updateBeatChime();
   updateSignalHarmony();
-  drawBeatHeart();
-  drawWaveform();
-  drawDashboardIfChanged();
+
+  if (currentApp == APP_PULSE) {
+    drawBeatHeart();
+    drawWaveform();
+    drawDashboardIfChanged();
+  } else if (currentApp == APP_PLACEHOLDER_1) {
+    drawPlaceholderApp("App 2", "your app here");
+  } else if (currentApp == APP_PLACEHOLDER_2) {
+    drawPlaceholderApp("App 3", "your app here too");
+  } else if (appNeedsRedraw) {
+    drawSettingsScreen();
+  }
 
   if (millis() - lastSerialPrint >= 500) {
     lastSerialPrint = millis();
@@ -453,7 +518,9 @@ void readTouchControls() {
   int16_t y;
   mapTouchPoint(point, &x, &y);
 
-  if (handleRotateTouch(x, y) || handleVolumeTouch(x, y)) {
+  if (handleAppNavTouch(x, y) ||
+      (currentApp == APP_PULSE && (handleRotateTouch(x, y) || handleVolumeTouch(x, y))) ||
+      (currentApp == APP_SETTINGS && handleSettingsTouch(x, y))) {
     lastControlTouchTime = millis();
   }
 }
@@ -477,6 +544,27 @@ void mapTouchPoint(const TS_Point& point, int16_t* x, int16_t* y) {
 
   *x = constrain(mappedX, 0, screenWidth - 1);
   *y = constrain(mappedY, 0, screenHeight - 1);
+}
+
+bool handleAppNavTouch(int16_t x, int16_t y) {
+  if (y < appButtonY - 8 || y > appButtonY + APP_BUTTON_SIZE + 8) return false;
+
+  if (x >= appPrevButtonX - 8 && x <= appPrevButtonX + APP_BUTTON_SIZE + 8) {
+    previousApp();
+    return true;
+  }
+
+  if (x >= appNextButtonX - 8 && x <= appNextButtonX + APP_BUTTON_SIZE + 8) {
+    nextApp();
+    return true;
+  }
+
+  if (x >= appSettingsButtonX - 8 && x <= appSettingsButtonX + APP_BUTTON_SIZE + 8) {
+    switchApp(currentApp == APP_SETTINGS ? APP_PULSE : APP_SETTINGS);
+    return true;
+  }
+
+  return false;
 }
 
 bool handleRotateTouch(int16_t x, int16_t y) {
@@ -505,13 +593,88 @@ bool handleVolumeTouch(int16_t x, int16_t y) {
   return true;
 }
 
+bool handleSettingsTouch(int16_t x, int16_t y) {
+  if (y >= 52 && y <= 74) {
+    if (x >= settingsVolMinusX - 8 && x <= settingsVolMinusX + APP_BUTTON_SIZE + 8) {
+      if (speakerVolume > VOLUME_MIN) speakerVolume--;
+      appNeedsRedraw = true;
+      drawSettingsScreen();
+      return true;
+    }
+    if (x >= settingsVolPlusX - 8 && x <= settingsVolPlusX + APP_BUTTON_SIZE + 8) {
+      if (speakerVolume < VOLUME_MAX) speakerVolume++;
+      appNeedsRedraw = true;
+      drawSettingsScreen();
+      return true;
+    }
+  }
+
+  if (y >= 78 && y <= 100 && x >= settingsRotateX - 8 && x <= settingsRotateX + 58) {
+    rotateScreen();
+    return true;
+  }
+
+  if (y >= 154 && y <= 176 && x >= settingsLedX - 8 && x <= settingsLedX + 74) {
+    beatLedEnabled = !beatLedEnabled;
+    if (!beatLedEnabled) setRearLedColor(REAR_LED_OFF);
+    appNeedsRedraw = true;
+    drawSettingsScreen();
+    return true;
+  }
+
+  if (y >= 180 && y <= 206) {
+    if (x >= settingsColorRedX - 8 && x <= settingsColorRedX + 26) {
+      heartbeatLedColor = REAR_LED_HEARTBEAT;
+      appNeedsRedraw = true;
+      drawSettingsScreen();
+      return true;
+    }
+    if (x >= settingsColorYellowX - 8 && x <= settingsColorYellowX + 26) {
+      heartbeatLedColor = REAR_LED_LOCKING;
+      appNeedsRedraw = true;
+      drawSettingsScreen();
+      return true;
+    }
+    if (x >= settingsColorCyanX - 8 && x <= settingsColorCyanX + 26) {
+      heartbeatLedColor = RearLedColor{0, 255, 255};
+      appNeedsRedraw = true;
+      drawSettingsScreen();
+      return true;
+    }
+  }
+
+  return false;
+}
+
+void switchApp(AppId app) {
+  if (app >= APP_COUNT) return;
+  currentApp = app;
+  stopSignalHarmony();
+  dashboardDrawn = false;
+  appNeedsRedraw = true;
+  resetPlaceholderState();
+  drawActiveApp();
+}
+
+void nextApp() {
+  uint8_t next = currentApp == APP_SETTINGS ? APP_PULSE : (uint8_t)currentApp + 1;
+  if (next > APP_PLACEHOLDER_2) next = APP_PULSE;
+  switchApp((AppId)next);
+}
+
+void previousApp() {
+  uint8_t previous = currentApp == APP_SETTINGS ? APP_PLACEHOLDER_2 : (uint8_t)currentApp;
+  previous = previous == APP_PULSE ? APP_PLACEHOLDER_2 : previous - 1;
+  switchApp((AppId)previous);
+}
+
 void rotateScreen() {
   screenRotationIndex = (screenRotationIndex + 1) % SCREEN_ROTATION_COUNT;
   screenRotation = SCREEN_ROTATIONS[screenRotationIndex];
   Serial.printf("screenRotation=%u\n", screenRotation);
   applyScreenRotation();
   resetDashboardState();
-  drawStaticScreen();
+  drawActiveApp();
 }
 
 void applyScreenRotation() {
@@ -557,6 +720,11 @@ void configureLayout() {
     volumeMinusX = volumeValueX - volumeButtonSize - 2;
     volumeLabelX = volumeMinusX - 28;
     volumeY = 4;
+
+    appPrevButtonX = 82;
+    appNextButtonX = appPrevButtonX + APP_BUTTON_SIZE + APP_BUTTON_GAP;
+    appSettingsButtonX = appNextButtonX + APP_BUTTON_SIZE + APP_BUTTON_GAP;
+    appButtonY = 4;
   } else {
     headerHeight = 42;
     heartCenterX = screenWidth / 2;
@@ -587,7 +755,20 @@ void configureLayout() {
     volumeMinusX = volumeValueX - volumeButtonSize - 2;
     volumeLabelX = volumeMinusX - 28;
     volumeY = 9;
+
+    appPrevButtonX = 122;
+    appNextButtonX = appPrevButtonX + APP_BUTTON_SIZE + APP_BUTTON_GAP;
+    appSettingsButtonX = appNextButtonX + APP_BUTTON_SIZE + APP_BUTTON_GAP;
+    appButtonY = 9;
   }
+
+  settingsVolMinusX = portraitLayout ? 132 : 150;
+  settingsVolPlusX = settingsVolMinusX + 52;
+  settingsRotateX = settingsVolMinusX;
+  settingsLedX = settingsVolMinusX;
+  settingsColorRedX = settingsVolMinusX;
+  settingsColorYellowX = settingsColorRedX + 28;
+  settingsColorCyanX = settingsColorYellowX + 28;
 }
 
 void resetDashboardState() {
@@ -603,6 +784,16 @@ void resetDashboardState() {
   graphX = 0;
   lastGraphY = signalToGraphY(currentSignal);
   lastGraphDraw = 0;
+}
+
+void resetPlaceholderState() {
+  placeholderX = screenWidth / 5;
+  placeholderY = headerHeight + 32;
+  placeholderLastX = -1;
+  placeholderLastY = -1;
+  placeholderDx = 2;
+  placeholderDy = 2;
+  lastPlaceholderMove = 0;
 }
 
 uint16_t scaledChimeDuty(uint8_t step) {
@@ -712,7 +903,9 @@ void triggerRearLedPulse(RearLedColor color) {
 }
 
 void triggerBeatEffects() {
-  triggerRearLedPulse(REAR_LED_HEARTBEAT);
+  if (beatLedEnabled) {
+    triggerRearLedPulse(heartbeatLedColor);
+  }
   ledPulseStartTime = millis();
   ledPulseActive = true;
   ledBrightness = 255;
@@ -896,6 +1089,22 @@ void updateSignalRange() {
 
 // ===== STATIC UI =====
 
+void drawActiveApp() {
+  if (currentApp == APP_PULSE) {
+    drawStaticScreen();
+  } else if (currentApp == APP_SETTINGS) {
+    drawSettingsScreen();
+  } else if (currentApp == APP_PLACEHOLDER_1) {
+    tft.fillScreen(COLOR_BG);
+    appNeedsRedraw = true;
+    drawPlaceholderApp("App 2", "your app here");
+  } else if (currentApp == APP_PLACEHOLDER_2) {
+    tft.fillScreen(COLOR_BG);
+    appNeedsRedraw = true;
+    drawPlaceholderApp("App 3", "your app here too");
+  }
+}
+
 void drawStaticScreen() {
   tft.fillScreen(COLOR_BG);
   drawGraphFrame();
@@ -942,6 +1151,7 @@ void drawHeader() {
   tft.setTextColor(COLOR_TEXT, COLOR_BG);
   tft.setCursor(10, portraitLayout ? 7 : 8);
   tft.print("PulseSensor.com");
+  drawAppNavControls();
   drawVolumeControl();
   drawRotateControl();
 
@@ -949,6 +1159,129 @@ void drawHeader() {
   tft.setTextSize(1);
   tft.setCursor(portraitLayout ? 62 : 10, portraitLayout ? 47 : 25);
   tft.print(signalCoachText());
+}
+
+void drawAppNavControls() {
+  drawAppButton(appPrevButtonX, appButtonY, "<", false);
+  drawAppButton(appNextButtonX, appButtonY, ">", false);
+  drawAppButton(appSettingsButtonX, appButtonY, "*", currentApp == APP_SETTINGS);
+}
+
+void drawAppButton(int x, int y, const char* label, bool active) {
+  uint16_t fill = active ? COLOR_CYAN_DARK : COLOR_PANEL;
+  uint16_t outline = active ? COLOR_CYAN : COLOR_GRID;
+  tft.fillRoundRect(x, y, APP_BUTTON_SIZE, APP_BUTTON_SIZE, 4, fill);
+  tft.drawRoundRect(x, y, APP_BUTTON_SIZE, APP_BUTTON_SIZE, 4, outline);
+  drawCenteredText(label, x, y + 5, APP_BUTTON_SIZE, 1, COLOR_TEXT, fill);
+}
+
+void drawSettingsScreen() {
+  appNeedsRedraw = false;
+  tft.fillScreen(COLOR_BG);
+  tft.fillRect(0, 0, screenWidth, headerHeight, COLOR_BG);
+  tft.drawFastHLine(0, headerHeight - 1, screenWidth, COLOR_GRID);
+  tft.setTextSize(1);
+  tft.setTextColor(COLOR_TEXT, COLOR_BG);
+  tft.setCursor(10, portraitLayout ? 7 : 8);
+  tft.print("Settings");
+  drawAppNavControls();
+
+  char volumeText[12];
+  snprintf(volumeText, sizeof(volumeText), "%u/10", speakerVolume);
+  drawSettingsRow(52, "Volume", volumeText);
+  drawAppButton(settingsVolMinusX, 53, "-", false);
+  drawAppButton(settingsVolPlusX, 53, "+", false);
+
+  char rotationText[14];
+  snprintf(rotationText, sizeof(rotationText), "rot %u", screenRotation);
+  drawSettingsRow(78, "Rotation", rotationText);
+  tft.fillRoundRect(settingsRotateX, 79, 58, APP_BUTTON_SIZE, 4, COLOR_PANEL);
+  tft.drawRoundRect(settingsRotateX, 79, 58, APP_BUTTON_SIZE, 4, COLOR_GRID);
+  drawCenteredText("ROT", settingsRotateX, 84, 58, 1, COLOR_TEXT, COLOR_PANEL);
+
+  drawSettingsRow(104, "WiFi", "off / setup later");
+  drawSettingsRow(130, "Bluetooth", "off / setup later");
+  drawSettingsRow(156, "LED Control", beatLedEnabled ? "beat with heartbeat" : "off");
+  tft.fillRoundRect(settingsLedX, 157, 74, APP_BUTTON_SIZE, 4, COLOR_PANEL);
+  tft.drawRoundRect(settingsLedX, 157, 74, APP_BUTTON_SIZE, 4, COLOR_GRID);
+  drawCenteredText(beatLedEnabled ? "BEAT" : "OFF", settingsLedX, 162, 74, 1, COLOR_TEXT, COLOR_PANEL);
+
+  drawSettingsRow(182, "Color", "tap swatch");
+  tft.fillRect(settingsColorRedX, 184, 20, 16, COLOR_RED);
+  tft.drawRect(settingsColorRedX, 184, 20, 16, COLOR_GRID);
+  tft.fillRect(settingsColorYellowX, 184, 20, 16, COLOR_SIGNAL_YELLOW);
+  tft.drawRect(settingsColorYellowX, 184, 20, 16, COLOR_GRID);
+  tft.fillRect(settingsColorCyanX, 184, 20, 16, COLOR_CYAN);
+  tft.drawRect(settingsColorCyanX, 184, 20, 16, COLOR_GRID);
+
+  tft.setTextSize(1);
+  tft.setTextColor(COLOR_MUTED, COLOR_BG);
+  tft.setCursor(10, screenHeight - 27);
+  tft.print("About: PulseSensor CYD dashboard");
+  tft.setCursor(10, screenHeight - 14);
+  tft.print("Version ");
+  tft.print(APP_VERSION);
+}
+
+void drawSettingsRow(int y, const char* label, const char* value) {
+  tft.setTextSize(1);
+  tft.setTextColor(COLOR_CYAN, COLOR_BG);
+  tft.setCursor(10, y + 7);
+  tft.print(label);
+  tft.setTextColor(COLOR_TEXT, COLOR_BG);
+  tft.setCursor(92, y + 7);
+  tft.print(value);
+}
+
+void drawPlaceholderApp(const char* title, const char* message) {
+  if (appNeedsRedraw) {
+    appNeedsRedraw = false;
+    tft.fillScreen(COLOR_BG);
+    tft.fillRect(0, 0, screenWidth, headerHeight, COLOR_BG);
+    tft.drawFastHLine(0, headerHeight - 1, screenWidth, COLOR_GRID);
+    tft.setTextSize(1);
+    tft.setTextColor(COLOR_TEXT, COLOR_BG);
+    tft.setCursor(10, portraitLayout ? 7 : 8);
+    tft.print(title);
+    drawAppNavControls();
+    resetPlaceholderState();
+  }
+
+  if (millis() - lastPlaceholderMove < PLACEHOLDER_STEP_MS) return;
+  lastPlaceholderMove = millis();
+
+  int textW = strlen(message) * 12;
+  int textH = 16;
+  int minY = headerHeight + 8;
+  int maxX = max(0, screenWidth - textW - 4);
+  int maxY = max(minY, screenHeight - textH - 8);
+
+  if (placeholderLastX >= 0) {
+    tft.fillRect(placeholderLastX - 2, placeholderLastY - 2, textW + 4, textH + 4, COLOR_BG);
+  }
+
+  placeholderX += placeholderDx;
+  placeholderY += placeholderDy;
+
+  if (placeholderX <= 4 || placeholderX >= maxX) {
+    placeholderDx = -placeholderDx;
+    placeholderX = constrain(placeholderX, 4, maxX);
+  }
+  if (placeholderY <= minY || placeholderY >= maxY) {
+    placeholderDy = -placeholderDy;
+    placeholderY = constrain(placeholderY, minY, maxY);
+  }
+
+  drawPlaceholderText(message, currentApp == APP_PLACEHOLDER_1 ? COLOR_CYAN : COLOR_SIGNAL_YELLOW);
+}
+
+void drawPlaceholderText(const char* message, uint16_t color) {
+  tft.setTextSize(2);
+  tft.setTextColor(color, COLOR_BG);
+  tft.setCursor(placeholderX, placeholderY);
+  tft.print(message);
+  placeholderLastX = placeholderX;
+  placeholderLastY = placeholderY;
 }
 
 void drawRotateControl() {

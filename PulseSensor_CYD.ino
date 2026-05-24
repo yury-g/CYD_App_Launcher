@@ -99,8 +99,10 @@
 
 // ===== APP SHELL =====
 
-#define APP_VERSION "0.4.10-perf-safe-pin-scanner"
+#define APP_VERSION "0.4.11-settings-build-memory"
 #define APP_FIRMWARE_DATE "2026-05-24"
+#define APP_BUILD_RAM_USAGE "RAM 7.3%"
+#define APP_BUILD_FLASH_USAGE "Flash 28.7%"
 #define TOOLBAR_BUTTON_WIDTH 44
 #define TOOLBAR_BUTTON_HEIGHT 28
 #define APP_BUTTON_WIDTH TOOLBAR_BUTTON_WIDTH
@@ -108,7 +110,7 @@
 #define APP_BUTTON_GAP 2
 #define SETTINGS_TEXT_SIZE 1
 #define SETTINGS_ROW_H 32
-#define SETTINGS_ROW_COUNT 11
+#define SETTINGS_ROW_COUNT 12
 #define SETTINGS_SCROLL_BUTTON_W TOOLBAR_BUTTON_WIDTH
 #define SETTINGS_SCROLL_BUTTON_H TOOLBAR_BUTTON_HEIGHT
 #define PLACEHOLDER_STEP_MS 35
@@ -546,6 +548,7 @@ void drawAppNavControls();
 void drawAppButton(int x, int y, const char* label, bool active);
 void drawSettingsScreen();
 void drawSettingsRow(int rowIndex, int y, const char* label, const char* value);
+void drawSettingsControlRow(int rowIndex, int y, const char* label, const char* value);
 uint16_t settingsRowBackground(int rowIndex);
 void drawSettingsButton(int x, int y, int w, const char* label, bool active);
 void drawSettingsDisplayModeControl(int x, int y, int w);
@@ -1682,7 +1685,7 @@ void drawSettingsScreen() {
   snprintf(volumeText, sizeof(volumeText), "%u/10", speakerVolume);
   int rowY = settingsRowScreenY(0);
   if (rowY >= settingsContentTop() && rowY + SETTINGS_ROW_H <= settingsContentBottom()) {
-    drawSettingsRow(0, rowY, "Volume", volumeText);
+    drawSettingsControlRow(0, rowY, "Volume", volumeText);
     int buttonY = rowY + 2;
     drawSettingsButton(settingsVolMinusX, buttonY, TOOLBAR_BUTTON_WIDTH, "-", false);
     drawSettingsButton(settingsVolPlusX, buttonY, TOOLBAR_BUTTON_WIDTH, "+", false);
@@ -1692,14 +1695,14 @@ void drawSettingsScreen() {
   snprintf(rotationText, sizeof(rotationText), "screen %u", screenRotation);
   rowY = settingsRowScreenY(1);
   if (rowY >= settingsContentTop() && rowY + SETTINGS_ROW_H <= settingsContentBottom()) {
-    drawSettingsRow(1, rowY, "Rotation", rotationText);
+    drawSettingsControlRow(1, rowY, "Rotation", rotationText);
     drawSettingsButton(settingsRotateX, rowY + 2, 86, "", false);
     drawRotateIcon(settingsRotateX, rowY + 2, 86, TOOLBAR_BUTTON_HEIGHT, buttonTextColor(false), buttonFillColor(false));
   }
 
   rowY = settingsRowScreenY(2);
   if (rowY >= settingsContentTop() && rowY + SETTINGS_ROW_H <= settingsContentBottom()) {
-    drawSettingsRow(2, rowY, "Display", displayModeName());
+    drawSettingsControlRow(2, rowY, "Display", displayModeName());
     drawSettingsDisplayModeControl(settingsDisplayModeX, rowY + 2, 90);
   }
 
@@ -1715,13 +1718,13 @@ void drawSettingsScreen() {
 
   rowY = settingsRowScreenY(5);
   if (rowY >= settingsContentTop() && rowY + SETTINGS_ROW_H <= settingsContentBottom()) {
-    drawSettingsRow(5, rowY, "LED Control", beatLedEnabled ? "beat pulse" : "off");
+    drawSettingsControlRow(5, rowY, "LED Control", beatLedEnabled ? "beat pulse" : "off");
     drawSettingsButton(settingsLedX, rowY + 2, 86, beatLedEnabled ? "BEAT" : "OFF", beatLedEnabled);
   }
 
   rowY = settingsRowScreenY(6);
   if (rowY >= settingsContentTop() && rowY + SETTINGS_ROW_H <= settingsContentBottom()) {
-    drawSettingsRow(6, rowY, "Color", "tap");
+    drawSettingsControlRow(6, rowY, "Color", "tap");
     int swatchY = rowY + 2;
     drawSettingsSwatch(settingsColorRedX, swatchY, COLOR_RED, heartbeatLedColor.red > 0 && heartbeatLedColor.green == 0);
     drawSettingsSwatch(settingsColorYellowX, swatchY, COLOR_SIGNAL_YELLOW, heartbeatLedColor.red > 0 && heartbeatLedColor.green > 0);
@@ -1757,10 +1760,31 @@ void drawSettingsScreen() {
     drawSettingsRow(10, rowY, "Memory", memoryText);
   }
 
+  char buildText[28];
+  snprintf(buildText, sizeof(buildText), "%s %s", APP_BUILD_RAM_USAGE, APP_BUILD_FLASH_USAGE);
+  rowY = settingsRowScreenY(11);
+  if (rowY >= settingsContentTop() && rowY + SETTINGS_ROW_H <= settingsContentBottom()) {
+    drawSettingsRow(11, rowY, "Build", buildText);
+  }
+
   drawSettingsScrollControls();
 }
 
 void drawSettingsRow(int rowIndex, int y, const char* label, const char* value) {
+  uint16_t bg = settingsRowBackground(rowIndex);
+  tft.fillRect(0, y, screenWidth, SETTINGS_ROW_H, bg);
+  drawDottedHLine(0, y + SETTINGS_ROW_H - 2, screenWidth, gridColor(), 5, 2);
+
+  tft.setTextSize(SETTINGS_TEXT_SIZE);
+  tft.setTextColor(textColor(), bg);
+  tft.setCursor(10, y + 11);
+  tft.print(label);
+  tft.print(": ");
+  tft.setTextColor(displayValueTextColor(), bg);
+  tft.print(value);
+}
+
+void drawSettingsControlRow(int rowIndex, int y, const char* label, const char* value) {
   uint16_t bg = settingsRowBackground(rowIndex);
   tft.fillRect(0, y, screenWidth, SETTINGS_ROW_H, bg);
   drawDottedHLine(0, y + SETTINGS_ROW_H - 2, screenWidth, gridColor(), 5, 2);

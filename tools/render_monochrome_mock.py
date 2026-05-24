@@ -11,7 +11,7 @@ TOOLBAR_BUTTON_WIDTH = 44
 TOOLBAR_BUTTON_HEIGHT = 28
 APP_BUTTON_GAP = 2
 SETTINGS_ROW_H = 32
-SETTINGS_ROW_COUNT = 11
+SETTINGS_ROW_COUNT = 12
 
 try:
     FONT_1 = ImageFont.truetype("/System/Library/Fonts/Menlo.ttc", 10)
@@ -223,8 +223,11 @@ def draw_row(draw, width, y, index, label, value):
     ink = WHITE
     draw.rectangle((0, y, width, y + SETTINGS_ROW_H), fill=bg)
     draw_dotted_line(draw, (0, y + SETTINGS_ROW_H - 2), (width, y + SETTINGS_ROW_H - 2), WHITE, 5, 2)
-    draw.text((10, y + 4), label, font=FONT_SETTINGS, fill=ink)
-    draw.text((10, y + 18), value, font=FONT_SETTINGS, fill=ink)
+    if index in {0, 1, 2, 5, 6}:
+        draw.text((10, y + 4), label, font=FONT_SETTINGS, fill=ink)
+        draw.text((10, y + 18), value, font=FONT_SETTINGS, fill=ink)
+    else:
+        draw.text((10, y + 11), f"{label}: {value}", font=FONT_SETTINGS, fill=ink)
     return bg
 
 
@@ -283,9 +286,10 @@ def render_settings(width, height, scroll_y, filename, mode_variant):
         ("LED Control", "beat pulse"),
         ("Color", "tap"),
         ("About", "PulseSensor CYD"),
-        ("Version", "0.4.10-perf-safe-pin-scanner"),
+        ("Version", "0.4.11-settings-build-memory"),
         ("Firmware", "2026-05-24"),
         ("Memory", "used 90K free 238K 72%"),
+        ("Build", "RAM 7.3% Flash 28.7%"),
     ]
 
     for index, (label, value) in enumerate(rows):
@@ -354,10 +358,10 @@ render_pulse(240, 320, True, "pulse-portrait-locked.png")
 for mode_variant in ["cycle", "separate"]:
     render_settings(320, 240, 0, f"{mode_variant}/settings-landscape-top.png", mode_variant)
     render_settings(320, 240, 96, f"{mode_variant}/settings-landscape-middle.png", mode_variant)
-    render_settings(320, 240, 191, f"{mode_variant}/settings-landscape-bottom.png", mode_variant)
+    render_settings(320, 240, 223, f"{mode_variant}/settings-landscape-bottom.png", mode_variant)
     render_settings(240, 320, 0, f"{mode_variant}/settings-portrait-top.png", mode_variant)
     render_settings(240, 320, 64, f"{mode_variant}/settings-portrait-middle.png", mode_variant)
-    render_settings(240, 320, 143, f"{mode_variant}/settings-portrait-bottom.png", mode_variant)
+    render_settings(240, 320, 175, f"{mode_variant}/settings-portrait-bottom.png", mode_variant)
 render_placeholder(320, 240, 2, "app2-landscape.png")
 render_placeholder(320, 240, 3, "app3-landscape.png")
 render_placeholder(240, 320, 2, "app2-portrait.png")

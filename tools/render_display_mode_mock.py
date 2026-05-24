@@ -242,16 +242,14 @@ def draw_settings_picker(mode_key, mode_variant):
     ]
     y = 46
     for label, value in rows:
-        draw.text((10, y + 4), label, font=FONT_SETTINGS, fill=p["label_text"])
-        draw.text((10, y + 18), value, font=FONT_SETTINGS, fill=p["value_text"])
+        draw.text((10, y + 11), f"{label}: {value}", font=FONT_SETTINGS, fill=p["value_text"])
         draw_dotted_line(draw, (0, y + SETTINGS_ROW_H - 2), (320, y + SETTINGS_ROW_H - 2), p["row_line"], 5, 2)
         y += SETTINGS_ROW_H
 
     draw_display_row(draw, y, p, mode_variant)
     y += SETTINGS_ROW_H
 
-    draw.text((10, y + 4), "WiFi", font=FONT_SETTINGS, fill=p["label_text"])
-    draw.text((10, y + 18), "setup later", font=FONT_SETTINGS, fill=p["value_text"])
+    draw.text((10, y + 11), "WiFi: setup later", font=FONT_SETTINGS, fill=p["value_text"])
     draw_dotted_line(draw, (0, y + SETTINGS_ROW_H - 2), (320, y + SETTINGS_ROW_H - 2), p["row_line"], 5, 2)
 
     scroll_y = 210

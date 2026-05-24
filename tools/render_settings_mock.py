@@ -18,7 +18,7 @@ TOOLBAR_BUTTON_WIDTH = 44
 TOOLBAR_BUTTON_HEIGHT = 28
 APP_BUTTON_GAP = 2
 SETTINGS_ROW_H = 32
-SETTINGS_ROW_COUNT = 11
+SETTINGS_ROW_COUNT = 12
 
 try:
     FONT_1 = ImageFont.truetype("/System/Library/Fonts/Menlo.ttc", 10)
@@ -65,13 +65,16 @@ def row_screen_y(header_h, scroll_y, row_index):
     return header_h + 4 + row_index * SETTINGS_ROW_H - scroll_y
 
 
-def draw_row(draw, width, y, label, value):
+def draw_row(draw, width, y, label, value, control=False):
     index = getattr(draw_row, "index", 0)
     bg = COLOR_BG
     draw.rectangle((0, y, width, y + SETTINGS_ROW_H), fill=bg)
     draw.line((0, y + SETTINGS_ROW_H - 1, width, y + SETTINGS_ROW_H - 1), fill=COLOR_GRID)
-    draw.text((10, y + 4), label, font=FONT_1, fill=COLOR_TEXT)
-    draw.text((10, y + 18), value, font=FONT_1, fill=COLOR_SIGNAL_YELLOW)
+    if control:
+        draw.text((10, y + 4), label, font=FONT_1, fill=COLOR_TEXT)
+        draw.text((10, y + 18), value, font=FONT_1, fill=COLOR_SIGNAL_YELLOW)
+    else:
+        draw.text((10, y + 11), f"{label}: {value}", font=FONT_1, fill=COLOR_SIGNAL_YELLOW)
 
 
 def render(width, height, scroll_y, filename):
@@ -110,9 +113,10 @@ def render(width, height, scroll_y, filename):
         ("LED Control", "beat pulse"),
         ("Color", "tap"),
         ("About", "PulseSensor CYD"),
-        ("Version", "0.4.10-perf-safe-pin-scanner"),
+        ("Version", "0.4.11-settings-build-memory"),
         ("Firmware", "2026-05-24"),
         ("Memory", "used 90K free 238K 72%"),
+        ("Build", "RAM 7.3% Flash 28.7%"),
     ]
 
     for index, (label, value) in enumerate(rows):
@@ -120,7 +124,7 @@ def render(width, height, scroll_y, filename):
         if y < content_top or y + SETTINGS_ROW_H > content_bottom:
             continue
         draw_row.index = index
-        draw_row(draw, width, y, label, value)
+        draw_row(draw, width, y, label, value, control=index in {0, 1, 2, 5, 6})
         button_y = y + 2
         if index == 0:
             draw_button(draw, settings_vol_minus_x, button_y, TOOLBAR_BUTTON_WIDTH, "-")
@@ -156,7 +160,7 @@ def render(width, height, scroll_y, filename):
 
 render(320, 240, 0, "settings-landscape-top.png")
 render(320, 240, 96, "settings-landscape-middle.png")
-render(320, 240, 191, "settings-landscape-bottom.png")
+render(320, 240, 223, "settings-landscape-bottom.png")
 render(240, 320, 0, "settings-portrait-top.png")
 render(240, 320, 64, "settings-portrait-middle.png")
-render(240, 320, 143, "settings-portrait-bottom.png")
+render(240, 320, 175, "settings-portrait-bottom.png")

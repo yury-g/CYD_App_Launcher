@@ -1,6 +1,7 @@
 # CYD App Launcher — Student Version — Changelog
 
 ## Unreleased
+- 2026-05-24 Settings build-memory layout pass: added a Build row showing PlatformIO RAM and Flash usage, changed plain Settings rows to single-line `Label: value` text that uses the full row, kept two-line text only on rows with right-side controls, and bumped firmware version to `0.4.11-settings-build-memory`.
 - 2026-05-24 App 4 performance-safe pin scanner pass: added a manual Pin Scanner screen after Settings with only GPIO35, GPIO22, GPIO21, and GPIO27, left scanning idle until one row is tapped, kept `readPulseSensor()` first in `loop()`, kept the ADC on the PulseSensor 10-bit scale, added a Settings memory row with used/free size and free percentage, switched the rotation control to an icon-only button, and reduced Settings row text to fit more rows; firmware version is `0.4.10-perf-safe-pin-scanner`.
 - 2026-05-24 monochrome SIG quality-bar polish: removed inactive SIG GPIO quality-bar background segments from monochrome modes in firmware and matching render mockups while leaving color-mode inactive bar backgrounds intact; firmware version is `0.4.9-mono-quality-bars`.
 - 2026-05-24 app-switcher waveform-priority pass: stopped live Pulse dashboard status changes from redrawing the full graph frame, added a small coach-status redraw instead, and guarded the app-shell check so `readPulseSensor()` remains first in `loop()`; firmware version is `0.4.8-waveform-priority`.

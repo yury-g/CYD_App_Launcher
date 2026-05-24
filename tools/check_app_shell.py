@@ -9,6 +9,7 @@ required_tokens = [
     "About",
     "Version",
     "Firmware",
+    "Build",
     "WiFi",
     "Bluetooth",
     "LED Control",
@@ -52,6 +53,8 @@ if "ESP.getFreeHeap()" not in settings_body or "ESP.getHeapSize()" not in settin
     raise SystemExit("Settings memory row must show heap size and percentage")
 if "usedHeap" not in settings_body or '"used %luK free %luK %u%%"' not in settings_body:
     raise SystemExit("Settings memory row must show used memory and free memory")
+if "APP_BUILD_RAM_USAGE" not in settings_body or "APP_BUILD_FLASH_USAGE" not in settings_body:
+    raise SystemExit("Settings screen is missing build RAM/Flash usage")
 if '"rot %u"' in settings_body:
     raise SystemExit("Settings rotation value should not use ROT text")
 if 'drawSettingsButton(settingsRotateX, rowY + 2, 86, "", false);' not in settings_body:
@@ -123,7 +126,7 @@ required_large_controls = {
     "#define APP_BUTTON_HEIGHT TOOLBAR_BUTTON_HEIGHT": "app nav height does not match toolbar height",
     "#define SETTINGS_TEXT_SIZE 1": "Settings screen text is not one size smaller",
     "#define SETTINGS_ROW_H 32": "Settings rows are not compact enough for the smaller font",
-    "#define SETTINGS_ROW_COUNT 11": "Settings screen is missing the added Memory row",
+    "#define SETTINGS_ROW_COUNT 12": "Settings screen is missing the added Memory/Build rows",
     "settingsScrollY": "Settings screen is missing scroll state",
     "handleSettingsScrollTouch": "Settings screen is missing scroll touch handling",
     "drawSettingsScrollControls": "Settings screen is missing large scroll controls",
@@ -227,6 +230,25 @@ if "drawAppNavControls();" not in settings_fn_body:
     raise SystemExit("Settings screen does not draw persistent nav controls")
 if "drawRotateControl();" in settings_fn_body:
     raise SystemExit("Settings screen still draws the removed top-bar rotate control")
+
+settings_row_start = source.index("void drawSettingsRow(int rowIndex, int y, const char* label, const char* value) {")
+settings_row_end = source.index("void drawSettingsControlRow", settings_row_start)
+settings_row_body = source[settings_row_start:settings_row_end]
+if 'tft.print(": ");' not in settings_row_body:
+    raise SystemExit("Settings rows should use one-line 'Label: value' layout")
+if "y + 18" in settings_row_body:
+    raise SystemExit("Plain Settings rows should not force a second line")
+if "void drawSettingsControlRow" not in source:
+    raise SystemExit("Settings control rows need a separate two-line fallback renderer")
+for row_token in [
+    'drawSettingsControlRow(0, rowY, "Volume", volumeText);',
+    'drawSettingsControlRow(1, rowY, "Rotation", rotationText);',
+    'drawSettingsControlRow(2, rowY, "Display", displayModeName());',
+    'drawSettingsControlRow(5, rowY, "LED Control", beatLedEnabled ? "beat pulse" : "off");',
+    'drawSettingsControlRow(6, rowY, "Color", "tap");',
+]:
+    if row_token not in settings_body:
+        raise SystemExit("Settings rows with right-side controls should use the control-row fallback")
 
 dashboard_fn_start = source.index("void drawDashboardIfChanged() {")
 dashboard_fn_end = source.index("void drawHeader()", dashboard_fn_start)

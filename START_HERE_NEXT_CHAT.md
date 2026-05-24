@@ -9,8 +9,10 @@ This file is the first breadcrumb for continuing internal PulseSensor CYD dashbo
 Use this branch for the current app shell work:
 
 ```text
-codex/settings-app-shell-20260523
+codex/monochrome-ui-treatment-20260524
 ```
+
+This branch was created from `codex/settings-app-shell-20260523` at `fa4a5a0` for local display-mode UI treatment experiments. Do not merge to main yet.
 
 Current local working path from the 2026-05-24 continuation:
 
@@ -22,11 +24,16 @@ The branch adds an app shell around the Pulse dashboard:
 
 - App 1 is the Pulse dashboard.
 - App 2 and App 3 are animated placeholders.
-- Settings includes Volume, Rotation, WiFi/Bluetooth placeholders, LED Control, color swatches, About, Version, and Firmware date.
+- Settings includes Volume, Rotation, Display, WiFi/Bluetooth placeholders, LED Control, color swatches, About, Version, and Firmware date.
 - Volume now lives in Settings only.
-- App navigation sits next to the persistent rotate button and uses the same visible button size.
+- Rotation now lives in Settings only; the persistent top rotate button was removed.
+- App navigation remains persistent as a three-button previous/next/Settings nav bar, with mode-aware outlines/fills and no top-bar rotate control.
+- Display mode cycles through `M DARK`, `M LIGHT`, `C DARK`, and `C LIGHT`.
+- Firmware version is `0.4.0-display-modes`.
 - Firmware date shown in Settings is `2026-05-24`.
 - Guard script: `python3 tools/check_app_shell.py`.
+
+2026-05-24 display-mode note: render-only design review files live in `docs/screenshots/display-mode-render/review-20260524-display-modes-v2/` and `docs/screenshots/monochrome-render/`. The approved direction before local hardware test: Settings row labels and values use distinct colors in color modes, `C LIGHT` is a high-contrast color-light treatment, the app nav bar is the compact three-button previous/next/Settings treatment, and the fat heart sits in the header gap between `PulseSensor.com` and the app nav.
 
 2026-05-24 hardware note: the app-shell firmware was built and flashed to `/dev/cu.usbserial-3120` on the connected ESP32-D0WD-V3 CYD, MAC `f4:65:0b:a9:f2:e8`. Touch ergonomics fixes changed compact toolbar routing to split adjacent app-nav/rotate hit targets at their midpoints, enlarged the visible app-nav and rotate controls from 22x22 to 44x28, converted Settings to a scrollable large-text row list with bigger row-local touch controls, widened Settings bottom scroll buttons to split the full bottom bar, changed Settings rows to alternating yellow/green Pulse dashboard backgrounds with black text, and redesigned App 1 metric tiles to use the same yellow/green high-contrast language.
 

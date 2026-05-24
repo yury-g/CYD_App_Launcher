@@ -11,8 +11,10 @@ Quick start for future chats: read `START_HERE_NEXT_CHAT.md` first, then this fi
 Active app-shell branch:
 
 ```text
-codex/settings-app-shell-20260523
+codex/monochrome-ui-treatment-20260524
 ```
+
+This branch was created from `codex/settings-app-shell-20260523` at `fa4a5a0` for display-mode UI treatment experiments. Do not merge to main yet.
 
 Current app-shell branch head before the 2026-05-24 touch ergonomics continuation:
 
@@ -25,12 +27,15 @@ The current branch wraps the one-screen Pulse dashboard in a small app shell:
 - App 1: Pulse dashboard.
 - App 2: bouncing `your app here`.
 - App 3: bouncing `your app here too`.
-- Settings: Volume, Rotation, WiFi placeholder, Bluetooth placeholder, LED Control, LED color swatches, About, Version, and Firmware date.
+- Settings: Volume, Rotation, Display, WiFi placeholder, Bluetooth placeholder, LED Control, LED color swatches, About, Version, and Firmware date.
 - Volume is Settings-only and no longer appears in the top toolbar.
-- Rotate remains persistent on all apps/pages.
-- App navigation is attached to the rotate button and uses the same visible button size.
+- Rotation is Settings-only and no longer appears as a persistent top-toolbar button.
+- App navigation remains persistent as a three-button previous/next/Settings nav bar, with mode-aware outlines/fills and no top-toolbar rotate button.
+- Firmware version for this branch: `0.4.0-display-modes`.
 - Firmware date shown in Settings: `2026-05-24`.
 - Guard script: `python3 tools/check_app_shell.py`.
+
+2026-05-24 display-mode continuation: added Settings `Display` cycling through `M DARK`, `M LIGHT`, `C DARK`, and `C LIGHT`. `M DARK`/`M LIGHT` are true monochrome treatments. `C DARK` preserves the main dark color family, and `C LIGHT` is a high-contrast light color treatment with blue values/search trace, amber searching accents, cyan/teal locked outlines, and green locked SIG bars. The top nav bar was also changed to the compact three-button previous/next/Settings layout, with rotation moved fully into Settings and the freed header space used for the centered fat heart. Render review files live in `docs/screenshots/display-mode-render/review-20260524-display-modes-v2/`; monochrome black/white review files live in `docs/screenshots/monochrome-render/`.
 
 2026-05-24 continuation: the compact toolbar hit testing was tuned for real CYD touch ergonomics. App nav and rotate still look grouped, but their padded tap regions are now split at the midpoint between adjacent button centers, preventing the previous overlap where taps near rotate could be claimed by Settings or taps near nav boundaries could choose the earlier button. The same midpoint approach is used for the Settings color swatches.
 

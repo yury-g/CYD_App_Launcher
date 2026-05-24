@@ -63,6 +63,13 @@ CRAWL_LINES = [
     "Now the signal lands here,",
     "on a Cheap Yellow Display:",
     "open, tiny, and alive with code.",
+    "",
+    "Send us your feature requests,",
+    "firmware update ideas,",
+    "and wild classroom wishes.",
+    "",
+    "Thanks for supporting",
+    "PulseSensor since 2012.",
 ]
 
 
@@ -183,12 +190,15 @@ frames = [
     ("app3-origin-crawl-start.png", 1, 40, False),
     ("app3-origin-crawl-mid.png", 2, 128, False),
     ("app3-origin-crawl-late.png", 3, 216, False),
+    ("app3-origin-crawl-close.png", 4, 532, False),
+    ("app3-origin-crawl-thanks.png", 5, 746, False),
 ]
 
 for filename, frame, offset, title_card in frames:
     render(filename, frame=frame, offset=offset, title_card=title_card)
 
-contact = Image.new("RGB", (640, 480), BLACK)
+contact_rows = (len(frames) + 1) // 2
+contact = Image.new("RGB", (640, contact_rows * 240), BLACK)
 for index, (filename, _, _, _) in enumerate(frames):
     frame = Image.open(OUT_DIR / filename)
     x = 0 if index % 2 == 0 else 320

@@ -38,4 +38,16 @@ read_touch_body = source[read_touch_start:read_touch_end]
 if "handleVolumeTouch" in read_touch_body:
     raise SystemExit("Pulse touch handling still uses top-bar volume controls")
 
+configure_start = source.index("void configureLayout() {")
+configure_end = source.index("void resetDashboardState()", configure_start)
+configure_body = source[configure_start:configure_end]
+required_nav_layout = [
+    "appSettingsButtonX = rotateButtonX - APP_BUTTON_SIZE - 2;",
+    "appNextButtonX = appSettingsButtonX - APP_BUTTON_SIZE - 2;",
+    "appPrevButtonX = appNextButtonX - APP_BUTTON_SIZE - 2;",
+]
+missing_nav_layout = [line for line in required_nav_layout if line not in configure_body]
+if missing_nav_layout:
+    raise SystemExit("App nav is not attached to rotate button")
+
 print("App shell checks passed")

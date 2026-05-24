@@ -87,7 +87,7 @@
 
 #define APP_VERSION "0.3.0-app-shell"
 #define APP_BUTTON_SIZE 20
-#define APP_BUTTON_GAP 4
+#define APP_BUTTON_GAP 2
 #define SETTINGS_ROW_H 25
 #define PLACEHOLDER_STEP_MS 35
 
@@ -721,9 +721,9 @@ void configureLayout() {
     volumeLabelX = volumeMinusX - 28;
     volumeY = 4;
 
-    appPrevButtonX = 82;
-    appNextButtonX = appPrevButtonX + APP_BUTTON_SIZE + APP_BUTTON_GAP;
-    appSettingsButtonX = appNextButtonX + APP_BUTTON_SIZE + APP_BUTTON_GAP;
+    appSettingsButtonX = rotateButtonX - APP_BUTTON_SIZE - 2;
+    appNextButtonX = appSettingsButtonX - APP_BUTTON_SIZE - 2;
+    appPrevButtonX = appNextButtonX - APP_BUTTON_SIZE - 2;
     appButtonY = 4;
   } else {
     headerHeight = 42;
@@ -756,9 +756,9 @@ void configureLayout() {
     volumeLabelX = volumeMinusX - 28;
     volumeY = 9;
 
-    appPrevButtonX = 122;
-    appNextButtonX = appPrevButtonX + APP_BUTTON_SIZE + APP_BUTTON_GAP;
-    appSettingsButtonX = appNextButtonX + APP_BUTTON_SIZE + APP_BUTTON_GAP;
+    appSettingsButtonX = rotateButtonX - APP_BUTTON_SIZE - 2;
+    appNextButtonX = appSettingsButtonX - APP_BUTTON_SIZE - 2;
+    appPrevButtonX = appNextButtonX - APP_BUTTON_SIZE - 2;
     appButtonY = 9;
   }
 

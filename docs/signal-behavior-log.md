@@ -40,6 +40,57 @@ User-visible behavior:
 Verdict:
 ```
 
+## 2026-05-24 - Peak-To-Peak Experiment
+
+Firmware: `0.4.20-peak2peak`
+
+Design:
+
+- The PulseSensor was kept in the same earlobe position during the recent
+  signal work, so this experiment targets small earlobe movement/pressure
+  changes rather than mixed body-position behavior.
+- Added `PEAK_TO_PEAK_EXPERIMENT`, enabled on this branch, to make the broader
+  path easy to disable if false positives appear.
+- Kept strict beats as the highest-confidence path.
+- Added `peakToPeakScore` from live range, detector amplitude, clipping
+  cleanliness, and beat-window state.
+- Let high-score peak-to-peak candidate beats help first acquisition or continue
+  acquisition after one strict beat, then accept them more liberally after lock
+  with a wider cadence window while rejecting short movement-blip intervals and
+  preserving plausible timing and clipping guardrails.
+- Serial telemetry now includes `p2p=...` and can report
+  `accept=peak2peak`.
+
+Hardware notes:
+
+```text
+Date/time: 2026-05-24 EDT
+Firmware: 0.4.20-peak2peak
+Commit: pending implementation commit
+Sensor body position: earlobe, same position as prior 0.4.19 tests
+Mount/contact method: same user earlobe placement as prior run; exact pressure
+  not recorded
+Condition: serial sanity from Codex side; user visual verdict still needed
+Duration: three short windows while tuning peak-to-peak gates
+Serial summary:
+  - Initial experiment showed `p2p` scoring live, often 7-10, but no
+    `accept=peak2peak`; the old cadence gate was still too timid.
+  - Wider 45% locked cadence gate produced `accept=peak2peak`, but could accept
+    short movement-blip intervals and pull IBI down too far.
+  - Tuned gate uses 35% / 180 ms tolerance plus a 70%-of-current-IBI floor.
+    This still produced `accept=peak2peak` during locked runs with plausible
+    IBI near the existing cadence, such as 954/966 ms after a stable roughly
+    900-960 ms locked run, and later 878/832/800/780 ms during another locked
+    run.
+  - Clipping remained 0 in the final tuned window.
+  - Lock still dropped on some later weak/short-interval sections; several of
+    those were strict-detector events rather than peak-to-peak events.
+User-visible behavior: not recorded by user yet
+Verdict: experiment candidate, not publish verdict. The p2p path is now active
+  and bounded, but real visual judgment on the CYD is still needed before main
+  merge.
+```
+
 ## 2026-05-24 - Foreground Timing Sanity
 
 Firmware under test: `0.4.19-peak-cadence`

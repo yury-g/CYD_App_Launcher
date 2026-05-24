@@ -25,7 +25,7 @@ codex/app4-pin-scanner-perf-safe-20260524
 Current firmware/UI code commit:
 
 ```text
-4e97afd Add tap reacquire and signal-first architecture note 20260524-133000-EDT
+82c9393 Add granular signal acquisition ladder 20260524-134500-EDT
 ```
 
 Current firmware version:

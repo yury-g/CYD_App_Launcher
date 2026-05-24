@@ -208,7 +208,7 @@ git log -1 --oneline
 The current firmware/UI code commit is:
 
 ```text
-4e97afd Add tap reacquire and signal-first architecture note 20260524-133000-EDT
+82c9393 Add granular signal acquisition ladder 20260524-134500-EDT
 ```
 
 3. Plug in one CYD and detect the serial port:

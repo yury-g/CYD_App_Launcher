@@ -4,7 +4,7 @@ Last updated: 2026-05-24 EDT
 
 This file is the first breadcrumb for continuing internal PulseSensor CYD dashboard development in a new Codex chat with no previous chat history.
 
-## Fresh Handoff: 2026-05-24 13:52 EDT
+## Fresh Handoff: 2026-05-24 15:00 EDT
 
 This top section supersedes older branch/path references below. Older notes are preserved as history.
 
@@ -23,19 +23,19 @@ codex/app4-pin-scanner-perf-safe-20260524
 Current firmware/UI code commit:
 
 ```text
-1460be0 Enlarge landscape Settings fallback text 20260524-140900-EDT
+887cf62 Add locked peak cadence beat recovery 20260524-150000-EDT
 ```
 
 Latest signal-behavior log commit:
 
 ```text
-8f341cd Record lock hold serial sanity 20260524-135300-EDT
+887cf62 Add locked peak cadence beat recovery 20260524-150000-EDT
 ```
 
 Current firmware version on the attached CYD:
 
 ```text
-0.4.18-settings-text
+0.4.19-peak-cadence
 ```
 
 Connected CYD used for the latest flash:
@@ -61,7 +61,7 @@ Build memory from PlatformIO:
 
 ```text
 RAM:   7.3% (23780 / 327680 bytes)
-Flash: 28.8% (377781 / 1310720 bytes)
+Flash: 28.8% (378073 / 1310720 bytes)
 ```
 
 Rollback anchors before lock-hold work:
@@ -91,8 +91,10 @@ Visual/UI status:
 - Tap-to-reacquire is available on the Pulse dashboard below the navigation/header for the case where a learner sees a good waveform but BPM/IBI/qualified-beat detection is stuck in false negatives.
 - `SIG GPIO35` bars now show a 12-step acquisition ladder before lock, and the acquisition harmony uses an 8-note rising palette.
 - The live waveform and `SIG GPIO35` panel now share the same state colors: yellow while acquiring, then the locked signal color after signal lock.
-- Lock retention now follows "acquire strictly, hold gently": four consecutive qualified beats are still required for acquisition, but an already-locked signal can survive up to two unqualified beat events inside a 2200 ms window. BPM/IBI still update only on qualified beats.
-- Expanded serial telemetry now includes live range, clipping score, qualified streak, unqualified streak, and lock-drop reason.
+- Lock retention now follows "acquire strictly, hold gently": four consecutive qualified beats are still required for acquisition, but an already-locked signal can survive up to two rejected beat events inside a 2200 ms window.
+- Locked beat detection now adds a peak/cadence recovery path for the user-observed earlobe case where slight movement distorts the valley while peaks remain visually stable. After lock, both strict and recovered beats must stay close to the current cadence before updating BPM/IBI.
+- Expanded serial telemetry now includes live range, clipping score, qualified streak, unqualified streak, beat accept reason, and lock-drop reason.
+- Serial sanity after flashing `0.4.19-peak-cadence` confirmed `accept=peak-cadence` events during locked runs with clipping at 0. One later window still showed a `grace expired` drop after two rejected events, so this is an upgrade candidate, not a final publish verdict.
 - Two 60-second earlobe serial sanity windows after flashing `0.4.17-lock-hold-grace` showed the lock-hold grace path active and bounded. Window 1 was 66.1% locked with `badStreak` max 2; window 2 was 94.2% locked with `badStreak` max 2. Details live in `docs/signal-behavior-log.md`.
 - Signal-first development guidance now lives in `docs/signal-first-architecture.md`.
 - Signal behavior lessons and upgrade/downgrade notes now live in `docs/signal-behavior-log.md`.

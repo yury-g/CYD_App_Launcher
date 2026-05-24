@@ -6,7 +6,7 @@ This repository branch is the working memory for internal PulseSensor CYD experi
 
 Quick start for future chats: read `START_HERE_NEXT_CHAT.md` first, then this file.
 
-## Fresh Handoff: 2026-05-24 13:42 EDT
+## Fresh Handoff: 2026-05-24 13:52 EDT
 
 This section supersedes older branch/path references below. Older notes remain as useful history.
 
@@ -25,24 +25,30 @@ codex/app4-pin-scanner-perf-safe-20260524
 Current firmware/UI code commit:
 
 ```text
-fb6279c Match waveform and SIG colors 20260524-140100-EDT
+a793756 Add lock hold grace for long pulse runs 20260524-141500-EDT
+```
+
+Latest signal-behavior log commit:
+
+```text
+8f341cd Record lock hold serial sanity 20260524-135300-EDT
 ```
 
 Current firmware version:
 
 ```text
-0.4.16-matched-sig-wave
+0.4.17-lock-hold-grace
 ```
 
 Latest hardware status:
 
 - Built with PlatformIO and flashed to `/dev/cu.usbserial-3120`.
 - Upload detected ESP32-D0WD-V3 MAC `f4:2d:c9:9d:af:cc`.
-- Serial sanity check after flash showed live raw `signal=...` lines.
+- Serial sanity checks after flash showed live raw `signal=...` lines with expanded lock-hold telemetry.
 - PlatformIO memory was `RAM 7.3%` and `Flash 28.8%`.
 - User confirmed the current UI looks great and is visually ready to publish back to `main`.
 
-Do not merge to `main` yet. Signal-performance code checks and one hardware serial timing pass have been done, but the user should still do a real finger-on-sensor visual sanity pass before any main merge or public release.
+Do not merge to `main` yet. Signal-performance code checks and serial sanity passes have been done, but the user should still do a real finger-on-sensor visual sanity pass before any main merge or public release.
 
 Performance priority:
 
@@ -50,6 +56,7 @@ Performance priority:
 - Display modes, app switching, App 4 Pin Scanner, Origin Story, and visual polish are second-class if they interfere with sensing.
 - Preserve `readPulseSensor()` as the first meaningful work in `loop()`.
 - If signal behavior still feels off on hardware, re-enable `PERF_DIAGNOSTICS`, compare serial loop/read/draw timing, and keep reducing display work before touching beat math.
+- Roll back the lock-hold experiment with branch/tag `backup/pre-lock-hold-grace-20260524` if the real CYD behavior feels worse.
 
 Commits to compare:
 
@@ -82,7 +89,11 @@ Current UI specifics:
 - Tap-to-reacquire is available on the Pulse dashboard below the navigation/header for the case where a learner sees a good waveform but BPM/IBI/qualified-beat detection is stuck in false negatives.
 - `SIG GPIO35` bars now show a 12-step acquisition ladder before lock, and the acquisition harmony uses an 8-note rising palette.
 - The live waveform and `SIG GPIO35` panel now share the same state colors: yellow while acquiring, then the locked signal color after signal lock.
+- Lock retention now follows "acquire strictly, hold gently": four consecutive qualified beats are still required for acquisition, but an already-locked signal can survive up to two unqualified beat events inside a 2200 ms window. BPM/IBI still update only on qualified beats.
+- Expanded serial telemetry now includes live range, clipping score, qualified streak, unqualified streak, and lock-drop reason.
+- Two 60-second serial sanity windows after flashing `0.4.17-lock-hold-grace` showed the lock-hold grace path active and bounded. Window 1 was 66.1% locked with `badStreak` max 2; window 2 was 94.2% locked with `badStreak` max 2. Details live in `docs/signal-behavior-log.md`.
 - Signal-first development guidance now lives in `docs/signal-first-architecture.md`.
+- Signal behavior lessons and upgrade/downgrade notes now live in `docs/signal-behavior-log.md`.
 
 ## Current App Shell Status
 

@@ -44,6 +44,20 @@ header_end = source.index("void drawAppNavControls()", header_start)
 header_body = source[header_start:header_end]
 if "drawVolumeControl();" in header_body:
     raise SystemExit("Pulse header still draws top-bar volume controls")
+if "drawHeaderVersionIdentity();" not in header_body:
+    raise SystemExit("Pulse header should show version/date identity on the first screen")
+if "void drawHeaderVersionIdentity() {" not in source:
+    raise SystemExit("Pulse header version/date helper is missing")
+header_identity_start = source.index("void drawHeaderVersionIdentity() {")
+header_identity_end = source.index("\n}", header_identity_start)
+header_identity_body = source[header_identity_start:header_identity_end]
+for token in [
+    '"PulseSensor.com"',
+    "tft.print(APP_VERSION);",
+    "tft.print(APP_FIRMWARE_DATE);",
+]:
+    if token not in header_identity_body:
+        raise SystemExit("Pulse first-screen header should show brand, version, and firmware date")
 
 settings_start = source.index("void drawSettingsScreen() {")
 settings_end = source.index("void drawSettingsRow", settings_start)

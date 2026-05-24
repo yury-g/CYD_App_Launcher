@@ -9,14 +9,14 @@ required = {
     "liveRange >= REARM_SIGNAL_RANGE && signalLooksCleanForAcquisition()": "detector re-arm should not run on clipped rail noise",
     "COACH_CLIPPED": "dashboard coach should have a clipped/adjust-sensor state",
     'return "ADJUST SENSOR";': "dashboard should tell the user to adjust the sensor when the ADC is railed",
-    '#define APP_VERSION "0.4.23-clip-guard"': "firmware version should identify the clipping guard fix",
+    '#define APP_VERSION "0.4.24-front-id"': "firmware version should identify the front-screen identity build",
 }
 
 missing = [message for token, message in required.items() if token not in source]
 
 platformio = Path("platformio.ini").read_text()
-if '-D APP_VERSION=\\"0.4.23-clip-guard-log\\"' not in platformio:
-    missing.append("diagnostic PlatformIO env should report the clipping guard logger version")
+if '-D APP_VERSION=\\"0.4.24-front-id-log\\"' not in platformio:
+    missing.append("diagnostic PlatformIO env should report the front-screen identity logger version")
 
 def function_body(name):
     start = source.index(f"\n{name} {{")

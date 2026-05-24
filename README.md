@@ -50,7 +50,7 @@ This is the current good development pause point for the app shell branch:
 
 ```text
 Branch:   codex/signal-core-polish-publish-prep-20260524
-Firmware: 0.4.23-clip-guard
+Firmware: 0.4.24-front-id
 ```
 
 - Preserved the known-good `0.4.21-signal-log` state with rollback branch/tag `backup/good-working-0.4.21-signal-log-20260524` and `good-working-0.4.21-signal-log-20260524` before cleanup.
@@ -63,9 +63,10 @@ Firmware: 0.4.23-clip-guard
 - Added balanced lock-retention grace: acquisition still needs four consecutive qualified beats, but once locked the dashboard tolerates brief movement/noise blips before clearing BPM/IBI.
 - Added locked-only peak/cadence beat recovery, then an enabled peak-to-peak experiment for the earlobe movement case: once lock is earned, beat events can survive valley distortion when cadence remains close to the last trusted IBI, while short movement-blip intervals are rejected.
 - Added raw signal logging diagnostics and an offline analyzer for the same-earlobe investigation. The latest 44.2 s capture accepted 47 firmware beats, found 47 independent raw peaks, and had matching median IBI/BPM (`918 ms` firmware vs `920 ms` independent), with zero short accepted IBIs below 700 ms.
-- Made raw CSV logging an internal diagnostic build mode: `pio run -e cyd` is the quieter release build, while `pio run -e cyd_diag` enables 50 Hz `rawDiag` rows and reports version `0.4.23-clip-guard-log`.
+- Made raw CSV logging an internal diagnostic build mode: `pio run -e cyd` is the quieter release build, while `pio run -e cyd_diag` enables 50 Hz `rawDiag` rows and reports version `0.4.24-front-id-log`.
 - Polished the single-file firmware without changing beat thresholds: dead top-bar volume/rotate code was removed, repeated app headers and Settings row visibility are shared, beat acceptance is grouped in a `BeatDecision` helper, and the Origin Story sprite is released on app exit/rotation to protect long-run heap behavior.
 - Added a clipping quality guard after hardware showed the ADC railing while the UI still displayed near-full acquisition bars. Clipped or motion-artifact input now forces acquisition quality and peak-to-peak score to zero, blocks detector re-arm, and shows `ADJUST SENSOR` instead of treating rail noise as progress.
+- Added first-screen version tracking: the Pulse dashboard header now shows `APP_VERSION` and `APP_FIRMWARE_DATE` directly under `PulseSensor.com`, and the guard script keeps that convention in future experiment branches.
 - Made long Settings values easier to read in horizontal display rotation by keeping them at the normal Settings text size on a second line; the tiny fallback remains available only for vertical rotation.
 - Added Settings-only controls for Volume, icon-only Rotation, Display, WiFi/Bluetooth placeholders, LED Control, LED swatches, About, Version, Firmware date, runtime memory used/free, and build memory.
 - Added four display modes under Settings `Display`: `M DARK`, `M LIGHT`, `C DARK`, and `C LIGHT`.

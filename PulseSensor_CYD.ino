@@ -125,7 +125,7 @@
 // ===== APP SHELL =====
 
 #ifndef APP_VERSION
-#define APP_VERSION "0.4.23-clip-guard"
+#define APP_VERSION "0.4.24-front-id"
 #endif
 #define APP_FIRMWARE_DATE "2026-05-24"
 #define APP_BUILD_RAM_USAGE "RAM 7.3%"
@@ -626,6 +626,7 @@ void drawActiveApp();
 void drawStaticScreen();
 void drawDashboardIfChanged();
 void drawHeader();
+void drawHeaderVersionIdentity();
 void drawAppFrameHeader(const char* title, const char* subtitle, uint16_t bg, uint16_t subtitleColor);
 void drawAppNavControls();
 void drawAppButton(int x, int y, const char* label, bool active);
@@ -1199,8 +1200,8 @@ void configureLayout() {
 
   if (portraitLayout) {
     headerHeight = 74;
-    heartCenterX = screenWidth / 2;
-    heartCenterY = 48;
+    heartCenterX = screenWidth - 32;
+    heartCenterY = 54;
 
     graphLeft = 8;
     graphTop = 82;
@@ -2150,11 +2151,24 @@ void drawHeader() {
   tft.drawFastHLine(0, headerHeight - 1, screenWidth, gridColor());
   beatHeartNeedsRedraw = true;
 
+  drawHeaderVersionIdentity();
+  drawAppNavControls();
+}
+
+void drawHeaderVersionIdentity() {
+  uint16_t bg = screenBgColor();
+  int brandX = 10;
+  int brandY = portraitLayout ? 38 : 4;
+
   tft.setTextSize(1);
   tft.setTextColor(textColor(), bg);
-  tft.setCursor(portraitLayout ? 52 : 10, portraitLayout ? 38 : 8);
+  tft.setCursor(brandX, brandY);
   tft.print("PulseSensor.com");
-  drawAppNavControls();
+  tft.setTextColor(displayValueTextColor(), bg);
+  tft.setCursor(brandX, brandY + 11);
+  tft.print(APP_VERSION);
+  tft.setCursor(brandX, brandY + 22);
+  tft.print(APP_FIRMWARE_DATE);
 }
 
 void drawAppFrameHeader(const char* title, const char* subtitle, uint16_t bg, uint16_t subtitleColor) {

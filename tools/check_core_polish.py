@@ -6,7 +6,7 @@ platformio = Path("platformio.ini").read_text()
 missing = []
 
 required_source = {
-    '#define APP_VERSION "0.4.23-clip-guard"': "release version should identify the clipping guard build",
+    '#define APP_VERSION "0.4.24-front-id"': "release version should identify the front-screen identity build",
     "#ifndef APP_VERSION": "diagnostic build should override the release version by build flag",
     "#define RAW_SIGNAL_DIAGNOSTICS 0": "release build should default raw diagnostics off",
     "#ifndef PERF_DIAGNOSTICS": "perf diagnostics should remain build-flag overrideable",
@@ -23,7 +23,7 @@ required_source = {
 required_platformio = {
     "[env:cyd]": "release PlatformIO environment is missing",
     "[env:cyd_diag]": "diagnostic PlatformIO environment is missing",
-    '-D APP_VERSION=\\"0.4.23-clip-guard-log\\"': "diagnostic build must set logging version",
+    '-D APP_VERSION=\\"0.4.24-front-id-log\\"': "diagnostic build must set logging version",
     "-D RAW_SIGNAL_DIAGNOSTICS=1": "diagnostic build must enable raw logging",
 }
 

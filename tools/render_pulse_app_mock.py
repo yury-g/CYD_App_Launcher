@@ -21,6 +21,8 @@ COLOR_RED_DARK = (96, 0, 0)
 TOOLBAR_BUTTON_WIDTH = 44
 TOOLBAR_BUTTON_HEIGHT = 28
 APP_BUTTON_GAP = 2
+APP_VERSION = "0.4.24-front-id"
+APP_FIRMWARE_DATE = "2026-05-24"
 
 try:
     FONT_1 = ImageFont.truetype("/System/Library/Fonts/Menlo.ttc", 10)
@@ -56,6 +58,12 @@ def draw_nav(draw, width, y):
     draw_button(draw, next_x, y, TOOLBAR_BUTTON_WIDTH, ">")
     draw_button(draw, settings_x, y, TOOLBAR_BUTTON_WIDTH, "*")
     draw_button(draw, rotate_x, y, TOOLBAR_BUTTON_WIDTH, "R")
+
+
+def draw_header_identity(draw, x, y):
+    draw.text((x, y), "PulseSensor.com", font=FONT_1, fill=COLOR_TEXT)
+    draw.text((x, y + 11), APP_VERSION, font=FONT_1, fill=COLOR_SIGNAL_YELLOW)
+    draw.text((x, y + 22), APP_FIRMWARE_DATE, font=FONT_1, fill=COLOR_SIGNAL_YELLOW)
 
 
 def draw_heart(draw, cx, cy, size=13):
@@ -117,22 +125,19 @@ def render(width, height, locked, filename):
         graph = (8, 82, width - 16, 146)
         panels = [(8, 240, 68, 72), (84, 240, 68, 72), (160, 240, 72, 72)]
         nav_y = 4
-        heart = (24, 52)
-        title_xy = (52, 38)
-        coach_xy = (62, 58)
+        heart = (width - 32, 54)
+        title_xy = (10, 38)
     else:
         header_h = 42
         graph = (8, 48, width - 16, 112)
         panels = [(8, 170, 102, 62), (118, 170, 102, 62), (228, 170, 84, 62)]
         nav_y = 7
         heart = (112, 22)
-        title_xy = (10, 8)
-        coach_xy = (10, 25)
+        title_xy = (10, 4)
 
     draw.rectangle((0, 0, width, header_h), fill=COLOR_BG)
     draw.line((0, header_h - 1, width, header_h - 1), fill=COLOR_GRID)
-    draw.text(title_xy, "PulseSensor.com", font=FONT_1, fill=COLOR_TEXT)
-    draw.text(coach_xy, "QUALIFIED BEAT" if locked else "GOOD WAVE", font=FONT_1, fill=COLOR_SIGNAL_YELLOW if not locked else COLOR_LOCK_GREEN)
+    draw_header_identity(draw, *title_xy)
     draw_heart(draw, *heart)
     draw_nav(draw, width, nav_y)
 

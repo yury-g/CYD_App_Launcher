@@ -23,19 +23,19 @@ codex/signal-core-polish-publish-prep-20260524
 Current firmware/UI code commit:
 
 ```text
-HEAD Close failed signal core experiment 20260524
+HEAD Add first screen version identity 20260524
 ```
 
 Latest signal-behavior log commit:
 
 ```text
-HEAD Close failed signal core experiment 20260524
+HEAD Add first screen version identity 20260524
 ```
 
 Current firmware version on the attached CYD:
 
 ```text
-0.4.23-clip-guard
+0.4.24-front-id
 ```
 
 Branch verdict:
@@ -49,6 +49,9 @@ Branch verdict:
 - `0.4.23-clip-guard` made that failure honest by showing `quality=0`,
   `p2p=0`, no detector re-arm spam, and no accepted BPM/IBI while the ADC was
   railed. It did not solve the underlying rail-to-rail input.
+- `0.4.24-front-id` keeps the app-shell/signal branch behavior and adds the
+  visible version/date identity directly under `PulseSensor.com` on the first
+  Pulse dashboard screen, with a guard so future experiments keep it visible.
 - Next baseline check: flash current internal `main` and compare. If `main`
   also rails, investigate sensor pressure/placement, power/ground, wiring,
   GPIO35 behavior, and alternate signal pins before changing beat math.

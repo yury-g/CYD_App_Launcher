@@ -10,7 +10,7 @@ required_source = {
     "#define RAW_SIGNAL_DIAGNOSTICS 0": "release build must keep raw diagnostics off by default",
     "#define RAW_SIGNAL_DIAGNOSTICS_MS 20": "raw diagnostics should stream at 50 Hz",
     "#ifndef APP_VERSION": "release firmware version must be overrideable by diagnostic build flags",
-    '#define APP_VERSION "0.4.23-clip-guard"': "release firmware version must identify the clipping guard build",
+    '#define APP_VERSION "0.4.24-front-id"': "release firmware version must identify the front-screen identity build",
     "void printRawSignalDiagnostics": "firmware must have a raw diagnostic printer",
     "rawDiag,ms,signal,amp,bpm,ibi,locked,quality,p2p,range,clip,inside,beat,accept,drop,qStreak,badStreak": "CSV header is missing required fields",
     "rawDiagnosticsBeatPending": "diagnostics must mark firmware beat events",
@@ -26,7 +26,7 @@ required_source = {
 
 required_platformio = {
     "[env:cyd_diag]": "diagnostic PlatformIO environment is missing",
-    '-D APP_VERSION=\\"0.4.23-clip-guard-log\\"': "diagnostic build must set the logging firmware version",
+    '-D APP_VERSION=\\"0.4.24-front-id-log\\"': "diagnostic build must set the logging firmware version",
     "-D RAW_SIGNAL_DIAGNOSTICS=1": "diagnostic build must enable raw CSV streaming",
 }
 

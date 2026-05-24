@@ -54,6 +54,20 @@ Next baseline:
   pressure and placement, power/ground, connector wiring, GPIO35 behavior, and
   alternate known signal pins such as GPIO27.
 
+## 2026-05-24 - First-Screen Version Identity
+
+Firmware: `0.4.24-front-id` release, `0.4.24-front-id-log` diagnostic
+
+Design:
+
+- The Pulse dashboard now shows `APP_VERSION` and `APP_FIRMWARE_DATE` directly
+  under `PulseSensor.com` on the first screen.
+- `tools/check_app_shell.py` guards this convention so future experiment
+  branches keep the version/date visible during hardware testing.
+- This is a tracking change only. It does not change PulseSensor sampling,
+  clipping guards, acquisition thresholds, BPM/IBI qualification, or diagnostic
+  serial fields.
+
 ## Test Record Template
 
 Use this shape for future hardware notes:

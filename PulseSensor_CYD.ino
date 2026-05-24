@@ -78,7 +78,7 @@
 #define APP3_CRAWL_FANFARE_STEP_COUNT 42
 #define APP3_CRAWL_FANFARE_LOOP_START_STEP 0
 #define APP3_CRAWL_FANFARE_LOOP_MS 15000
-#define APP3_ORIGIN_CRAWL_LINE_COUNT 54
+#define APP3_ORIGIN_CRAWL_LINE_COUNT 68
 #define APP3_CRAWL_FRAME_MS 72
 #define APP3_CRAWL_TEXT_SIZE 2
 #define HEART_MIN_SIZE 8
@@ -91,7 +91,7 @@
 
 // ===== APP SHELL =====
 
-#define APP_VERSION "0.4.5-origin-visible"
+#define APP_VERSION "0.4.6-origin-oshw"
 #define APP_FIRMWARE_DATE "2026-05-24"
 #define TOOLBAR_BUTTON_WIDTH 44
 #define TOOLBAR_BUTTON_HEIGHT 28
@@ -231,6 +231,20 @@ const char* const APP3_ORIGIN_CRAWL_LINES[APP3_ORIGIN_CRAWL_LINE_COUNT] = {
   "PulseSensor",
   "and teaching it",
   "in public.",
+  "",
+  "OSHWA certified:",
+  "Pulse Sensor Amped",
+  "UID US000075",
+  "August 30, 2017",
+  "",
+  "GitHub repo:",
+  "github.com/",
+  "WorldFamousElectronics/",
+  "PulseSensor_Amped_Arduino",
+  "",
+  "Repo likes (stars):",
+  "249 stars, 207 forks",
+  "as of May 24, 2026",
   "",
   "The sensor shines",
   "green light into",

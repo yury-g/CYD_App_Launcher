@@ -32,12 +32,12 @@ The current branch wraps the one-screen Pulse dashboard in a small app shell:
 
 - App 1: Pulse dashboard.
 - App 2: bouncing `your app here`.
-- App 3: bouncing `your app here too`.
+- App 3: `Origin Story` crawl with programmatic fanfare.
 - Settings: Volume, Rotation, Display, WiFi placeholder, Bluetooth placeholder, LED Control, LED color swatches, About, Version, and Firmware date.
 - Volume is Settings-only and no longer appears in the top toolbar.
 - Rotation is Settings-only and no longer appears as a persistent top-toolbar button.
 - App navigation remains persistent as a three-button previous/next/Settings nav bar, with mode-aware outlines/fills and no top-toolbar rotate button.
-- Firmware version for this branch: `0.4.5-origin-visible`.
+- Firmware version for this branch: `0.4.6-origin-oshw`.
 - Firmware date shown in Settings: `2026-05-24`.
 - Guard script: `python3 tools/check_app_shell.py`.
 
@@ -54,6 +54,8 @@ The current branch wraps the one-screen Pulse dashboard in a small app shell:
 2026-05-24 09:22:21 EDT Origin Story hardware pass: user reported the scrolling text was much too small and the page flickered heavily. The crawl now uses 2x text with shorter CYD-width lines and renders the animated content area into a `TFT_eSprite`, then pushes the composed sprite to the display to avoid direct clear/redraw flicker. This is flashed for hardware review.
 
 2026-05-24 09:25:59 EDT Origin Story blank-screen fix: user reported the Origin Story page became totally black. Likely causes were the first large line starting below the visible content area and/or full-size sprite allocation failure. Firmware now uses an 8-bit sprite, starts text visibly on the first frame, and falls back to direct large-text rendering if sprite allocation fails.
+
+2026-05-24 09:30:51 EDT Origin Story provenance pass: the crawl now includes Pulse Sensor Amped OSHWA registration `US000075`, certification date August 30, 2017, the `WorldFamousElectronics/PulseSensor_Amped_Arduino` GitHub repo, and a dated repo-love note showing `249` stars and `207` forks as of May 24, 2026.
 
 2026-05-24 continuation: the compact toolbar hit testing was tuned for real CYD touch ergonomics. App nav and rotate still look grouped, but their padded tap regions are now split at the midpoint between adjacent button centers, preventing the previous overlap where taps near rotate could be claimed by Settings or taps near nav boundaries could choose the earlier button. The same midpoint approach is used for the Settings color swatches.
 

@@ -10,6 +10,41 @@ Quick start for future chats: read `START_HERE_NEXT_CHAT.md` first, then this fi
 
 This section supersedes older branch/path references below. Older notes remain as useful history.
 
+## Latest Stopping Point: 2026-05-24 No More Development Today
+
+The user wants to stop development here and resume from the internal GitHub repo
+later.
+
+Next time, point the AI at:
+
+```text
+https://github.com/yury-g/CYD_App_Launcher
+```
+
+Then ask it to flash the connected CYD with the current favorite build already
+on the device:
+
+```text
+Firmware: 0.4.24-front-id
+Commit:   d04c21a Add first screen version identity 20260524
+Ref:      good-working-0.4.24-front-id-20260524
+Branch:   main
+```
+
+No more firmware/UI development is requested before that first flash/sanity
+check.
+
+Latest hardware/user note:
+
+- The apparent signal degradation/no-lock edge case cleared without a code
+  change once earlobe placement improved.
+- The user reported the current device state was "working like a champ" and
+  suspected the earlier issue was user placement.
+- Keep `0.4.24-front-id` as the preferred first flash and comparison point.
+- Keep the regression research notes for later: if the symptom returns, capture
+  serial evidence first and compare placement/wiring/GPIO35/GPIO27 before
+  changing beat math.
+
 Current local path:
 
 ```text
@@ -34,10 +69,10 @@ Latest signal-behavior log commit:
 HEAD Add first screen version identity 20260524
 ```
 
-Current firmware version:
+Current firmware version on the attached CYD at the stopping point:
 
 ```text
-0.4.25-stable-wave
+0.4.24-front-id
 ```
 
 Latest hardware status:
@@ -49,7 +84,9 @@ Latest hardware status:
 - `0.4.25-stable-wave` keeps the same signal behavior and adds `APP_VERSION` plus `APP_FIRMWARE_DATE` directly under `PulseSensor.com` on the first Pulse dashboard screen for fast hardware/version tracking.
 - `0.4.25-stable-wave` stabilizes waveform drawing with a fixed ADC viewport and removes beat-effect circles from the raw trace. BPM/IBI qualification, acquisition scoring, clipping guards, and diagnostics still use the live rolling range.
 - Hardware comparison note: after the purple signal wire was re-soldered, the user liked `0.4.24-front-id` best so far with earlobe placement. It worked well and made the algorithm/BPM/IBI behavior visible once beats were detected, so keep it as an important A/B reference against later waveform experiments.
-- Next action is to flash current internal `main` and compare. If `main` also rails, investigate physical/electrical causes before touching beat math.
+- Next action is to flash current internal `main` (`0.4.24-front-id`) and
+  compare. If it fails again, investigate physical/electrical causes before
+  touching beat math.
 - Built with PlatformIO in release env `cyd` and diagnostic env `cyd_diag`.
 - Release build defaults raw CSV diagnostics off and reports `0.4.25-stable-wave`; diagnostic build enables 50 Hz `rawDiag` CSV and reports `0.4.25-stable-wave-log`.
 - Upload target remains `/dev/cu.usbserial-3120`; latest known attached CYD MAC is `f4:2d:c9:9d:af:cc`.

@@ -8,6 +8,43 @@ This file is the first breadcrumb for continuing internal PulseSensor CYD dashbo
 
 This top section supersedes older branch/path references below. Older notes are preserved as history.
 
+## Latest Stopping Point: 2026-05-24 No More Development Today
+
+The user wants to stop development here and resume from the internal GitHub
+repo later.
+
+Next time, point the AI at:
+
+```text
+https://github.com/yury-g/CYD_App_Launcher
+```
+
+Then ask it to flash the connected CYD with the current favorite build already
+on the device:
+
+```text
+Firmware: 0.4.24-front-id
+Commit:   d04c21a Add first screen version identity 20260524
+Ref:      good-working-0.4.24-front-id-20260524
+Branch:   main
+```
+
+Do not start new signal math or UI development first. Flash/check the current
+favorite state, then do a stable earlobe placement sanity pass.
+
+Latest user-visible hardware note:
+
+- The apparent long-run signal regression cleared without any code change after
+  the user corrected earlobe placement.
+- The user reported it was "working like a champ" and suspected the earlier
+  degradation/no-lock behavior was a placement mistake.
+- Treat the earlier 2026-05-24 regression report as unresolved research, not as
+  proof that the current firmware is bad.
+- If it comes back, audit/capture before changing code: compare serial
+  `range`, `clip`, `p2p`, `qStreak`, `badStreak`, `accept`, and `drop`; then use
+  App 4 Pin Scanner to compare GPIO35 against GPIO27 if wiring/contact is in
+  doubt.
+
 Current local repo path:
 
 ```text
@@ -32,10 +69,10 @@ Latest signal-behavior log commit:
 HEAD Add first screen version identity 20260524
 ```
 
-Current firmware version on the attached CYD:
+Current firmware version on the attached CYD at the stopping point:
 
 ```text
-0.4.25-stable-wave
+0.4.24-front-id
 ```
 
 Branch verdict:
@@ -60,9 +97,10 @@ Branch verdict:
   liked `0.4.24-front-id` best so far with earlobe placement because it worked
   well and made the algorithm/BPM/IBI behavior visible once beats were detected.
   Keep it as an important A/B reference against `0.4.25-stable-wave`.
-- Next baseline check: flash current internal `main` and compare. If `main`
-  also rails, investigate sensor pressure/placement, power/ground, wiring,
-  GPIO35 behavior, and alternate signal pins before changing beat math.
+- Next baseline check: flash current internal `main` (`0.4.24-front-id`) and
+  compare. If it fails again, investigate sensor pressure/placement,
+  power/ground, wiring, GPIO35 behavior, and alternate signal pins before
+  changing beat math.
 
 Connected CYD used for the latest flash:
 

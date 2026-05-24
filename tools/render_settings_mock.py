@@ -17,8 +17,8 @@ COLOR_SIGNAL_YELLOW = (255, 255, 144)
 TOOLBAR_BUTTON_WIDTH = 44
 TOOLBAR_BUTTON_HEIGHT = 28
 APP_BUTTON_GAP = 2
-SETTINGS_ROW_H = 40
-SETTINGS_ROW_COUNT = 9
+SETTINGS_ROW_H = 32
+SETTINGS_ROW_COUNT = 11
 
 try:
     FONT_1 = ImageFont.truetype("/System/Library/Fonts/Menlo.ttc", 10)
@@ -41,15 +41,24 @@ def draw_button(draw, x, y, w, label, active=False):
     draw_centered(draw, label, x, y + 4, w, FONT_2, COLOR_TEXT)
 
 
+def draw_rotate_icon(draw, x, y, w):
+    cx = x + w // 2
+    cy = y + TOOLBAR_BUTTON_HEIGHT // 2
+    box = (cx - 10, cy - 10, cx + 10, cy + 10)
+    draw.arc(box, 35, 315, fill=COLOR_TEXT, width=2)
+    draw.line((cx + 8, cy - 10, cx + 15, cy - 10), fill=COLOR_TEXT, width=2)
+    draw.line((cx + 15, cy - 10, cx + 15, cy - 3), fill=COLOR_TEXT, width=2)
+    draw.line((cx - 8, cy + 10, cx - 15, cy + 10), fill=COLOR_TEXT, width=2)
+    draw.line((cx - 15, cy + 10, cx - 15, cy + 3), fill=COLOR_TEXT, width=2)
+
+
 def draw_nav(draw, width, y, active_settings=True):
-    rotate_x = width - TOOLBAR_BUTTON_WIDTH - 4
-    settings_x = rotate_x - TOOLBAR_BUTTON_WIDTH - APP_BUTTON_GAP
+    settings_x = width - TOOLBAR_BUTTON_WIDTH - 4
     next_x = settings_x - TOOLBAR_BUTTON_WIDTH - APP_BUTTON_GAP
     prev_x = next_x - TOOLBAR_BUTTON_WIDTH - APP_BUTTON_GAP
     draw_button(draw, prev_x, y, TOOLBAR_BUTTON_WIDTH, "<")
     draw_button(draw, next_x, y, TOOLBAR_BUTTON_WIDTH, ">")
     draw_button(draw, settings_x, y, TOOLBAR_BUTTON_WIDTH, "*", active_settings)
-    draw_button(draw, rotate_x, y, TOOLBAR_BUTTON_WIDTH, "R")
 
 
 def row_screen_y(header_h, scroll_y, row_index):
@@ -58,11 +67,11 @@ def row_screen_y(header_h, scroll_y, row_index):
 
 def draw_row(draw, width, y, label, value):
     index = getattr(draw_row, "index", 0)
-    bg = COLOR_SIGNAL_YELLOW if index % 2 == 0 else (0, 255, 0)
+    bg = COLOR_BG
     draw.rectangle((0, y, width, y + SETTINGS_ROW_H), fill=bg)
-    draw.line((0, y + SETTINGS_ROW_H - 1, width, y + SETTINGS_ROW_H - 1), fill=COLOR_BG)
-    draw.text((10, y + 0), label, font=FONT_2, fill=COLOR_BG)
-    draw.text((10, y + 21), value, font=FONT_2, fill=COLOR_BG)
+    draw.line((0, y + SETTINGS_ROW_H - 1, width, y + SETTINGS_ROW_H - 1), fill=COLOR_GRID)
+    draw.text((10, y + 4), label, font=FONT_1, fill=COLOR_TEXT)
+    draw.text((10, y + 18), value, font=FONT_1, fill=COLOR_SIGNAL_YELLOW)
 
 
 def render(width, height, scroll_y, filename):
@@ -94,14 +103,16 @@ def render(width, height, scroll_y, filename):
 
     rows = [
         ("Volume", "1/10"),
-        ("Rotation", "rot 1"),
+        ("Rotation", "screen 1"),
+        ("Display", "C DARK"),
         ("WiFi", "setup later"),
         ("Bluetooth", "setup later"),
         ("LED Control", "beat pulse"),
         ("Color", "tap"),
         ("About", "PulseSensor CYD"),
-        ("Version", "0.3.0-app-shell"),
+        ("Version", "0.4.10-perf-safe-pin-scanner"),
         ("Firmware", "2026-05-24"),
+        ("Memory", "used 90K free 238K 72%"),
     ]
 
     for index, (label, value) in enumerate(rows):
@@ -110,15 +121,18 @@ def render(width, height, scroll_y, filename):
             continue
         draw_row.index = index
         draw_row(draw, width, y, label, value)
-        button_y = y + 8
+        button_y = y + 2
         if index == 0:
             draw_button(draw, settings_vol_minus_x, button_y, TOOLBAR_BUTTON_WIDTH, "-")
             draw_button(draw, settings_vol_plus_x, button_y, TOOLBAR_BUTTON_WIDTH, "+")
         elif index == 1:
-            draw_button(draw, settings_rotate_x, button_y, 86, "ROT")
-        elif index == 4:
-            draw_button(draw, settings_led_x, button_y, 86, "BEAT", True)
+            draw_button(draw, settings_rotate_x, button_y, 86, "")
+            draw_rotate_icon(draw, settings_rotate_x, button_y, 86)
+        elif index == 2:
+            draw_button(draw, settings_rotate_x, button_y, 90, "C DARK", True)
         elif index == 5:
+            draw_button(draw, settings_led_x, button_y, 86, "BEAT", True)
+        elif index == 6:
             for x, color, active in [
                 (swatch_red_x, COLOR_RED, True),
                 (swatch_yellow_x, COLOR_SIGNAL_YELLOW, False),
@@ -141,8 +155,8 @@ def render(width, height, scroll_y, filename):
 
 
 render(320, 240, 0, "settings-landscape-top.png")
-render(320, 240, 120, "settings-landscape-middle.png")
-render(320, 240, 199, "settings-landscape-bottom.png")
+render(320, 240, 96, "settings-landscape-middle.png")
+render(320, 240, 191, "settings-landscape-bottom.png")
 render(240, 320, 0, "settings-portrait-top.png")
-render(240, 320, 80, "settings-portrait-middle.png")
-render(240, 320, 151, "settings-portrait-bottom.png")
+render(240, 320, 64, "settings-portrait-middle.png")
+render(240, 320, 143, "settings-portrait-bottom.png")

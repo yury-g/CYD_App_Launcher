@@ -1,6 +1,7 @@
 from pathlib import Path
 
 source = Path("PulseSensor_CYD.ino").read_text()
+settings_mock = Path("tools/render_settings_mock.py").read_text()
 
 required_tokens = [
     "APP_VERSION",
@@ -14,7 +15,10 @@ required_tokens = [
     "your app here",
     "APP_PLACEHOLDER_1",
     "APP_PLACEHOLDER_2",
+    "APP_PIN_SCANNER",
     "APP_SETTINGS",
+    "Pin Scanner",
+    "Memory",
     "DISPLAY_MONO_DARK",
     "DISPLAY_MONO_LIGHT",
     "DISPLAY_COLOR_DARK",
@@ -42,6 +46,18 @@ if "APP_FIRMWARE_DATE" not in settings_body:
     raise SystemExit("Settings screen is missing firmware date")
 if '"Settings "' not in settings_body:
     raise SystemExit("Settings title is missing firmware date")
+if '"Memory"' not in settings_body:
+    raise SystemExit("Settings screen is missing the memory row")
+if "ESP.getFreeHeap()" not in settings_body or "ESP.getHeapSize()" not in settings_body:
+    raise SystemExit("Settings memory row must show heap size and percentage")
+if "usedHeap" not in settings_body or '"used %luK free %luK %u%%"' not in settings_body:
+    raise SystemExit("Settings memory row must show used memory and free memory")
+if '"rot %u"' in settings_body:
+    raise SystemExit("Settings rotation value should not use ROT text")
+if 'drawSettingsButton(settingsRotateX, rowY + 2, 86, "", false);' not in settings_body:
+    raise SystemExit("Settings rotation control should be icon-only")
+if '"ROT"' in settings_mock:
+    raise SystemExit("Settings mock still renders ROT text instead of the rotation icon")
 
 read_touch_start = source.index("void readTouchControls() {")
 read_touch_end = source.index("void mapTouchPoint", read_touch_start)
@@ -57,12 +73,15 @@ loop_body = source[loop_start:loop_end]
 first_read = loop_body.find("readPulseSensor();")
 if first_read < 0:
     raise SystemExit("Pulse loop no longer samples PulseSensor")
+if "if (currentApp != APP_PIN_SCANNER) readPulseSensor();" in loop_body:
+    raise SystemExit("PulseSensor sampling must not pause while App 4 is open")
 for token in [
     "readTouchControls();",
     "updateLED();",
     "updateBeatChime();",
     "updateSignalHarmony();",
     "updateApp3CrawlFanfare();",
+    "updateActivePinScannerReading();",
 ]:
     token_pos = loop_body.find(token)
     if token_pos >= 0 and token_pos < first_read:
@@ -102,7 +121,9 @@ required_large_controls = {
     "#define TOOLBAR_BUTTON_HEIGHT 28": "toolbar buttons are not one-quarter taller",
     "#define APP_BUTTON_WIDTH TOOLBAR_BUTTON_WIDTH": "app nav width does not match toolbar width",
     "#define APP_BUTTON_HEIGHT TOOLBAR_BUTTON_HEIGHT": "app nav height does not match toolbar height",
-    "#define SETTINGS_TEXT_SIZE 2": "Settings screen text is not enlarged",
+    "#define SETTINGS_TEXT_SIZE 1": "Settings screen text is not one size smaller",
+    "#define SETTINGS_ROW_H 32": "Settings rows are not compact enough for the smaller font",
+    "#define SETTINGS_ROW_COUNT 11": "Settings screen is missing the added Memory row",
     "settingsScrollY": "Settings screen is missing scroll state",
     "handleSettingsScrollTouch": "Settings screen is missing scroll touch handling",
     "drawSettingsScrollControls": "Settings screen is missing large scroll controls",
@@ -143,10 +164,49 @@ required_large_controls = {
     "drawApp3CrawlLinePerspective": "Origin Story crawl is missing perspective fade/shrink rendering",
     "APP3_CRAWL_HORIZON_Y": "Origin Story crawl is missing a horizontal vanishing point",
     "APP3_CRAWL_MIN_TEXT_SIZE": "Origin Story crawl cannot shrink toward the horizon",
+    "#define PIN_SCANNER_PIN_COUNT 4": "App 4 should list GPIO35, GPIO22, GPIO21, and GPIO27",
+    "#define PIN_SCANNER_ADC_MAX_VALUE 1023": "App 4 scanner should keep the PulseSensor 10-bit ADC scale",
+    "#define PIN_SCANNER_READ_MS": "App 4 scanner read rate limit is missing",
+    "ScannerPin scannerPins[]": "App 4 pin scanner data model is missing",
+    "scannerActiveIndex = -1": "App 4 scanner should start with no active pin selected",
+    "handlePinScannerTouch": "App 4 scanner should let one pin be selected at a time",
+    "setupPinScanner": "App 4 pin scanner setup is missing",
+    "updateActivePinScannerReading": "App 4 pin scanner should update only the selected pin",
+    "isPinScannerAdcCapable": "App 4 scanner should guard non-ADC pins before reading",
+    "pinScannerStatusText": "App 4 scanner should explain inactive and non-ADC pin states",
+    "drawApp4PinScanner": "App 4 pin scanner renderer is missing",
+    "drawPinScannerRow": "App 4 pin scanner row renderer is missing",
+    "PIN_SCANNER_DRAW_MS": "App 4 scanner draw rate limit is missing",
 }
 for token, message in required_large_controls.items():
     if token not in source:
         raise SystemExit(message)
+
+app_order_start = source.index("enum AppId {")
+app_order_end = source.index("};", app_order_start)
+app_order_body = source[app_order_start:app_order_end]
+app_order = [
+    "APP_PULSE",
+    "APP_SETTINGS",
+    "APP_PIN_SCANNER",
+    "APP_PLACEHOLDER_1",
+    "APP_PLACEHOLDER_2",
+]
+last_pos = -1
+for app_name in app_order:
+    app_pos = app_order_body.find(app_name)
+    if app_pos < 0 or app_pos < last_pos:
+        raise SystemExit("App order should be Pulse, Settings, Pin Scanner, your-app-here, Origin Story")
+    last_pos = app_pos
+
+next_fn_start = source.index("void nextApp() {")
+next_fn_end = source.index("void previousApp()", next_fn_start)
+next_fn_body = source[next_fn_start:next_fn_end]
+previous_fn_start = source.index("void previousApp() {")
+previous_fn_end = source.index("void rotateScreen()", previous_fn_start)
+previous_fn_body = source[previous_fn_start:previous_fn_end]
+if "currentApp == APP_SETTINGS ? APP_PULSE" in next_fn_body + previous_fn_body:
+    raise SystemExit("Settings should be in the app sequence, not skipped by next/previous")
 
 for fn_name in [
     "void drawHeader() {",
@@ -192,6 +252,36 @@ if "bool drawInactiveSegments = shouldDrawInactiveQualitySegments();" not in qua
     raise SystemExit("SIG GPIO quality bars are not checking whether inactive segments should draw")
 if "else if (drawInactiveSegments)" not in quality_body:
     raise SystemExit("SIG GPIO quality bars should skip inactive segments when monochrome modes are active")
+
+scanner_start = source.index("ScannerPin scannerPins[] = {")
+scanner_end = source.index("};", scanner_start)
+scanner_body = source[scanner_start:scanner_end]
+for required_pin in ['"P3  IO35", 35', '"IO22", 22', '"BL  IO21", 21', '"CN1 IO27", 27']:
+    if required_pin not in scanner_body:
+        raise SystemExit(f"App 4 pin scanner is missing external connector target: {required_pin}")
+for unsafe_pin in ['"IO34"', '"IO36"', '"IO39"', '"TOUCH"', '"MISO"', '"MOSI"', '"SCLK"', '"CS"']:
+    if unsafe_pin in scanner_body:
+        raise SystemExit(f"App 4 pin scanner includes unsafe integrated-app scan target: {unsafe_pin}")
+
+active_update_start = source.index("void updateActivePinScannerReading() {")
+active_update_end = source.index("const char* pinScannerStatusText", active_update_start)
+active_update_body = source[active_update_start:active_update_end]
+if "if (currentApp != APP_PIN_SCANNER) return;" not in active_update_body:
+    raise SystemExit("App 4 scanner reads must be idle unless App 4 is visible")
+if "scannerActiveIndex < 0" not in active_update_body:
+    raise SystemExit("App 4 scanner must start idle until a single pin is selected")
+if "isPinScannerAdcCapable(scannerPins[scannerActiveIndex].pin)" not in active_update_body:
+    raise SystemExit("App 4 scanner does not guard analogRead with ADC capability")
+if "analogReadResolution(12)" in active_update_body or "analogReadResolution(12)" in source:
+    raise SystemExit("App 4 scanner should not change away from the PulseSensor 10-bit ADC resolution")
+if "delayMicroseconds" in active_update_body or "delay(" in active_update_body:
+    raise SystemExit("App 4 scanner reads should not add blocking delays")
+
+app4_branch_start = source.index("} else if (currentApp == APP_PIN_SCANNER) {")
+app4_branch_end = source.index("\n  }", app4_branch_start)
+app4_branch_body = source[app4_branch_start:app4_branch_end]
+if "updateActivePinScannerReading();" not in app4_branch_body or "drawApp4PinScanner();" not in app4_branch_body:
+    raise SystemExit("App 4 should update and render only in its own app branch")
 
 app3_branch_start = source.index("} else if (currentApp == APP_PLACEHOLDER_2) {")
 app3_branch_end = source.index("\n  }", app3_branch_start)

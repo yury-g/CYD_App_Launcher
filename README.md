@@ -49,14 +49,16 @@ Use this section as the quick human-readable project log. See [CHANGELOG.md](CHA
 This is the current good development pause point for the app shell branch:
 
 ```text
-Branch: codex/monochrome-ui-treatment-20260524
-Head:   af2a5c2 Add screenshot contact sheet
+Branch:   codex/app4-pin-scanner-perf-safe-20260524
+Firmware: 0.4.10-perf-safe-pin-scanner
 ```
 
-- Added a compact app shell around the Pulse dashboard: App 1 is the live Pulse dashboard, App 2 is a placeholder, and App 3 is `Origin Story`.
-- Added Settings-only controls for Volume, Rotation, Display, WiFi/Bluetooth placeholders, LED Control, LED swatches, About, Version, and Firmware date.
+- Added a compact app shell around the Pulse dashboard: the screen order is Pulse dashboard, Settings, App 4 `Pin Scanner`, `Your App Here`, then `Origin Story` last.
+- Added a manual App 4 `Pin Scanner` for GPIO35, GPIO22, GPIO21, and GPIO27. It starts idle, scans only one tapped row at a time, guards non-ADC pins, and keeps `readPulseSensor()` first in the main loop.
+- Added Settings-only controls for Volume, icon-only Rotation, Display, WiFi/Bluetooth placeholders, LED Control, LED swatches, About, Version, Firmware date, and memory used/free.
 - Added four display modes under Settings `Display`: `M DARK`, `M LIGHT`, `C DARK`, and `C LIGHT`.
-- Added high-contrast Settings rows, larger touch targets, render-preview tools, and the current screenshot sets for the new colors and Settings screen.
+- Reduced Settings row text one size so more rows fit before scrolling; the Memory row shows used heap plus free heap by size and percentage.
+- Added high-contrast mode-aware screens, larger touch targets, render-preview tools, and the current screenshot sets for the new colors and Settings screen.
 - Added the `Origin Story` starfield crawl and programmatic fanfare. The current crawl words are placeholder copy for a later writing pass.
 
 ### v1.2.0 — 2026-05-15
@@ -90,7 +92,7 @@ Head:   af2a5c2 Add screenshot contact sheet
 
 ## Current App Shell Development Preview
 
-This branch is the current app-shell development pause point on `codex/monochrome-ui-treatment-20260524`, branched from `codex/settings-app-shell-20260523`. It keeps the Pulse dashboard as App 1, adds placeholder App 2 plus the `Origin Story` App 3 crawl, and moves settings into a dedicated scrollable Settings screen with larger finger-friendly controls.
+This branch is the current app-shell development pause point on `codex/app4-pin-scanner-perf-safe-20260524`. It keeps the Pulse dashboard as the first-class screen, moves Settings into the app sequence, adds a guarded manual `Pin Scanner`, keeps `Your App Here` second-to-last, and keeps `Origin Story` last.
 
 Use these images to review the new screens, colors, and Settings treatment before flashing another CYD. The current `Origin Story` content is intentionally placeholder text; keep the renderer and layout, then drop in revised crawl copy during a later text-edit pass.
 
@@ -114,11 +116,15 @@ Use these images to review the new screens, colors, and Settings treatment befor
 | --- | --- | --- |
 | ![Settings portrait top render](docs/screenshots/settings-render/settings-portrait-top.png) | ![Settings portrait middle render](docs/screenshots/settings-render/settings-portrait-middle.png) | ![Settings portrait bottom render](docs/screenshots/settings-render/settings-portrait-bottom.png) |
 
+### App 4: Pin Scanner Render
+
+![App 4 Pin Scanner contact sheet](docs/screenshots/app4-pin-scanner-render/app4-pin-scanner-contact-sheet.png)
+
 ### App 3: Origin Story Render
 
 ![Origin Story crawl contact sheet](docs/screenshots/app3-origin-crawl-render/app3-origin-contact-sheet.png)
 
-The render helpers are in `tools/render_pulse_app_mock.py`, `tools/render_settings_mock.py`, and `tools/render_app3_origin_crawl_mock.py`. They are intentionally lightweight PNG mockups used for quick UI iteration before flashing the CYD.
+The render helpers are in `tools/render_pulse_app_mock.py`, `tools/render_settings_mock.py`, `tools/render_app4_pin_scanner_mock.py`, and `tools/render_app3_origin_crawl_mock.py`. They are intentionally lightweight PNG mockups used for quick UI iteration before flashing the CYD.
 
 ### Internal Design Memory: 2026-05-24 Display Modes
 
@@ -386,6 +392,7 @@ python3 tools/render_pulse_app_mock.py
 python3 tools/render_settings_mock.py
 python3 tools/render_monochrome_mock.py
 python3 tools/render_display_mode_mock.py
+python3 tools/render_app4_pin_scanner_mock.py
 python3 tools/render_app3_origin_crawl_mock.py
 ```
 
@@ -394,7 +401,7 @@ python3 tools/render_app3_origin_crawl_mock.py
 The current hardware-tested branch is:
 
 ```text
-codex/monochrome-ui-treatment-20260524
+codex/app4-pin-scanner-perf-safe-20260524
 ```
 
 Timestamped local tags record the iteration path:

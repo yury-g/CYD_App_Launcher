@@ -19,6 +19,9 @@ close to the code when changing the firmware.
 - The `SIG GPIO35` bars are a user-facing acquisition ladder, not proof of BPM
   lock. They may rise from raw signal range, amplitude, cleanliness, and detector
   activity before the firmware trusts BPM/IBI.
+- The live waveform and `SIG GPIO35` panel must share the same state color path:
+  yellow while acquiring, then the locked signal color after lock. This keeps
+  the visible graph and the acquisition/lock cue from teaching different states.
 - Live Pulse dashboard work must be small, change-driven, and non-blocking.
 - Full-screen redraws are allowed on intentional screen changes, not as part of
   normal live waveform or beat updates.
@@ -87,6 +90,9 @@ moment where the visible waveform is good but beat detection has lost trust.
 - Do not tune beat math to hide a drawing performance problem. Measure first.
 - Do not equate acquisition bars with BPM lock. Bars can guide finger placement;
   lock still requires consecutive qualified beats.
+- Do not give the waveform its own acquisition color palette. Use
+  `signalSearchColor()` and `signalLockColor()` through `liveTraceColorForMode()`
+  so the graph and `SIG GPIO35` panel stay synchronized.
 - Do not ship `PERF_DIAGNOSTICS` enabled by default.
 
 ## Good Hackable Patterns

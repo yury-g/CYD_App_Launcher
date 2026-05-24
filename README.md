@@ -18,7 +18,7 @@ That page has a one-click web installer, wiring diagram, and the full tutorial f
 
 | Channel | Feedback |
 | --- | --- |
-| Screen | Cyan waveform (searching) → white waveform (locked), dotted `THR 550` guide, BPM, IBI, compact `SIG GPIO35` quality bars that move yellow → green |
+| Screen | Waveform and `SIG GPIO35` use the same state color: yellow while acquiring, then the locked signal color after lock; dotted `THR 550` guide, BPM, IBI, and compact 12-step quality bars |
 | Light | Rear LED pulses yellow while locking and red once locked, using the same smooth heartbeat fade |
 | Sound | Rising signal-quality harmony while locking, then short heartbeat tone on the CYD speaker (GPIO 26) |
 | Touch | Header buttons change speaker volume, default 1/10, and rotate the dashboard for different enclosures |
@@ -50,7 +50,7 @@ This is the current good development pause point for the app shell branch:
 
 ```text
 Branch:   codex/app4-pin-scanner-perf-safe-20260524
-Firmware: 0.4.15-acquisition-ladder
+Firmware: 0.4.16-matched-sig-wave
 ```
 
 - Added a compact app shell around the Pulse dashboard: the screen order is Pulse dashboard, Settings, App 4 `Pin Scanner`, `Your App Here`, then `Origin Story` last.
@@ -58,6 +58,7 @@ Firmware: 0.4.15-acquisition-ladder
 - Re-checked the Pulse signal foreground path before main publish: `readPulseSensor()` remains first in `loop()`, PulseSensor Playground still samples ESP32 ADC data from its 500 Hz timer interrupt, and the live waveform/panel redraw paths were tightened to avoid avoidable foreground stalls.
 - Added tap-to-reacquire on the Pulse dashboard: when the raw waveform looks strong but BPM/IBI/qualified-beat detection is stuck, tap below the navigation/header to re-arm the detector and clear local acquisition state.
 - Changed the compact `SIG GPIO35` bars into a 12-step acquisition ladder, so users get more gradual feedback while finding a usable signal before BPM/IBI are trusted. The acquisition harmony now has an 8-note rising palette.
+- Matched the live waveform line color to the `SIG GPIO35` panel state color, so the graph and SIG box both show yellow while acquiring and change together after lock.
 - Added Settings-only controls for Volume, icon-only Rotation, Display, WiFi/Bluetooth placeholders, LED Control, LED swatches, About, Version, Firmware date, runtime memory used/free, and build memory.
 - Added four display modes under Settings `Display`: `M DARK`, `M LIGHT`, `C DARK`, and `C LIGHT`.
 - Bumped Settings row text back up one size. Plain data rows keep the label left-justified and the value right-justified, while rows with right-side controls keep a second value line only to avoid overlap. The Memory row shows used heap plus free heap by size and percentage, and the Build row shows PlatformIO RAM/Flash usage.
@@ -75,7 +76,7 @@ Pre-main publish note: the current UI looked great on the attached CYD, but befo
 ### v1.1.0 — 2026-05-14
 
 - Added beat sound on the CYD speaker and touch volume controls.
-- Added the centered animated heart and cyan/white waveform behavior.
+- Added the centered animated heart and state-colored waveform behavior.
 - Added the first ESP Web Tools browser flasher prototype.
 - Reworked the README into a flash-first, student-friendly guide.
 
@@ -279,9 +280,8 @@ The `SIG GPIO35` label is intentionally compact because a future revision may sh
 
 The dashboard uses a small, consistent color vocabulary so beginners can learn the state at a glance:
 
-- **Cyan:** live waveform and graph guide details.
-- **Yellow:** signal is promising and the detector is locking. The `SIG GPIO35` bars and rear LED both use yellow here.
-- **Green:** signal is locked. The `SIG GPIO35` box and bars turn green.
+- **Yellow:** signal is promising and the detector is locking. The live waveform and `SIG GPIO35` panel both use yellow here.
+- **Cyan/teal:** signal is locked. The live waveform and `SIG GPIO35` panel change together after lock.
 - **Red:** confirmed heartbeat feedback. The rear LED and on-screen heart use red after lock.
 
 The rear LED is intentionally expressive rather than diagnostic. It should feel alive: yellow says "finding your beat," red says "got it." More detailed explanations belong in the docs, not on the tiny CYD screen.

@@ -104,7 +104,7 @@
 
 // ===== APP SHELL =====
 
-#define APP_VERSION "0.4.15-acquisition-ladder"
+#define APP_VERSION "0.4.16-matched-sig-wave"
 #define APP_FIRMWARE_DATE "2026-05-24"
 #define APP_BUILD_RAM_USAGE "RAM 7.3%"
 #define APP_BUILD_FLASH_USAGE "Flash 28.7%"
@@ -148,7 +148,6 @@
 #define COLOR_CYAN 0x07FF
 #define COLOR_CYAN_DARK 0x0452
 #define COLOR_TEAL 0x05F3
-#define COLOR_ACQUIRE_BLUE 0x3DFF
 #define COLOR_LOCK_GREEN 0x07E0
 #define COLOR_RED 0xF800
 #define COLOR_RED_DARK 0x6000
@@ -158,7 +157,6 @@
 #define COLOR_SIGNAL_YELLOW COLOR_HIGH_VIS_YELLOW
 #define COLOR_LIGHT_BUTTON_FILL 0xE7DF
 #define COLOR_LIGHT_BLUE 0x02F6
-#define COLOR_LIGHT_TRACE_BLUE 0x039F
 #define COLOR_LIGHT_CYAN 0x047F
 #define COLOR_LIGHT_TEAL 0x04B0
 #define COLOR_LIGHT_GREEN 0x04A0
@@ -2870,10 +2868,7 @@ uint16_t beatColor() {
 }
 
 uint16_t liveTraceColorForMode() {
-  if (lockedSignal) return textColor();
-  if (displayMode == DISPLAY_COLOR_DARK) return COLOR_ACQUIRE_BLUE;
-  if (displayMode == DISPLAY_COLOR_LIGHT) return COLOR_LIGHT_TRACE_BLUE;
-  return textColor();
+  return lockedSignal ? signalLockColor() : signalSearchColor();
 }
 
 uint16_t pinScannerHotColor() {

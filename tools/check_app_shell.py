@@ -110,6 +110,18 @@ for token in [
 if "y < headerHeight + CONTROL_TOUCH_PAD" not in pulse_reacquire_body:
     raise SystemExit("Tap-to-reacquire should stay out of the app-navigation/header area")
 
+live_trace_start = source.index("uint16_t liveTraceColorForMode() {")
+live_trace_end = source.index("uint16_t pinScannerHotColor()", live_trace_start)
+live_trace_body = source[live_trace_start:live_trace_end]
+if "return lockedSignal ? signalLockColor() : signalSearchColor();" not in live_trace_body:
+    raise SystemExit("Waveform color must match SIG panel acquisition/lock colors")
+for token in [
+    "COLOR_ACQUIRE_BLUE",
+    "COLOR_LIGHT_TRACE_BLUE",
+]:
+    if token in live_trace_body:
+        raise SystemExit("Waveform color should not use a separate acquisition palette")
+
 app_nav_start = source.index("bool handleAppNavTouch(int16_t x, int16_t y) {")
 app_nav_end = source.index("bool handleRotateTouch(int16_t x, int16_t y) {", app_nav_start)
 app_nav_body = source[app_nav_start:app_nav_end]

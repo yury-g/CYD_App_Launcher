@@ -9,6 +9,8 @@
  *   RGB LED:      Red=4, Green=16, Blue=17 (active-low onboard CYD LED)
  *
  * This sketch intentionally stays in one file for Arduino IDE beginners.
+ * Cross-machine resume helper: tools/flash_current_favorite.py protects the
+ * known favorite 0.4.24-front-id flash path for future internal sessions.
  *
  * PulseSensorPlayground functions used, following the library resources:
  *   analogReadResolution(10)  -> match PulseSensorPlayground's 0..1023 math

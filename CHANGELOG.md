@@ -1,6 +1,7 @@
 # CYD App Launcher — Student Version — Changelog
 
 ## Unreleased
+- 2026-05-24 cross-machine resume helper: added `tools/flash_current_favorite.py` and a guard check so a fresh clone or future AI session can flash the current favorite `0.4.24-front-id` state from the repo itself, with explicit protection against accidentally flashing an experiment branch.
 - 2026-05-24 stopping point: user stopped development after the apparent long-run signal regression cleared without code changes when earlobe placement improved; current device favorite remains `0.4.24-front-id` from internal `main`, and future sessions should first flash/check that state before inventing new beat math.
 - 2026-05-24 hardware preference note: after re-soldering the purple signal wire, `0.4.24-front-id` worked well with earlobe placement and became the user's favorite comparison point because the post-beat display made the algorithm/BPM/IBI behavior easy to watch once beats were detected.
 - 2026-05-24 stable waveform viewport: changed the live graph to use a fixed ADC viewport (`250..850`) instead of rolling `minSignal`/`maxSignal` auto-scaling, and removed beat-effect circles from the raw waveform trace so acquiring lock cannot make the signal drawing look jagged; BPM/IBI qualification and serial diagnostics still use the live rolling range; firmware version is `0.4.25-stable-wave`.

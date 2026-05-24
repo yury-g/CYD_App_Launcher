@@ -68,6 +68,26 @@ Design:
   clipping guards, acquisition thresholds, BPM/IBI qualification, or diagnostic
   serial fields.
 
+## 2026-05-24 - Stable Waveform Viewport
+
+Firmware: `0.4.25-stable-wave` release, `0.4.25-stable-wave-log` diagnostic
+
+Problem:
+
+- User observed that the waveform became jagged as soon as beats qualified and
+  seemed to change the longer the app stayed on.
+- Code inspection found two display-side causes: `signalToGraphY()` mapped the
+  trace through the rolling `minSignal`/`maxSignal` window, which can magnify
+  small ADC movement as the range tightens, and `drawWaveform()` overlaid large
+  beat-effect circles on the raw trace after lock.
+
+Fix:
+
+- The live graph now uses a stable fixed ADC viewport (`250..850`) for drawing.
+- Beat-effect circles no longer draw on top of the waveform trace.
+- Beat qualification, BPM/IBI freshness, acquisition scoring, clipping guards,
+  and serial diagnostics still use the live rolling signal range.
+
 ## Test Record Template
 
 Use this shape for future hardware notes:

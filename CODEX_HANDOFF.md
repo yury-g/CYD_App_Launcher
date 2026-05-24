@@ -37,7 +37,7 @@ HEAD Add first screen version identity 20260524
 Current firmware version:
 
 ```text
-0.4.24-front-id
+0.4.25-stable-wave
 ```
 
 Latest hardware status:
@@ -46,10 +46,11 @@ Latest hardware status:
 - It produced useful diagnostics and one honest UI guard, but it did not restore a trustworthy live pulse experience on hardware.
 - The weird waveform behavior was real: the attached CYD showed rail-to-rail `SIG GPIO35` input with `signal` hitting `0`/`1023`, `range=1023`, `clip=100`, and unusable BPM/IBI.
 - `0.4.23-clip-guard` only made the failure visible and safe: while railed, serial showed `quality=0`, `p2p=0`, `locked=0`, `BPM=0`, `IBI=0`, `rawDiag=0`, and no re-arm spam.
-- `0.4.24-front-id` keeps the same signal behavior and adds `APP_VERSION` plus `APP_FIRMWARE_DATE` directly under `PulseSensor.com` on the first Pulse dashboard screen for fast hardware/version tracking.
+- `0.4.25-stable-wave` keeps the same signal behavior and adds `APP_VERSION` plus `APP_FIRMWARE_DATE` directly under `PulseSensor.com` on the first Pulse dashboard screen for fast hardware/version tracking.
+- `0.4.25-stable-wave` stabilizes waveform drawing with a fixed ADC viewport and removes beat-effect circles from the raw trace. BPM/IBI qualification, acquisition scoring, clipping guards, and diagnostics still use the live rolling range.
 - Next action is to flash current internal `main` and compare. If `main` also rails, investigate physical/electrical causes before touching beat math.
 - Built with PlatformIO in release env `cyd` and diagnostic env `cyd_diag`.
-- Release build defaults raw CSV diagnostics off and reports `0.4.24-front-id`; diagnostic build enables 50 Hz `rawDiag` CSV and reports `0.4.24-front-id-log`.
+- Release build defaults raw CSV diagnostics off and reports `0.4.25-stable-wave`; diagnostic build enables 50 Hz `rawDiag` CSV and reports `0.4.25-stable-wave-log`.
 - Upload target remains `/dev/cu.usbserial-3120`; latest known attached CYD MAC is `f4:2d:c9:9d:af:cc`.
 - User reported the `0.4.22` waveform looked much worse and filled the screen with bar-like noise. Release serial confirmed the ADC was genuinely saturated/clipped, but exposed a UI/control bug: `quality=10/11`, `p2p=6/7`, and detector re-arm messages could appear while `clip=100`.
 - `0.4.23-clip-guard` fixes that: clipped or motion-artifact input forces acquisition quality and peak-to-peak score to `0`, blocks detector re-arm, and shows `ADJUST SENSOR`. A 14 s release serial window after flashing showed `rawDiag=0`, `quality=0`, `p2p=0`, `locked=0`, `BPM=0`, `IBI=0`, and no re-arm messages while the ADC remained railed.

@@ -93,6 +93,8 @@
 #define SIGNAL_ACQUISITION_MAX_SCORE_BEFORE_LOCK 11
 #define SIGNAL_MOTION_ARTIFACT_RANGE 420
 #define AMPLITUDE_METER_MAX 120
+#define GRAPH_SIGNAL_MIN 250
+#define GRAPH_SIGNAL_MAX 850
 
 // ===== BEAT TONE SETTINGS =====
 
@@ -125,7 +127,7 @@
 // ===== APP SHELL =====
 
 #ifndef APP_VERSION
-#define APP_VERSION "0.4.24-front-id"
+#define APP_VERSION "0.4.25-stable-wave"
 #endif
 #define APP_FIRMWARE_DATE "2026-05-24"
 #define APP_BUILD_RAM_USAGE "RAM 7.3%"
@@ -2772,11 +2774,11 @@ void drawThresholdMarker(int localX) {
 }
 
 int signalToGraphY(int signal) {
-  if (minSignal == maxSignal) {
-    return graphTop + graphHeight / 2;
-  }
-
-  int y = map(signal, minSignal, maxSignal, graphTop + graphHeight - 8, graphTop + 8);
+  int y = map(constrain(signal, GRAPH_SIGNAL_MIN, GRAPH_SIGNAL_MAX),
+              GRAPH_SIGNAL_MIN,
+              GRAPH_SIGNAL_MAX,
+              graphTop + graphHeight - 8,
+              graphTop + 8);
   return constrain(y, graphTop + 8, graphTop + graphHeight - 8);
 }
 
@@ -2798,10 +2800,6 @@ void drawWaveform() {
     tft.drawLine(graphLeft + graphX - 1, lastGraphY, graphLeft + graphX, y, waveColor);
     tft.drawPixel(graphLeft + graphX, y - 1, waveColor);
     tft.drawPixel(graphLeft + graphX, y + 1, waveColor);
-  }
-
-  if (ledBrightness > 180) {
-    tft.fillCircle(graphLeft + graphX, y, 3, beatColor());
   }
 
   lastGraphY = y;

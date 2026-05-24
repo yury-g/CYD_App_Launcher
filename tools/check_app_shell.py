@@ -151,6 +151,29 @@ for token in [
     if token in live_trace_body:
         raise SystemExit("Waveform color should not use a separate acquisition palette")
 
+signal_to_graph_start = source.index("int signalToGraphY(int signal) {")
+signal_to_graph_end = source.index("// ===== LIVE GRAPH =====", signal_to_graph_start)
+signal_to_graph_body = source[signal_to_graph_start:signal_to_graph_end]
+for token in [
+    "GRAPH_SIGNAL_MIN",
+    "GRAPH_SIGNAL_MAX",
+    "constrain(signal, GRAPH_SIGNAL_MIN, GRAPH_SIGNAL_MAX)",
+]:
+    if token not in signal_to_graph_body:
+        raise SystemExit("Waveform should use a stable fixed ADC viewport")
+for token in [
+    "minSignal",
+    "maxSignal",
+]:
+    if token in signal_to_graph_body:
+        raise SystemExit("Waveform drawing should not auto-scale from rolling signal range")
+
+draw_waveform_start = source.index("void drawWaveform() {")
+draw_waveform_end = source.index("// ===== DASHBOARD PANELS =====", draw_waveform_start)
+draw_waveform_body = source[draw_waveform_start:draw_waveform_end]
+if "fillCircle" in draw_waveform_body:
+    raise SystemExit("Beat effects should not draw circles on top of the raw waveform trace")
+
 required_lock_hold_tokens = {
     "#define LOCK_QUALIFIED_BEATS 4": "Strict acquisition should still require four qualified beats",
     "#define LOCK_GRACE_BAD_BEATS 2": "Balanced lock hold should tolerate two unqualified beats after lock",

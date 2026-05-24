@@ -35,7 +35,7 @@ HEAD Add first screen version identity 20260524
 Current firmware version on the attached CYD:
 
 ```text
-0.4.24-front-id
+0.4.25-stable-wave
 ```
 
 Branch verdict:
@@ -49,9 +49,13 @@ Branch verdict:
 - `0.4.23-clip-guard` made that failure honest by showing `quality=0`,
   `p2p=0`, no detector re-arm spam, and no accepted BPM/IBI while the ADC was
   railed. It did not solve the underlying rail-to-rail input.
-- `0.4.24-front-id` keeps the app-shell/signal branch behavior and adds the
+- `0.4.25-stable-wave` keeps the app-shell/signal branch behavior and adds the
   visible version/date identity directly under `PulseSensor.com` on the first
   Pulse dashboard screen, with a guard so future experiments keep it visible.
+- `0.4.25-stable-wave` also stabilizes waveform drawing: the graph uses a fixed
+  ADC viewport instead of rolling auto-scale, and beat effects no longer draw
+  circles over the raw trace. Beat math and diagnostics still use live rolling
+  range.
 - Next baseline check: flash current internal `main` and compare. If `main`
   also rails, investigate sensor pressure/placement, power/ground, wiring,
   GPIO35 behavior, and alternate signal pins before changing beat math.

@@ -1,6 +1,6 @@
 {
   "name": "PulseSensor CYD Dashboard",
-  "version": "1.2.0",
+  "version": "0.4.22-core-polish",
   "new_install_prompt_erase": true,
   "builds": [
     {

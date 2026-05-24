@@ -1,13 +1,16 @@
 from pathlib import Path
 
 source = Path("PulseSensor_CYD.ino").read_text()
+platformio = Path("platformio.ini").read_text()
 capture = Path("tools/capture_signal_log.py").read_text() if Path("tools/capture_signal_log.py").exists() else ""
 analyzer = Path("tools/analyze_signal_log.py").read_text() if Path("tools/analyze_signal_log.py").exists() else ""
 
 required_source = {
-    "#define RAW_SIGNAL_DIAGNOSTICS 1": "raw diagnostics must be enabled for this evidence build",
+    "#ifndef RAW_SIGNAL_DIAGNOSTICS": "raw diagnostics must be a build-mode switch",
+    "#define RAW_SIGNAL_DIAGNOSTICS 0": "release build must keep raw diagnostics off by default",
     "#define RAW_SIGNAL_DIAGNOSTICS_MS 20": "raw diagnostics should stream at 50 Hz",
-    '#define APP_VERSION "0.4.21-signal-log"': "firmware version must identify the signal logger",
+    "#ifndef APP_VERSION": "release firmware version must be overrideable by diagnostic build flags",
+    '#define APP_VERSION "0.4.22-core-polish"': "release firmware version must identify the core polish build",
     "void printRawSignalDiagnostics": "firmware must have a raw diagnostic printer",
     "rawDiag,ms,signal,amp,bpm,ibi,locked,quality,p2p,range,clip,inside,beat,accept,drop,qStreak,badStreak": "CSV header is missing required fields",
     "rawDiagnosticsBeatPending": "diagnostics must mark firmware beat events",
@@ -19,6 +22,12 @@ required_source = {
     "#define ACQUISITION_CADENCE_TOLERANCE_PERCENT 35": "acquisition cadence guard is missing",
     "bool isAcquisitionCadenceMatch": "pre-lock acquisition should require cadence consistency",
     "wasLocked ? isLockedCadenceMatch(ibi) : isAcquisitionCadenceMatch(ibi)": "strict pre-lock beats should use acquisition cadence matching",
+}
+
+required_platformio = {
+    "[env:cyd_diag]": "diagnostic PlatformIO environment is missing",
+    '-D APP_VERSION=\\"0.4.22-core-polish-log\\"': "diagnostic build must set the logging firmware version",
+    "-D RAW_SIGNAL_DIAGNOSTICS=1": "diagnostic build must enable raw CSV streaming",
 }
 
 required_capture = {
@@ -36,6 +45,9 @@ required_analyzer = {
 missing = []
 for token, message in required_source.items():
     if token not in source:
+        missing.append(message)
+for token, message in required_platformio.items():
+    if token not in platformio:
         missing.append(message)
 for token, message in required_capture.items():
     if token not in capture:

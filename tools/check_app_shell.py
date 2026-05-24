@@ -52,7 +52,7 @@ if '"Volume"' not in settings_body:
     raise SystemExit("Settings screen is missing Volume")
 if "APP_FIRMWARE_DATE" not in settings_body:
     raise SystemExit("Settings screen is missing firmware date")
-if '"Settings "' not in settings_body:
+if 'drawAppFrameHeader("Settings", APP_FIRMWARE_DATE' not in settings_body:
     raise SystemExit("Settings title is missing firmware date")
 if '"Memory"' not in settings_body:
     raise SystemExit("Settings screen is missing the memory row")
@@ -156,10 +156,10 @@ required_lock_hold_tokens = {
     'const char* lastBeatAcceptReason = "none";': "Serial should record how the latest beat was accepted",
     "bool isLockedCadenceMatch": "Locked signal should compare new beats against the current cadence",
     "bool isPeakCadenceRecoveryBeat": "Locked-state peak/cadence recovery helper is missing",
-    "bool strictAccepted = qualified && (wasLocked ? isLockedCadenceMatch(ibi) : isAcquisitionCadenceMatch(ibi));": "Strict acquisition should require cadence consistency before and after lock",
-    "bool peakToPeakAccepted = PEAK_TO_PEAK_EXPERIMENT &&": "Peak-to-peak experiment should have an explicit acceptance path",
-    "bool recovered = !strictAccepted && !peakToPeakAccepted && wasLocked &&": "Peak/cadence fallback must stay locked-state only after peak-to-peak",
-    'lastBeatAcceptReason = strictAccepted ? "strict" : (peakToPeakAccepted ? "peak2peak" : "peak-cadence");': "Accepted beats should mark strict vs peak-to-peak vs peak/cadence serial reason",
+    "decision.strictAccepted = decision.qualified &&": "Strict acquisition should require cadence consistency before and after lock",
+    "decision.peakToPeakAccepted = PEAK_TO_PEAK_EXPERIMENT &&": "Peak-to-peak experiment should have an explicit acceptance path",
+    "decision.recovered = !decision.strictAccepted &&": "Peak/cadence fallback must stay locked-state only after peak-to-peak",
+    'decision.acceptReason = decision.accepted ?': "Accepted beats should mark strict vs peak-to-peak vs peak/cadence serial reason",
     "wasLocked && unqualifiedBeatStreak <= LOCK_GRACE_BAD_BEATS": "Locked signal should survive brief bad-beat movement",
     "now - lastQualifiedBeatTime <= LOCK_HOLD_GRACE_MS": "Locked signal should survive a brief post-lock timing gap",
     'dropSignalLock("grace expired");': "Grace-expired lock drops should be tracked",
@@ -174,7 +174,7 @@ if "drop=%s" not in source or "accept=%s" not in source or "p2p=%d" not in sourc
     raise SystemExit("Serial signal telemetry should include lock-hold drop and streak fields")
 
 app_nav_start = source.index("bool handleAppNavTouch(int16_t x, int16_t y) {")
-app_nav_end = source.index("bool handleRotateTouch(int16_t x, int16_t y) {", app_nav_start)
+app_nav_end = source.index("int buttonCenterX", app_nav_start)
 app_nav_body = source[app_nav_start:app_nav_end]
 required_touch_boundaries = [
     "appPrevNextBoundary",
@@ -301,7 +301,7 @@ for fn_name in [
     fn_start = source.index(fn_name)
     fn_end = source.index("\n}", fn_start)
     fn_body = source[fn_start:fn_end]
-    if "drawAppNavControls();" not in fn_body:
+    if "drawAppNavControls();" not in fn_body and "drawAppFrameHeader(" not in fn_body:
         raise SystemExit(f"{fn_name} does not draw persistent nav controls")
     if "drawRotateControl();" in fn_body:
         raise SystemExit(f"{fn_name} still draws the removed top-bar rotate control")
@@ -309,7 +309,7 @@ for fn_name in [
 settings_fn_start = source.index("void drawSettingsScreen() {")
 settings_fn_end = source.index("\n}", settings_fn_start)
 settings_fn_body = source[settings_fn_start:settings_fn_end]
-if "drawAppNavControls();" not in settings_fn_body:
+if "drawAppNavControls();" not in settings_fn_body and "drawAppFrameHeader(" not in settings_fn_body:
     raise SystemExit("Settings screen does not draw persistent nav controls")
 if "drawRotateControl();" in settings_fn_body:
     raise SystemExit("Settings screen still draws the removed top-bar rotate control")

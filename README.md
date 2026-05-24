@@ -49,10 +49,11 @@ Use this section as the quick human-readable project log. See [CHANGELOG.md](CHA
 This is the current good development pause point for the app shell branch:
 
 ```text
-Branch:   codex/app4-pin-scanner-perf-safe-20260524
-Firmware: 0.4.21-signal-log
+Branch:   codex/signal-core-polish-publish-prep-20260524
+Firmware: 0.4.22-core-polish
 ```
 
+- Preserved the known-good `0.4.21-signal-log` state with rollback branch/tag `backup/good-working-0.4.21-signal-log-20260524` and `good-working-0.4.21-signal-log-20260524` before cleanup.
 - Added a compact app shell around the Pulse dashboard: the screen order is Pulse dashboard, Settings, App 4 `Pin Scanner`, `Your App Here`, then `Origin Story` last.
 - Added a manual App 4 `Pin Scanner` for GPIO35, GPIO22, GPIO21, and GPIO27. It starts idle, scans only one tapped row at a time, guards non-ADC pins, and keeps `readPulseSensor()` first in the main loop.
 - Re-checked the Pulse signal foreground path before main publish: `readPulseSensor()` remains first in `loop()`, PulseSensor Playground still samples ESP32 ADC data from its 500 Hz timer interrupt, and the live waveform/panel redraw paths were tightened to avoid avoidable foreground stalls.
@@ -62,6 +63,8 @@ Firmware: 0.4.21-signal-log
 - Added balanced lock-retention grace: acquisition still needs four consecutive qualified beats, but once locked the dashboard tolerates brief movement/noise blips before clearing BPM/IBI.
 - Added locked-only peak/cadence beat recovery, then an enabled peak-to-peak experiment for the earlobe movement case: once lock is earned, beat events can survive valley distortion when cadence remains close to the last trusted IBI, while short movement-blip intervals are rejected.
 - Added raw signal logging diagnostics and an offline analyzer for the same-earlobe investigation. The latest 44.2 s capture accepted 47 firmware beats, found 47 independent raw peaks, and had matching median IBI/BPM (`918 ms` firmware vs `920 ms` independent), with zero short accepted IBIs below 700 ms.
+- Made raw CSV logging an internal diagnostic build mode: `pio run -e cyd` is the quieter release build, while `pio run -e cyd_diag` enables 50 Hz `rawDiag` rows and reports version `0.4.22-core-polish-log`.
+- Polished the single-file firmware without changing beat thresholds: dead top-bar volume/rotate code was removed, repeated app headers and Settings row visibility are shared, beat acceptance is grouped in a `BeatDecision` helper, and the Origin Story sprite is released on app exit/rotation to protect long-run heap behavior.
 - Made long Settings values easier to read in horizontal display rotation by keeping them at the normal Settings text size on a second line; the tiny fallback remains available only for vertical rotation.
 - Added Settings-only controls for Volume, icon-only Rotation, Display, WiFi/Bluetooth placeholders, LED Control, LED swatches, About, Version, Firmware date, runtime memory used/free, and build memory.
 - Added four display modes under Settings `Display`: `M DARK`, `M LIGHT`, `C DARK`, and `C LIGHT`.
@@ -104,7 +107,7 @@ Signal-acquisition experiments, upgrades, downgrades, and hardware verdicts live
 
 ## Current App Shell Development Preview
 
-This branch is the current app-shell development pause point on `codex/app4-pin-scanner-perf-safe-20260524`. It keeps the Pulse dashboard as the first-class screen, moves Settings into the app sequence, adds a guarded manual `Pin Scanner`, keeps `Your App Here` second-to-last, and keeps `Origin Story` last.
+This branch is the current app-shell development pause point on `codex/signal-core-polish-publish-prep-20260524`. It keeps the Pulse dashboard as the first-class screen, moves Settings into the app sequence, adds a guarded manual `Pin Scanner`, keeps `Your App Here` second-to-last, and keeps `Origin Story` last.
 
 Use these images to review the new screens, colors, and Settings treatment before flashing another CYD. The current `Origin Story` content is intentionally placeholder text; keep the renderer and layout, then drop in revised crawl copy during a later text-edit pass.
 
@@ -138,7 +141,7 @@ Use these images to review the new screens, colors, and Settings treatment befor
 
 The render helpers are in `tools/render_pulse_app_mock.py`, `tools/render_settings_mock.py`, `tools/render_app4_pin_scanner_mock.py`, and `tools/render_app3_origin_crawl_mock.py`. They are intentionally lightweight PNG mockups used for quick UI iteration before flashing the CYD.
 
-The signal diagnostic helpers are `tools/capture_signal_log.py`, `tools/analyze_signal_log.py`, and `tools/check_signal_diagnostics.py`. Raw captures are written under local `logs/` and intentionally ignored by Git.
+The signal diagnostic helpers are `tools/capture_signal_log.py`, `tools/analyze_signal_log.py`, and `tools/check_signal_diagnostics.py`. Raw captures are written under local `logs/` and intentionally ignored by Git. Use `pio run -e cyd_diag -t upload --upload-port <port>` when you want the raw logger build.
 
 Signal-first firmware architecture and future development rules live in [docs/signal-first-architecture.md](docs/signal-first-architecture.md). Read that before changing PulseSensor sampling, beat qualification, graph drawing, app switching, or diagnostic tools.
 
@@ -210,7 +213,7 @@ python3 -m pip install --user platformio
 ```bash
 git clone https://github.com/yury-g/CYD_App_Launcher.git
 cd CYD_App_Launcher
-git checkout codex/app4-pin-scanner-perf-safe-20260524
+git checkout codex/signal-core-polish-publish-prep-20260524
 git log -1 --oneline
 ```
 
@@ -233,7 +236,7 @@ pio run -e cyd
 pio run -e cyd -t upload --upload-port /dev/cu.usbserial-3120
 ```
 
-This branch includes a `platformio.ini` for repeatable local builds and uploads.
+This branch includes a `platformio.ini` for repeatable local builds and uploads. For internal signal logging, build and upload `cyd_diag` instead of `cyd`.
 
 ### Option B — Public one-click web installer
 

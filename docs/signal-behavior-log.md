@@ -44,6 +44,77 @@ User-visible behavior:
 Verdict:
 ```
 
+## 2026-05-24 - Signal-Core Polish Build Modes
+
+Firmware: `0.4.22-core-polish` release, `0.4.22-core-polish-log` diagnostic
+
+Design:
+
+- Preserved the clean `0.4.21-signal-log` state as rollback branch/tag
+  `backup/good-working-0.4.21-signal-log-20260524` and
+  `good-working-0.4.21-signal-log-20260524` before cleanup.
+- Kept the source as one Arduino `.ino` file for beginner source use.
+- Added two PlatformIO modes: `cyd` defaults raw CSV diagnostics off for a
+  quieter release candidate, while `cyd_diag` enables 50 Hz `rawDiag` rows and
+  keeps the offline analyzer workflow.
+- Reduced code around the signal path without changing beat thresholds:
+  removed dead top-bar volume/rotate handlers, shared app-frame drawing, shared
+  Settings row visibility, grouped accepted/rejected beat decisions in
+  `BeatDecision`, and releases the Origin Story sprite when leaving the app or
+  rotating the display.
+
+Build sanity:
+
+```text
+Release env cyd:      RAM 23764 / 327680 bytes, Flash 378277 / 1310720 bytes
+Diagnostic env cyd_diag: RAM 23764 / 327680 bytes, Flash 378313 / 1310720 bytes
+```
+
+Hardware evidence:
+
+```text
+Date/time: 2026-05-24 EDT
+Firmware: 0.4.22-core-polish-log diagnostic, then 0.4.22-core-polish release
+Sensor body position: earlobe, same position as the prior smooth/noisy tests
+Mount/contact method: same user earlobe placement; exact pressure not recorded
+Condition: Codex-side serial capture while user stayed connected
+Diagnostic capture A:
+  - Path: logs/signal-log-ear-core-polish-60s-20260524.csv
+  - Duration: 59.3 s
+  - Rows: 2997 rawDiag rows
+  - Firmware beat events: 8 accepted, 104 rejected
+  - Accepted reasons: 3 strict, 5 peak2peak
+  - Firmware accepted median IBI/BPM: 1002 ms / 59.9 BPM for the plausible
+    analyzer series
+  - Accepted short IBIs below 700 ms: 1, at 646 ms near the transition into
+    noisy/clipped behavior
+  - Row-level accepted noisy beats: 0
+  - Clip rows: 2012
+Diagnostic capture B:
+  - Path: logs/signal-log-ear-core-polish-180s-20260524.csv
+  - Duration before user stopped capture: 122.1 s
+  - Rows: 6010 rawDiag rows
+  - Firmware beat events: 0 accepted, 369 rejected
+  - Clip rows: 6008
+  - Locked rows: 0
+Release serial quiet check:
+  - Flashed final `cyd` release build after diagnostics.
+  - 8 s serial window produced 17 summary lines and 0 rawDiag CSV rows.
+  - Signal was still saturated during that window (`signal=1023`, `clip=100`),
+    and BPM/IBI stayed at 0 while unlocked.
+```
+
+Verdict:
+
+- Cleanup candidate is publish-prep safe from a signal-failure standpoint:
+  saturated/clipped periods did not create accepted beats, and the release build
+  is quiet by default.
+- This is not a clean steady-contact accuracy proof, because the available
+  `0.4.22` captures became heavily clipped after the early plausible section.
+  Keep the `0.4.21-signal-log` clean same-earlobe capture as the best accuracy
+  evidence, and require one more stable-contact hardware sanity pass before
+  merging to `main` or publishing publicly.
+
 ## 2026-05-24 - Raw Signal Log Diagnostics
 
 Firmware: `0.4.21-signal-log`

@@ -4,7 +4,7 @@ Last updated: 2026-05-24 EDT
 
 This file is the first breadcrumb for continuing internal PulseSensor CYD dashboard development in a new Codex chat with no previous chat history.
 
-## Fresh Handoff: 2026-05-24 Signal-Log Continuation
+## Fresh Handoff: 2026-05-24 Signal-Core Polish Continuation
 
 This top section supersedes older branch/path references below. Older notes are preserved as history.
 
@@ -17,25 +17,25 @@ Current local repo path:
 Current branch:
 
 ```text
-codex/app4-pin-scanner-perf-safe-20260524
+codex/signal-core-polish-publish-prep-20260524
 ```
 
 Current firmware/UI code commit:
 
 ```text
-HEAD Add signal logging diagnostics 20260524
+HEAD Signal-core polish publish prep 20260524
 ```
 
 Latest signal-behavior log commit:
 
 ```text
-HEAD Add signal logging diagnostics 20260524
+HEAD Signal-core polish publish prep 20260524
 ```
 
 Current firmware version on the attached CYD:
 
 ```text
-0.4.21-signal-log
+0.4.22-core-polish
 ```
 
 Connected CYD used for the latest flash:
@@ -50,10 +50,17 @@ Latest verified commands from this pause point:
 
 ```sh
 python3 tools/check_app_shell.py
+python3 tools/check_core_polish.py
 python3 tools/check_signal_diagnostics.py
 python3 tools/check_peak_to_peak_experiment.py
 git diff --check
 PATH=/Users/mininarwhal/Documents/Codex/2026-05-23/i-have-a-cyd-connected-can/.venv-pio/bin:$PATH PLATFORMIO_CORE_DIR=/Users/mininarwhal/Documents/Codex/2026-05-23/i-have-a-cyd-connected-can/.platformio pio run -e cyd
+PATH=/Users/mininarwhal/Documents/Codex/2026-05-23/i-have-a-cyd-connected-can/.venv-pio/bin:$PATH PLATFORMIO_CORE_DIR=/Users/mininarwhal/Documents/Codex/2026-05-23/i-have-a-cyd-connected-can/.platformio pio run -e cyd_diag
+PATH=/Users/mininarwhal/Documents/Codex/2026-05-23/i-have-a-cyd-connected-can/.venv-pio/bin:$PATH PLATFORMIO_CORE_DIR=/Users/mininarwhal/Documents/Codex/2026-05-23/i-have-a-cyd-connected-can/.platformio pio run -e cyd_diag -t upload --upload-port /dev/cu.usbserial-3120
+python3 tools/capture_signal_log.py --port /dev/cu.usbserial-3120 --seconds 60 --out logs/signal-log-ear-core-polish-60s-20260524.csv
+python3 tools/analyze_signal_log.py logs/signal-log-ear-core-polish-60s-20260524.csv
+python3 tools/capture_signal_log.py --port /dev/cu.usbserial-3120 --seconds 180 --out logs/signal-log-ear-core-polish-180s-20260524.csv
+python3 tools/analyze_signal_log.py logs/signal-log-ear-core-polish-180s-20260524.csv
 PATH=/Users/mininarwhal/Documents/Codex/2026-05-23/i-have-a-cyd-connected-can/.venv-pio/bin:$PATH PLATFORMIO_CORE_DIR=/Users/mininarwhal/Documents/Codex/2026-05-23/i-have-a-cyd-connected-can/.platformio pio run -e cyd -t upload --upload-port /dev/cu.usbserial-3120
 python3 tools/render_pulse_app_mock.py
 python3 tools/render_settings_mock.py
@@ -61,15 +68,23 @@ python3 tools/render_monochrome_mock.py
 python3 tools/render_display_mode_mock.py
 python3 tools/render_app4_pin_scanner_mock.py
 python3 tools/render_app3_origin_crawl_mock.py
-python3 tools/capture_signal_log.py --port /dev/cu.usbserial-3120 --seconds 45 --out logs/signal-log-ear-acqcadence-20260524.csv
-python3 tools/analyze_signal_log.py logs/signal-log-ear-acqcadence-20260524.csv
 ```
 
 Build memory from PlatformIO:
 
 ```text
-RAM:   7.3% (23812 / 327680 bytes)
-Flash: 28.9% (378809 / 1310720 bytes)
+Release RAM:   7.3% (23764 / 327680 bytes)
+Release Flash: 28.9% (378277 / 1310720 bytes)
+Diag RAM:      7.3% (23764 / 327680 bytes)
+Diag Flash:    28.9% (378313 / 1310720 bytes)
+```
+
+Rollback anchors before signal-core polish:
+
+```text
+Branch: backup/good-working-0.4.21-signal-log-20260524
+Tag:    good-working-0.4.21-signal-log-20260524
+Commit: 00bc805
 ```
 
 Rollback anchors before lock-hold work:
@@ -103,6 +118,8 @@ Visual/UI status:
 - Locked beat detection now adds a peak/cadence recovery path for the user-observed earlobe case where slight movement distorts the valley while peaks remain visually stable. After lock, both strict and recovered beats must stay close to the current cadence before updating BPM/IBI.
 - `0.4.20-peak2peak` adds an enabled peak-to-peak experiment. It scores live peak-to-peak waveform movement, can let high-score peak-to-peak candidate beats help acquisition, and can accept bounded peak-to-peak candidates while locked. The tuned window uses a wider cadence tolerance than strict recovery but rejects short movement-blip intervals below 70% of the current IBI.
 - Expanded serial telemetry now includes live range, clipping score, qualified streak, unqualified streak, `p2p` score, beat accept reason, and lock-drop reason.
+- `0.4.22-core-polish` keeps the source as a single Arduino `.ino`, makes raw CSV logging an internal `cyd_diag` build mode, removes dead top-bar volume/rotate code, shares app header/Settings row helpers, groups beat acceptance in `BeatDecision` without changing thresholds, and releases the Origin Story sprite on app exit/rotation. Hardware sanity showed the release build is quiet by default (`0` rawDiag CSV rows in an 8 s serial check) and saturated signal did not create accepted beats in the longer clipped diagnostic capture.
+- Latest `0.4.22-core-polish-log` diagnostic captures were not a clean stable-contact proof. The 59.3 s capture had 8 accepted beat events, 104 rejected events, 0 row-level accepted noisy beats, and 1 accepted 646 ms short IBI near the transition into clipped/noisy behavior. The longer capture was stopped at the user's request after 122.1 s and was almost entirely saturated: 6008 clip rows out of 6010, 369 rejected beat events, and 0 accepted beats.
 - `0.4.21-signal-log` adds 50 Hz `rawDiag` CSV serial diagnostics, local capture/analyzer tools, time-based clipping-score decay, a motion-artifact rolling-range guard, and pre-lock cadence consistency so acquisition rejects short/double detections. Final same-earlobe diagnostic capture found 47 firmware accepted beats and 47 independent raw peaks over 44.2 s, with median IBI 918 ms vs 920 ms and zero accepted IBIs below 700 ms.
 - Serial sanity after flashing `0.4.20-peak2peak` on the same earlobe position confirmed `accept=peak2peak` events during locked runs with clipping at 0. The tuned path looked bounded in serial, but later weak/short-interval sections still dropped lock, so this remains an experiment candidate rather than a publish verdict.
 - Serial sanity after flashing `0.4.19-peak-cadence` confirmed `accept=peak-cadence` events during locked runs with clipping at 0. One later window still showed a `grace expired` drop after two rejected events, so this is an upgrade candidate, not a final publish verdict.
@@ -113,7 +130,7 @@ Visual/UI status:
 Pre-main blocker:
 
 - Do not merge to `main` yet.
-- Signal-performance code checks and earlobe serial sanity passes have been done, including the clean `0.4.21-signal-log` capture, but the user should still do real body-position-specific visual sanity passes before any main merge/public release.
+- Signal-performance code checks and earlobe serial sanity passes have been done, including the clean `0.4.21-signal-log` capture and `0.4.22` release/diagnostic builds. The latest `0.4.22` hardware signal was heavily clipped, so the user should still do one stable-contact visual/signal sanity pass before any main merge/public release.
 - Next chat should start with hardware sanity on the real CYD and record sensor body position: finger if usable, earlobe if finger remains unreliable. Check raw trace responsiveness, BPM, IBI, qualified-beat lock, app switching, Settings, Pin Scanner idle/active behavior, and Origin Story exit behavior.
 - Keep PulseSensor performance first-class. Drawing, display modes, App 4, and Origin Story are secondary to fast raw `SIG GPIO35`, BPM, IBI, and qualified-beat math.
 

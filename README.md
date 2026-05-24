@@ -8,9 +8,9 @@ A one-screen PulseSensor heartbeat dashboard for the ESP32 **Cheap Yellow Displa
 
 ---
 
-## 👉 Easiest install: [pulsesensor.com/pages/cyd](https://pulsesensor.com/pages/cyd)
+## Public One-Click Install: [pulsesensor.com/pages/cyd](https://pulsesensor.com/pages/cyd)
 
-That page has a one-click web installer, wiring diagram, and the full tutorial. Use it if you just want to flash your CYD and see your heartbeat. This README is for people who want to read the source or build from source.
+That page has a one-click web installer, wiring diagram, and the full tutorial for the published public firmware. Use the source-flash instructions below when you want the current app-shell preview with the new screens, colors, Settings page, and `Origin Story` app.
 
 ---
 
@@ -40,6 +40,123 @@ Beat-dot explainer:
 
 ![Beat-dot explainer showing cyan beat marker dots on the live graph](docs/screenshots/beat-dot-explainer.svg)
 
+## Version History And Major Changes
+
+Use this section as the quick human-readable project log. See [CHANGELOG.md](CHANGELOG.md) for the full detailed history.
+
+### Current app-shell preview — 2026-05-24
+
+This is the current good development pause point for the app shell branch:
+
+```text
+Branch: codex/monochrome-ui-treatment-20260524
+Head:   af2a5c2 Add screenshot contact sheet
+```
+
+- Added a compact app shell around the Pulse dashboard: App 1 is the live Pulse dashboard, App 2 is a placeholder, and App 3 is `Origin Story`.
+- Added Settings-only controls for Volume, Rotation, Display, WiFi/Bluetooth placeholders, LED Control, LED swatches, About, Version, and Firmware date.
+- Added four display modes under Settings `Display`: `M DARK`, `M LIGHT`, `C DARK`, and `C LIGHT`.
+- Added high-contrast Settings rows, larger touch targets, render-preview tools, and the current screenshot sets for the new colors and Settings screen.
+- Added the `Origin Story` starfield crawl and programmatic fanfare. The current crawl words are placeholder copy for a later writing pass.
+
+### v1.2.0 — 2026-05-15
+
+- Added Signal Coach teaching feedback: `TOO FLAT`, `HOLD STEADY`, `GOOD WAVE`, `LOCKING`, and `QUALIFIED BEAT`.
+- Added the amplitude meter and dotted `THR 550` guide.
+- Lowered startup volume to `1/10`.
+
+### v1.1.0 — 2026-05-14
+
+- Added beat sound on the CYD speaker and touch volume controls.
+- Added the centered animated heart and cyan/white waveform behavior.
+- Added the first ESP Web Tools browser flasher prototype.
+- Reworked the README into a flash-first, student-friendly guide.
+
+### v1.0.0 — 2026-05-13
+
+- Established the known-good one-screen CYD Pulse dashboard.
+- Switched PulseSensor input to `GPIO 35` for the tested CYD hardware.
+- Added BPM, IBI, waveform, signal quality bars, rear LED pulse, and automatic detector re-arm.
+
+### v0.2.0 — 2026-04-08
+
+- Built the first complete five-app launcher sketch.
+- Added touch menu navigation and early Heartbeat, Breathing, Relaxation, HRV, and BreathFFT apps.
+- Status at that point was still incomplete and not yet hardware-verified.
+
+### v0.1.0 — 2026-04-08
+
+- Started the repository with a placeholder README and initial Git history.
+
+## Current App Shell Development Preview
+
+This branch is the current app-shell development pause point on `codex/monochrome-ui-treatment-20260524`, branched from `codex/settings-app-shell-20260523`. It keeps the Pulse dashboard as App 1, adds placeholder App 2 plus the `Origin Story` App 3 crawl, and moves settings into a dedicated scrollable Settings screen with larger finger-friendly controls.
+
+Use these images to review the new screens, colors, and Settings treatment before flashing another CYD. The current `Origin Story` content is intentionally placeholder text; keep the renderer and layout, then drop in revised crawl copy during a later text-edit pass.
+
+### App 1: Pulse Dashboard Render
+
+| Landscape searching | Landscape locked |
+| --- | --- |
+| ![Pulse app landscape searching render](docs/screenshots/pulse-render/pulse-landscape-searching.png) | ![Pulse app landscape locked render](docs/screenshots/pulse-render/pulse-landscape-locked.png) |
+
+| Portrait searching | Portrait locked |
+| --- | --- |
+| ![Pulse app portrait searching render](docs/screenshots/pulse-render/pulse-portrait-searching.png) | ![Pulse app portrait locked render](docs/screenshots/pulse-render/pulse-portrait-locked.png) |
+
+### Settings Screen Render
+
+| Landscape top | Landscape middle | Landscape bottom |
+| --- | --- | --- |
+| ![Settings landscape top render](docs/screenshots/settings-render/settings-landscape-top.png) | ![Settings landscape middle render](docs/screenshots/settings-render/settings-landscape-middle.png) | ![Settings landscape bottom render](docs/screenshots/settings-render/settings-landscape-bottom.png) |
+
+| Portrait top | Portrait middle | Portrait bottom |
+| --- | --- | --- |
+| ![Settings portrait top render](docs/screenshots/settings-render/settings-portrait-top.png) | ![Settings portrait middle render](docs/screenshots/settings-render/settings-portrait-middle.png) | ![Settings portrait bottom render](docs/screenshots/settings-render/settings-portrait-bottom.png) |
+
+### App 3: Origin Story Render
+
+![Origin Story crawl contact sheet](docs/screenshots/app3-origin-crawl-render/app3-origin-contact-sheet.png)
+
+The render helpers are in `tools/render_pulse_app_mock.py`, `tools/render_settings_mock.py`, and `tools/render_app3_origin_crawl_mock.py`. They are intentionally lightweight PNG mockups used for quick UI iteration before flashing the CYD.
+
+### Internal Design Memory: 2026-05-24 Display Modes
+
+This section is an internal firmware-development memory trail. It is intentionally image-heavy so future contributors can see the UI evolution visually before reading code. It does not need to be copied to the public customer tutorial.
+
+The 2026-05-24 pass explored a maximum-readability display treatment for no-glasses use: larger controls, more black space, true black/white monochrome modes, high-contrast color modes, dotted outlines for inactive or no-data states, a compact three-button app nav bar, Settings-only rotation, and a fatter centered heart in the freed header space.
+
+![Full display-mode review panel](docs/screenshots/display-mode-render/review-20260524-display-modes-v2/full-panel-all-modes.png)
+
+#### Settings Display Picker
+
+| Monochrome Dark | Monochrome Light |
+| --- | --- |
+| ![Settings display picker monochrome dark](docs/screenshots/display-mode-render/review-20260524-display-modes-v2/separate/settings-display-mono_dark.png) | ![Settings display picker monochrome light](docs/screenshots/display-mode-render/review-20260524-display-modes-v2/separate/settings-display-mono_light.png) |
+
+| Color Dark | Color Light |
+| --- | --- |
+| ![Settings display picker color dark](docs/screenshots/display-mode-render/review-20260524-display-modes-v2/separate/settings-display-color_dark.png) | ![Settings display picker color light](docs/screenshots/display-mode-render/review-20260524-display-modes-v2/separate/settings-display-color_light.png) |
+
+#### Pulse Dashboard Display Modes
+
+| Mode | Searching | Locked |
+| --- | --- | --- |
+| Monochrome Dark | ![Monochrome dark searching pulse dashboard](docs/screenshots/display-mode-render/review-20260524-display-modes-v2/screen-preview/mono_dark/pulse-landscape-searching.png) | ![Monochrome dark locked pulse dashboard](docs/screenshots/display-mode-render/review-20260524-display-modes-v2/screen-preview/mono_dark/pulse-landscape-locked.png) |
+| Monochrome Light | ![Monochrome light searching pulse dashboard](docs/screenshots/display-mode-render/review-20260524-display-modes-v2/screen-preview/mono_light/pulse-landscape-searching.png) | ![Monochrome light locked pulse dashboard](docs/screenshots/display-mode-render/review-20260524-display-modes-v2/screen-preview/mono_light/pulse-landscape-locked.png) |
+| Color Dark | ![Color dark searching pulse dashboard](docs/screenshots/display-mode-render/review-20260524-display-modes-v2/screen-preview/color_dark/pulse-landscape-searching.png) | ![Color dark locked pulse dashboard](docs/screenshots/display-mode-render/review-20260524-display-modes-v2/screen-preview/color_dark/pulse-landscape-locked.png) |
+| Color Light | ![Color light searching pulse dashboard](docs/screenshots/display-mode-render/review-20260524-display-modes-v2/screen-preview/color_light/pulse-landscape-searching.png) | ![Color light locked pulse dashboard](docs/screenshots/display-mode-render/review-20260524-display-modes-v2/screen-preview/color_light/pulse-landscape-locked.png) |
+
+#### True Black/White Exploration
+
+| Dark monochrome searching | Dark monochrome locked |
+| --- | --- |
+| ![True black and white searching mock](docs/screenshots/monochrome-render/review-20260524-pulse-landscape-searching.png) | ![True black and white locked mock](docs/screenshots/monochrome-render/review-20260524-pulse-landscape-locked.png) |
+
+| Light inverse searching | Light inverse locked |
+| --- | --- |
+| ![Inverse black and white searching mock](docs/screenshots/monochrome-render/inverse/pulse-landscape-searching.png) | ![Inverse black and white locked mock](docs/screenshots/monochrome-render/inverse/pulse-landscape-locked.png) |
+
 ---
 
 ## Wire The PulseSensor
@@ -56,32 +173,56 @@ Beat-dot explainer:
 
 ## Flash Your CYD
 
-### Option A — One-click web installer (recommended)
+### Option A — Current app-shell preview from source
+
+Use this path on any computer when you want the current app shell, display modes, new Settings screen, and `Origin Story` app from this branch. This does not require a Codex session.
+
+1. Install Git, Python 3, and PlatformIO:
+
+```bash
+python3 -m pip install --user platformio
+```
+
+2. Clone this repo and check out the current app-shell branch:
+
+```bash
+git clone https://github.com/yury-g/CYD_App_Launcher.git
+cd CYD_App_Launcher
+git checkout codex/monochrome-ui-treatment-20260524
+git log -1 --oneline
+```
+
+The expected pause-point head is:
+
+```text
+af2a5c2 Add screenshot contact sheet
+```
+
+3. Plug in one CYD and detect the serial port:
+
+```bash
+pio device list
+```
+
+On macOS the port usually looks like `/dev/cu.usbserial-3120`, `/dev/cu.usbserial-210`, or similar. On Windows it usually looks like `COM3`, `COM4`, or similar.
+
+4. Build and flash, replacing the port with the one you detected:
+
+```bash
+pio run -e cyd
+pio run -e cyd -t upload --upload-port /dev/cu.usbserial-3120
+```
+
+This branch includes a `platformio.ini` for repeatable local builds and uploads.
+
+### Option B — Public one-click web installer
 
 Go to **[pulsesensor.com/pages/cyd](https://pulsesensor.com/pages/cyd)** in Chrome, Edge, or Brave on a desktop or laptop. Plug in your CYD over USB. Click **Install**.
 
 The same installer is also hosted from this repo:
 **[worldfamouselectronics.github.io/PulseSensor_CYD/](https://worldfamouselectronics.github.io/PulseSensor_CYD/)**
 
-### Option B — Local USB flash with PlatformIO
-
-This branch includes a `platformio.ini` for repeatable local builds and uploads.
-
-1. Plug one CYD into USB.
-2. Detect the serial port:
-
-```bash
-pio device list
-```
-
-3. Build and flash:
-
-```bash
-pio run -e cyd
-pio run -e cyd -t upload
-```
-
-The current developer config uses `/dev/cu.usbserial-210` as `upload_port`. If your CYD appears on a different port, update `platformio.ini` before uploading. The config includes the required `TFT_eSPI` CYD display compile flags and uses `115200` upload speed.
+Important: the public one-click installer is for the published tutorial firmware unless the checked-in `firmware/` binaries have been regenerated from the current app-shell branch. To test the new screens and display modes right now, use Option A.
 
 ### Option C — Build in Arduino IDE
 
@@ -227,14 +368,33 @@ Use the PlatformIO local flash path above while iterating on source. Regenerate 
 
 The checked-in screenshots are SVG recreations of the CYD screen in `docs/screenshots/`. Update them whenever the on-device layout changes.
 
+The app shell branch also includes PNG render previews in:
+
+```text
+docs/screenshots/pulse-render/
+docs/screenshots/settings-render/
+docs/screenshots/monochrome-render/
+docs/screenshots/display-mode-render/
+```
+
 Older screenshot sets are kept under `docs/screenshots/history/` as design-version history.
+
+Current UI render helpers:
+
+```bash
+python3 tools/render_pulse_app_mock.py
+python3 tools/render_settings_mock.py
+python3 tools/render_monochrome_mock.py
+python3 tools/render_display_mode_mock.py
+python3 tools/render_app3_origin_crawl_mock.py
+```
 
 ## Development Checkpoints
 
 The current hardware-tested branch is:
 
 ```text
-codex/finger-coach-dashboard-20260519-111641-EDT
+codex/monochrome-ui-treatment-20260524
 ```
 
 Timestamped local tags record the iteration path:
@@ -243,6 +403,8 @@ Timestamped local tags record the iteration path:
 - `false-positive-tune-20260519-114323-EDT` — re-applied stricter signal lock: four consecutive qualified beats, healthy live range, and low recent clipping.
 - `signal-box-minimal-20260519-114712-EDT` — compact `SIG GPIO35` quality-bar panel.
 - `rotate-control-20260522-121644-EDT` — hardware-tested top-row screen rotation control.
+
+Current app-shell continuation notes live in `START_HERE_NEXT_CHAT.md` and `CODEX_HANDOFF.md`.
 
 See `docs/experiment-log.md` for the rejected Signal Dashboard / Finger Coach side quest. The only UI idea carried forward from that experiment is the dotted threshold line plus `THR 550` label.
 

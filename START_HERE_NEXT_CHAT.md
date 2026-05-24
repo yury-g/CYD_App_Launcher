@@ -1,8 +1,57 @@
 # Start Here Next Chat
 
-Last updated: 2026-05-22 EDT
+Last updated: 2026-05-24 EDT
 
 This file is the first breadcrumb for continuing internal PulseSensor CYD dashboard development in a new Codex chat with no previous chat history.
+
+## Current App Shell Branch
+
+Use this branch for the current app shell work:
+
+```text
+codex/monochrome-ui-treatment-20260524
+```
+
+This branch was created from `codex/settings-app-shell-20260523` at `fa4a5a0` for local display-mode UI treatment experiments. Do not merge to main yet.
+
+Current local working path from the 2026-05-24 continuation:
+
+```text
+/Users/mininarwhal/Documents/Codex/2026-05-23/i-have-a-cyd-connected-can/CYD_App_Launcher_current-clean
+```
+
+The branch adds an app shell around the Pulse dashboard:
+
+- App 1 is the Pulse dashboard.
+- App 2 is an animated placeholder; App 3 is the `Origin Story` crawl with programmatic fanfare.
+- Settings includes Volume, Rotation, Display, WiFi/Bluetooth placeholders, LED Control, color swatches, About, Version, and Firmware date.
+- Volume now lives in Settings only.
+- Rotation now lives in Settings only; the persistent top rotate button was removed.
+- App navigation remains persistent as a three-button previous/next/Settings nav bar, with mode-aware outlines/fills and no top-bar rotate control.
+- Display mode cycles through `M DARK`, `M LIGHT`, `C DARK`, and `C LIGHT`.
+- Firmware version is `0.4.7-origin-perspective`.
+- Firmware date shown in Settings is `2026-05-24`.
+- Guard script: `python3 tools/check_app_shell.py`.
+
+2026-05-24 display-mode note: render-only design review files live in `docs/screenshots/display-mode-render/review-20260524-display-modes-v2/` and `docs/screenshots/monochrome-render/`. The approved direction before local hardware test: Settings row labels and values use distinct colors in color modes, `C LIGHT` is a high-contrast color-light treatment, the app nav bar is the compact three-button previous/next/Settings treatment, and the fat heart sits in the header gap between `PulseSensor.com` and the app nav.
+
+2026-05-24 08:56:35 EDT hardware/UI follow-up: startup now defaults to the black-background `C DARK` color display mode instead of `M DARK`. `C LIGHT` inactive app navigation and Settings button cells now use a dark blue high-contrast fill with white text so button backgrounds remain distinct from the white app background. Tracking guard `tools/check_app_shell.py` now asserts both preferences.
+
+2026-05-24 09:06:39 EDT App 3 audio experiment: App 3 now starts an original programmatic "origin crawl" fanfare on entry, using the CYD speaker with a short title sting and looping arpeggio. The tone sequence is generated with `ledcWriteTone()`, respects Settings volume, stops when leaving App 3, and is tracked by `tools/check_app_shell.py`. This is a hardware listening pass, not yet a hardware-approved tag.
+
+2026-05-24 09:15:15 EDT App 3 firmware pass: App 3 no longer renders the bouncing `your app here too` placeholder. It now renders a black starfield and scrolling PulseSensor origin crawl directly in firmware, including the feature-request / firmware-update ask and the since-2012 thank-you. The App 3 fanfare table was extended to a tracked 15-second loop. This was built and flashed for hardware review.
+
+2026-05-24 09:17:17 EDT naming pass: App 3's visible title is now `Origin Story` on-device and in the mockup renderer, keeping the science-fiction crawl theme while making the app name clearer.
+
+2026-05-24 09:22:21 EDT Origin Story hardware pass: the crawl text was too small and direct full-area redraws caused heavy flicker on the CYD. Firmware now uses 2x crawl text, reflowed shorter lines, and an offscreen `TFT_eSprite` for the scrolling content area before pushing each frame to the display. Guard script tracks the enlarged text and sprite rendering.
+
+2026-05-24 09:25:59 EDT Origin Story blank-screen fix: user reported Origin Story became a black screen. Firmware now uses an 8-bit crawl sprite to reduce memory, starts the first large text line inside the visible area immediately, and includes a direct large-text fallback renderer if sprite allocation fails. This version was built and flashed for hardware review.
+
+2026-05-24 09:30:51 EDT Origin Story provenance pass: added Pulse Sensor Amped OSHWA certification details (`US000075`, certified August 30, 2017), the `WorldFamousElectronics/PulseSensor_Amped_Arduino` GitHub repo, and a dated repo-love line showing `249` stars and `207` forks as of May 24, 2026. Firmware version is now `0.4.6-origin-oshw`.
+
+2026-05-24 09:34:48 EDT Origin Story perspective-speed pass: crawl speed was doubled and the renderer now fades/shrinks text toward a horizontal vanishing line at the top of the content area. This build was compiled and flashed to the connected CYD for review.
+
+2026-05-24 hardware note: the app-shell firmware was built and flashed to `/dev/cu.usbserial-3120` on the connected ESP32-D0WD-V3 CYD, MAC `f4:65:0b:a9:f2:e8`. Touch ergonomics fixes changed compact toolbar routing to split adjacent app-nav/rotate hit targets at their midpoints, enlarged the visible app-nav and rotate controls from 22x22 to 44x28, converted Settings to a scrollable large-text row list with bigger row-local touch controls, widened Settings bottom scroll buttons to split the full bottom bar, changed Settings rows to alternating yellow/green Pulse dashboard backgrounds with black text, and redesigned App 1 metric tiles to use the same yellow/green high-contrast language.
 
 ## Use This Repo And Branch
 
@@ -15,13 +64,19 @@ yury-g/CYD_App_Launcher
 Active branch:
 
 ```text
-codex/finger-coach-dashboard-20260519-111641-EDT
+codex/monochrome-ui-treatment-20260524
+```
+
+GitHub draft PR for this continuation:
+
+```text
+https://github.com/yury-g/CYD_App_Launcher/pull/1
 ```
 
 Local working path used on the Mac:
 
 ```text
-/Users/narwhal2/Documents/Codex-CYD/PulseSensor_CYD
+/Users/mininarwhal/Documents/Codex/2026-05-23/i-have-a-cyd-connected-can/CYD_App_Launcher_current-clean
 ```
 
 Read this file first, then read `CODEX_HANDOFF.md`.
@@ -222,13 +277,13 @@ docs/screenshots/history/20260522-before-rotation-palette/
 Paste this into a fresh Codex chat:
 
 ```text
-We are continuing internal development of the PulseSensor CYD dashboard.
+We are continuing internal development of the CYD app shell branch.
 
-Use repo yury-g/CYD_App_Launcher, branch codex/finger-coach-dashboard-20260519-111641-EDT.
+Use repo yury-g/CYD_App_Launcher, branch codex/settings-app-shell-20260523.
 
 Start by reading START_HERE_NEXT_CHAT.md and CODEX_HANDOFF.md. Treat yury-g/CYD_App_Launcher as the internal development home. Do not push experiments to WorldFamousElectronics/PulseSensor_CYD unless I explicitly approve a public release.
 
-The current best hardware-tested code state is 1679ed3, with handoff/docs updates after it. It was flashed successfully on 2026-05-22 to /dev/cu.usbserial-110. Preserve default volume 1, GPIO35 PulseSensor input, the top-right rotate icon button, four-orientation rotation cycle, improved portrait layout, blue waveform acquisition state, yellow SIG/LED locking feedback, green locked SIG state, red locked heartbeat LED fade, white labels, brighter grid lines, the minimal SIG GPIO35 quality panel, stricter false-positive tuning, and the one-screen dashboard.
+The current app-shell code state started from 7654183 and was continued on 2026-05-24. It was flashed successfully to /dev/cu.usbserial-3120, MAC f4:65:0b:a9:f2:e8. Preserve default volume 1, GPIO35 PulseSensor input, the persistent rotate icon button, four-orientation rotation cycle, Settings-only volume, app navigation attached to rotate, app placeholder pages, Settings firmware date 2026-05-24, midpoint-split touch targets for the compact toolbar, enlarged 44x28 app-nav/rotate controls, the scrollable large-text Settings list, full-width split Settings scroll buttons, yellow/green staggered Settings row backgrounds, and yellow/green App 1 metric tiles with black text.
 
-Make small changes, build with PlatformIO, flash to the CYD when asked, then preserve hardware-tested states with timestamped commits/tags on launcher.
+Make small changes, run python3 tools/check_app_shell.py, build with PlatformIO, flash to the CYD when asked, then preserve hardware-tested states with timestamped commits/tags on the internal repo.
 ```

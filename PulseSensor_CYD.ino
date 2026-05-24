@@ -78,8 +78,9 @@
 #define APP3_CRAWL_FANFARE_STEP_COUNT 42
 #define APP3_CRAWL_FANFARE_LOOP_START_STEP 0
 #define APP3_CRAWL_FANFARE_LOOP_MS 15000
-#define APP3_ORIGIN_CRAWL_LINE_COUNT 39
+#define APP3_ORIGIN_CRAWL_LINE_COUNT 54
 #define APP3_CRAWL_FRAME_MS 72
+#define APP3_CRAWL_TEXT_SIZE 2
 #define HEART_MIN_SIZE 8
 #define HEART_MAX_SIZE 15
 #define VOLUME_MIN 0
@@ -90,7 +91,7 @@
 
 // ===== APP SHELL =====
 
-#define APP_VERSION "0.4.3-app3-crawl"
+#define APP_VERSION "0.4.4-origin-readable"
 #define APP_FIRMWARE_DATE "2026-05-24"
 #define TOOLBAR_BUTTON_WIDTH 44
 #define TOOLBAR_BUTTON_HEIGHT 28
@@ -176,6 +177,7 @@ enum DisplayMode {
 // ===== GLOBAL OBJECTS =====
 
 TFT_eSPI tft = TFT_eSPI();
+TFT_eSprite app3CrawlSprite = TFT_eSprite(&tft);
 SPIClass touchSpi = SPIClass(HSPI);
 XPT2046_Touchscreen touch(TOUCH_CS, TOUCH_IRQ);
 PulseSensorPlayground pulseSensor;
@@ -214,37 +216,52 @@ const char* const APP3_ORIGIN_CRAWL_LINES[APP3_ORIGIN_CRAWL_LINE_COUNT] = {
   "FINDS THE BEAT",
   "",
   "From Brooklyn shops",
-  "and Parsons classrooms,",
-  "Joel Murphy and Yury Gitman",
-  "built an open hardware",
-  "heart-rate sensor",
+  "and Parsons classes,",
+  "Joel Murphy",
+  "and Yury Gitman",
+  "built open hardware",
+  "heart-rate sensing",
   "for makers.",
   "",
-  "World Famous Electronics",
-  "began as a Kickstarter",
+  "World Famous",
+  "Electronics began",
+  "as a Kickstarter",
   "project in 2012,",
   "then kept making",
-  "PulseSensor and teaching",
-  "it in public.",
+  "PulseSensor",
+  "and teaching it",
+  "in public.",
   "",
-  "The sensor shines green light",
-  "into capillary tissue and watches",
-  "the returning brightness. Each",
-  "pulse wave nudges the signal.",
+  "The sensor shines",
+  "green light into",
+  "capillary tissue",
+  "and watches the",
+  "returning brightness.",
+  "Each pulse wave",
+  "nudges the signal.",
   "",
-  "Its origin is delightfully practical:",
-  "breadboards, op-amps, filters,",
-  "a phone-style light sensor,",
-  "and a reverse-mount green LED",
-  "that made finger placement better.",
+  "Its origin is",
+  "delightfully practical:",
+  "breadboards,",
+  "op-amps, filters,",
+  "a phone-style",
+  "light sensor,",
+  "and a reverse-mount",
+  "green LED",
+  "made finger placement",
+  "better.",
   "",
-  "Now the signal lands here,",
-  "on a Cheap Yellow Display:",
-  "open, tiny, and alive with code.",
+  "Now the signal",
+  "lands here,",
+  "on a Cheap Yellow",
+  "Display:",
+  "open, tiny, alive",
+  "with code.",
   "",
-  "Send us your feature requests,",
+  "Send feature requests,",
   "firmware update ideas,",
-  "and wild classroom wishes.",
+  "and wild classroom",
+  "wishes.",
   "",
   "Thanks for supporting",
   "PulseSensor since 2012."
@@ -405,6 +422,9 @@ int placeholderDy = 2;
 unsigned long lastPlaceholderMove = 0;
 unsigned long app3CrawlStartTime = 0;
 unsigned long lastApp3CrawlFrame = 0;
+bool app3CrawlSpriteReady = false;
+int app3CrawlSpriteW = 0;
+int app3CrawlSpriteH = 0;
 
 // ===== FORWARD DECLARATIONS =====
 
@@ -486,6 +506,7 @@ void drawSettingsScrollControls();
 void drawPlaceholderApp(const char* title, const char* message);
 void drawPlaceholderText(const char* message, uint16_t color);
 void drawApp3OriginCrawl();
+bool ensureApp3CrawlSprite(int w, int h);
 void drawApp3Starfield();
 void drawRotateControl();
 void drawRotateIcon(int x, int y, int w, int h, uint16_t color, uint16_t bg);
@@ -1678,49 +1699,69 @@ void drawApp3OriginCrawl() {
   uint16_t bg = COLOR_BG;
   uint16_t gold = displayMode == DISPLAY_COLOR_LIGHT ? COLOR_LIGHT_AMBER : COLOR_SIGNAL_YELLOW;
   uint16_t dimGold = displayMode == DISPLAY_MONO_DARK || displayMode == DISPLAY_MONO_LIGHT ? textColor() : COLOR_AMBER;
+  int contentH = screenHeight - headerHeight;
 
   if (appNeedsRedraw) {
     appNeedsRedraw = false;
     tft.fillScreen(bg);
     app3CrawlStartTime = now;
+    tft.fillRect(0, 0, screenWidth, headerHeight, bg);
+    tft.drawFastHLine(0, headerHeight - 1, screenWidth, gridColor());
+    tft.setTextSize(1);
+    tft.setTextColor(textColor(), bg);
+    tft.setCursor(portraitLayout ? 10 : 10, portraitLayout ? 38 : 8);
+    tft.print("PulseSensor.com");
+    tft.setTextColor(gold, bg);
+    tft.setCursor(portraitLayout ? 10 : 10, portraitLayout ? 58 : 25);
+    tft.print("Origin Story");
+    drawAppNavControls();
   }
 
-  tft.fillRect(0, headerHeight, screenWidth, screenHeight - headerHeight, bg);
-  tft.fillRect(0, 0, screenWidth, headerHeight, bg);
-  tft.drawFastHLine(0, headerHeight - 1, screenWidth, gridColor());
+  if (!ensureApp3CrawlSprite(screenWidth, contentH)) return;
+
+  app3CrawlSprite.fillSprite(bg);
   drawApp3Starfield();
 
-  tft.setTextSize(1);
-  tft.setTextColor(textColor(), bg);
-  tft.setCursor(portraitLayout ? 10 : 10, portraitLayout ? 38 : 8);
-  tft.print("PulseSensor.com");
-  tft.setTextColor(gold, bg);
-  tft.setCursor(portraitLayout ? 10 : 10, portraitLayout ? 58 : 25);
-  tft.print("Origin Story");
-  drawAppNavControls();
-
-  int crawlTop = headerHeight + 6;
-  int crawlBottom = screenHeight - 4;
-  int lineHeight = 13;
+  int crawlTop = 6;
+  int crawlBottom = contentH - 4;
+  int lineHeight = 24;
   unsigned long elapsed = now - app3CrawlStartTime;
   int travel = APP3_ORIGIN_CRAWL_LINE_COUNT * lineHeight + (crawlBottom - crawlTop) + 40;
-  int offset = (elapsed / 90) % travel;
+  int offset = (elapsed / 105) % travel;
   int baseY = crawlBottom - offset;
 
-  tft.setTextSize(1);
+  app3CrawlSprite.setTextSize(APP3_CRAWL_TEXT_SIZE);
   for (int i = 0; i < APP3_ORIGIN_CRAWL_LINE_COUNT; i++) {
     const char* line = APP3_ORIGIN_CRAWL_LINES[i];
     if (line[0] == '\0') continue;
     int y = baseY + i * lineHeight;
-    if (y < crawlTop || y > crawlBottom - 8) continue;
+    if (y < crawlTop || y > crawlBottom - lineHeight) continue;
 
     uint16_t color = i < 3 ? gold : dimGold;
-    int textW = strlen(line) * 6;
+    int textW = strlen(line) * 6 * APP3_CRAWL_TEXT_SIZE;
     int x = max(0, (screenWidth - textW) / 2);
-    tft.setTextColor(color, bg);
-    tft.setCursor(x, y);
-    tft.print(line);
+    app3CrawlSprite.setTextColor(color, bg);
+    app3CrawlSprite.setCursor(x, y);
+    app3CrawlSprite.print(line);
   }
+
+  app3CrawlSprite.pushSprite(0, headerHeight);
+}
+
+bool ensureApp3CrawlSprite(int w, int h) {
+  if (w <= 0 || h <= 0) return false;
+  if (app3CrawlSpriteReady && app3CrawlSpriteW == w && app3CrawlSpriteH == h) return true;
+
+  if (app3CrawlSpriteReady) {
+    app3CrawlSprite.deleteSprite();
+    app3CrawlSpriteReady = false;
+  }
+
+  app3CrawlSprite.setColorDepth(16);
+  app3CrawlSpriteReady = app3CrawlSprite.createSprite(w, h) != nullptr;
+  app3CrawlSpriteW = app3CrawlSpriteReady ? w : 0;
+  app3CrawlSpriteH = app3CrawlSpriteReady ? h : 0;
+  return app3CrawlSpriteReady;
 }
 
 void drawApp3Starfield() {
@@ -1732,9 +1773,9 @@ void drawApp3Starfield() {
   uint16_t starColor = displayMode == DISPLAY_MONO_DARK || displayMode == DISPLAY_MONO_LIGHT ? textColor() : COLOR_TEXT;
   for (int i = 0; i < 16; i++) {
     int x = stars[i][0];
-    int y = stars[i][1];
-    if (x >= screenWidth || y < headerHeight || y >= screenHeight) continue;
-    tft.drawPixel(x, y, starColor);
+    int y = stars[i][1] - headerHeight;
+    if (x >= app3CrawlSpriteW || y < 0 || y >= app3CrawlSpriteH) continue;
+    app3CrawlSprite.drawPixel(x, y, starColor);
   }
 }
 

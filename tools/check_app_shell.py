@@ -108,7 +108,12 @@ required_large_controls = {
     "drawApp3OriginCrawl": "App 3 origin crawl renderer is missing",
     "APP3_ORIGIN_CRAWL_LINE_COUNT": "App 3 origin crawl copy is missing",
     "Origin Story": "App 3 is not labeled Origin Story",
-    "Send us your feature requests,": "App 3 origin crawl is missing the feature-request ask",
+    "Send feature requests,": "App 3 origin crawl is missing the feature-request ask",
+    "#define APP3_CRAWL_TEXT_SIZE 2": "Origin Story crawl text is not enlarged",
+    "TFT_eSprite app3CrawlSprite": "Origin Story crawl is missing an offscreen sprite",
+    "ensureApp3CrawlSprite": "Origin Story crawl sprite is not managed for rotation changes",
+    "app3CrawlSprite.pushSprite": "Origin Story crawl frames are not pushed from an offscreen sprite",
+    "app3CrawlSprite.setTextSize(APP3_CRAWL_TEXT_SIZE)": "Origin Story crawl does not use the enlarged text size",
 }
 for token, message in required_large_controls.items():
     if token not in source:
@@ -141,5 +146,11 @@ if 'drawPlaceholderApp("App 3", "your app here too")' in app3_branch_body:
     raise SystemExit("App 3 still renders the bouncing placeholder")
 if "drawApp3OriginCrawl();" not in app3_branch_body:
     raise SystemExit("App 3 does not render the origin crawl")
+
+app3_fn_start = source.index("void drawApp3OriginCrawl() {")
+app3_fn_end = source.index("void drawApp3Starfield", app3_fn_start)
+app3_fn_body = source[app3_fn_start:app3_fn_end]
+if "tft.fillRect(0, headerHeight" in app3_fn_body:
+    raise SystemExit("Origin Story crawl clears the live TFT area directly, causing flicker")
 
 print("App shell checks passed")

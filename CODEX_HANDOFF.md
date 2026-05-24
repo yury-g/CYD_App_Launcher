@@ -25,27 +25,27 @@ codex/app4-pin-scanner-perf-safe-20260524
 Current firmware/UI code commit:
 
 ```text
-887cf62 Add locked peak cadence beat recovery 20260524-150000-EDT
+02a5001 Add peak to peak signal experiment 20260524
 ```
 
 Latest signal-behavior log commit:
 
 ```text
-887cf62 Add locked peak cadence beat recovery 20260524-150000-EDT
+02a5001 Add peak to peak signal experiment 20260524
 ```
 
 Current firmware version:
 
 ```text
-0.4.19-peak-cadence
+0.4.20-peak2peak
 ```
 
 Latest hardware status:
 
 - Built with PlatformIO and flashed to `/dev/cu.usbserial-3120`.
 - Upload detected ESP32-D0WD-V3 MAC `f4:2d:c9:9d:af:cc`.
-- Serial sanity checks after flash showed live raw `signal=...` lines with expanded lock-hold and beat-accept telemetry.
-- PlatformIO memory was `RAM 7.3%` and `Flash 28.8%`.
+- Serial sanity checks after flash showed live raw `signal=...` lines with expanded lock-hold, `p2p`, and beat-accept telemetry.
+- PlatformIO memory was `RAM 7.3%` and `Flash 28.9%`.
 - User confirmed the current UI looks great and is visually ready to publish back to `main`.
 
 Do not merge to `main` yet. Signal-performance code checks and earlobe serial sanity passes have been done, but the user should still do real body-position-specific visual sanity passes before any main merge or public release.
@@ -56,7 +56,7 @@ Performance priority:
 - Display modes, app switching, App 4 Pin Scanner, Origin Story, and visual polish are second-class if they interfere with sensing.
 - Preserve `readPulseSensor()` as the first meaningful work in `loop()`.
 - If signal behavior still feels off on hardware, re-enable `PERF_DIAGNOSTICS`, compare serial loop/read/draw timing, and keep reducing display work before touching beat math.
-- Roll back the lock-hold experiment with branch/tag `backup/pre-lock-hold-grace-20260524` if the real CYD behavior feels worse.
+- Disable `PEAK_TO_PEAK_EXPERIMENT` first if the new `0.4.20-peak2peak` behavior creates false positives or unstable BPM/IBI. Roll back the lock-hold experiment with branch/tag `backup/pre-lock-hold-grace-20260524` only if the broader lock-hold behavior feels worse.
 - Always record sensor body position and mount/contact method in hardware notes. The `0.4.17-lock-hold-grace` serial sanity windows were earlobe tests because finger contact had stopped giving usable readings even though it worked well the previous day.
 
 Commits to compare:
@@ -93,7 +93,9 @@ Current UI specifics:
 - The live waveform and `SIG GPIO35` panel now share the same state colors: yellow while acquiring, then the locked signal color after signal lock.
 - Lock retention now follows "acquire strictly, hold gently": four consecutive qualified beats are still required for acquisition, but an already-locked signal can survive up to two rejected beat events inside a 2200 ms window.
 - Locked beat detection now adds a peak/cadence recovery path for the user-observed earlobe case where slight movement distorts the valley while peaks remain visually stable. After lock, both strict and recovered beats must stay close to the current cadence before updating BPM/IBI.
-- Expanded serial telemetry now includes live range, clipping score, qualified streak, unqualified streak, beat accept reason, and lock-drop reason.
+- `0.4.20-peak2peak` adds an enabled peak-to-peak experiment. It scores live peak-to-peak waveform movement, can let high-score peak-to-peak candidate beats help acquisition, and can accept bounded peak-to-peak candidates while locked. The tuned window uses a wider cadence tolerance than strict recovery but rejects short movement-blip intervals below 70% of the current IBI.
+- Expanded serial telemetry now includes live range, clipping score, qualified streak, unqualified streak, `p2p` score, beat accept reason, and lock-drop reason.
+- Serial sanity after flashing `0.4.20-peak2peak` on the same earlobe position confirmed `accept=peak2peak` events during locked runs with clipping at 0. The tuned path looked bounded in serial, but later weak/short-interval sections still dropped lock, so this remains an experiment candidate rather than a publish verdict.
 - Serial sanity after flashing `0.4.19-peak-cadence` confirmed `accept=peak-cadence` events during locked runs with clipping at 0. One later window still showed a `grace expired` drop after two rejected events, so this is an upgrade candidate, not a final publish verdict.
 - Two 60-second earlobe serial sanity windows after flashing `0.4.17-lock-hold-grace` showed the lock-hold grace path active and bounded. Window 1 was 66.1% locked with `badStreak` max 2; window 2 was 94.2% locked with `badStreak` max 2. Details live in `docs/signal-behavior-log.md`.
 - Signal-first development guidance now lives in `docs/signal-first-architecture.md`.

@@ -66,7 +66,7 @@ Hardware notes:
 ```text
 Date/time: 2026-05-24 EDT
 Firmware: 0.4.20-peak2peak
-Commit: pending implementation commit
+Commit: 02a5001 Add peak to peak signal experiment 20260524
 Sensor body position: earlobe, same position as prior 0.4.19 tests
 Mount/contact method: same user earlobe placement as prior run; exact pressure
   not recorded

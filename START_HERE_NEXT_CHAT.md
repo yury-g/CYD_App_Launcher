@@ -23,19 +23,19 @@ codex/app4-pin-scanner-perf-safe-20260524
 Current firmware/UI code commit:
 
 ```text
-887cf62 Add locked peak cadence beat recovery 20260524-150000-EDT
+02a5001 Add peak to peak signal experiment 20260524
 ```
 
 Latest signal-behavior log commit:
 
 ```text
-887cf62 Add locked peak cadence beat recovery 20260524-150000-EDT
+02a5001 Add peak to peak signal experiment 20260524
 ```
 
 Current firmware version on the attached CYD:
 
 ```text
-0.4.19-peak-cadence
+0.4.20-peak2peak
 ```
 
 Connected CYD used for the latest flash:
@@ -50,6 +50,7 @@ Latest verified commands from this pause point:
 
 ```sh
 python3 tools/check_app_shell.py
+python3 tools/check_peak_to_peak_experiment.py
 git diff --check
 PATH=/Users/mininarwhal/Documents/Codex/2026-05-23/i-have-a-cyd-connected-can/.venv-pio/bin:$PATH PLATFORMIO_CORE_DIR=/Users/mininarwhal/Documents/Codex/2026-05-23/i-have-a-cyd-connected-can/.platformio pio run -e cyd
 PATH=/Users/mininarwhal/Documents/Codex/2026-05-23/i-have-a-cyd-connected-can/.venv-pio/bin:$PATH PLATFORMIO_CORE_DIR=/Users/mininarwhal/Documents/Codex/2026-05-23/i-have-a-cyd-connected-can/.platformio pio run -e cyd -t upload --upload-port /dev/cu.usbserial-3120
@@ -60,8 +61,8 @@ python3 tools/render_monochrome_mock.py
 Build memory from PlatformIO:
 
 ```text
-RAM:   7.3% (23780 / 327680 bytes)
-Flash: 28.8% (378073 / 1310720 bytes)
+RAM:   7.3% (23788 / 327680 bytes)
+Flash: 28.9% (378569 / 1310720 bytes)
 ```
 
 Rollback anchors before lock-hold work:
@@ -93,7 +94,9 @@ Visual/UI status:
 - The live waveform and `SIG GPIO35` panel now share the same state colors: yellow while acquiring, then the locked signal color after signal lock.
 - Lock retention now follows "acquire strictly, hold gently": four consecutive qualified beats are still required for acquisition, but an already-locked signal can survive up to two rejected beat events inside a 2200 ms window.
 - Locked beat detection now adds a peak/cadence recovery path for the user-observed earlobe case where slight movement distorts the valley while peaks remain visually stable. After lock, both strict and recovered beats must stay close to the current cadence before updating BPM/IBI.
-- Expanded serial telemetry now includes live range, clipping score, qualified streak, unqualified streak, beat accept reason, and lock-drop reason.
+- `0.4.20-peak2peak` adds an enabled peak-to-peak experiment. It scores live peak-to-peak waveform movement, can let high-score peak-to-peak candidate beats help acquisition, and can accept bounded peak-to-peak candidates while locked. The tuned window uses a wider cadence tolerance than strict recovery but rejects short movement-blip intervals below 70% of the current IBI.
+- Expanded serial telemetry now includes live range, clipping score, qualified streak, unqualified streak, `p2p` score, beat accept reason, and lock-drop reason.
+- Serial sanity after flashing `0.4.20-peak2peak` on the same earlobe position confirmed `accept=peak2peak` events during locked runs with clipping at 0. The tuned path looked bounded in serial, but later weak/short-interval sections still dropped lock, so this remains an experiment candidate rather than a publish verdict.
 - Serial sanity after flashing `0.4.19-peak-cadence` confirmed `accept=peak-cadence` events during locked runs with clipping at 0. One later window still showed a `grace expired` drop after two rejected events, so this is an upgrade candidate, not a final publish verdict.
 - Two 60-second earlobe serial sanity windows after flashing `0.4.17-lock-hold-grace` showed the lock-hold grace path active and bounded. Window 1 was 66.1% locked with `badStreak` max 2; window 2 was 94.2% locked with `badStreak` max 2. Details live in `docs/signal-behavior-log.md`.
 - Signal-first development guidance now lives in `docs/signal-first-architecture.md`.

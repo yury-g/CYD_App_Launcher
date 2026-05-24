@@ -50,7 +50,7 @@ This is the current good development pause point for the app shell branch:
 
 ```text
 Branch:   codex/app4-pin-scanner-perf-safe-20260524
-Firmware: 0.4.19-peak-cadence
+Firmware: 0.4.20-peak2peak
 ```
 
 - Added a compact app shell around the Pulse dashboard: the screen order is Pulse dashboard, Settings, App 4 `Pin Scanner`, `Your App Here`, then `Origin Story` last.
@@ -60,7 +60,7 @@ Firmware: 0.4.19-peak-cadence
 - Changed the compact `SIG GPIO35` bars into a 12-step acquisition ladder, so users get more gradual feedback while finding a usable signal before BPM/IBI are trusted. The acquisition harmony now has an 8-note rising palette.
 - Matched the live waveform line color to the `SIG GPIO35` panel state color, so the graph and SIG box both show yellow while acquiring and change together after lock.
 - Added balanced lock-retention grace: acquisition still needs four consecutive qualified beats, but once locked the dashboard tolerates brief movement/noise blips before clearing BPM/IBI.
-- Added locked-only peak/cadence beat recovery for the earlobe movement case: once lock is earned, beat events can survive valley distortion when cadence remains close to the last trusted IBI, while short movement-blip intervals are rejected.
+- Added locked-only peak/cadence beat recovery, then an enabled peak-to-peak experiment for the earlobe movement case: once lock is earned, beat events can survive valley distortion when cadence remains close to the last trusted IBI, while short movement-blip intervals are rejected.
 - Made long Settings values easier to read in horizontal display rotation by keeping them at the normal Settings text size on a second line; the tiny fallback remains available only for vertical rotation.
 - Added Settings-only controls for Volume, icon-only Rotation, Display, WiFi/Bluetooth placeholders, LED Control, LED swatches, About, Version, Firmware date, runtime memory used/free, and build memory.
 - Added four display modes under Settings `Display`: `M DARK`, `M LIGHT`, `C DARK`, and `C LIGHT`.
@@ -213,7 +213,7 @@ git log -1 --oneline
 
 Run `git log -1 --oneline` after checkout to see the latest pushed handoff
 commit. The latest firmware/UI code commit is
-`887cf62 Add locked peak cadence beat recovery 20260524-150000-EDT`.
+`02a5001 Add peak to peak signal experiment 20260524`.
 
 3. Plug in one CYD and detect the serial port:
 

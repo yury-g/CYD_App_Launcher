@@ -21,7 +21,7 @@ That page has a one-click web installer, wiring diagram, and the full tutorial f
 | Screen | Waveform and `SIG GPIO35` use the same state color: yellow while acquiring, then the locked signal color after lock; dotted `THR 550` guide, BPM, IBI, and compact 12-step quality bars |
 | Light | Rear LED pulses yellow while locking and red once locked, using the same smooth heartbeat fade |
 | Sound | Rising signal-quality harmony while locking, then short heartbeat tone on the CYD speaker (GPIO 26) |
-| Touch | Header buttons change speaker volume, default 1/10, and rotate the dashboard for different enclosures |
+| Touch | App navigation plus Settings controls for speaker volume, display mode, rotation, LED, and diagnostics |
 | Heart | Centered animated red heart with cyan outline |
 
 Current horizontal dashboard:
@@ -50,7 +50,7 @@ This is the current good development pause point for the app shell branch:
 
 ```text
 Branch:   codex/app4-pin-scanner-perf-safe-20260524
-Firmware: 0.4.18-settings-text
+Firmware: 0.4.19-peak-cadence
 ```
 
 - Added a compact app shell around the Pulse dashboard: the screen order is Pulse dashboard, Settings, App 4 `Pin Scanner`, `Your App Here`, then `Origin Story` last.
@@ -60,6 +60,7 @@ Firmware: 0.4.18-settings-text
 - Changed the compact `SIG GPIO35` bars into a 12-step acquisition ladder, so users get more gradual feedback while finding a usable signal before BPM/IBI are trusted. The acquisition harmony now has an 8-note rising palette.
 - Matched the live waveform line color to the `SIG GPIO35` panel state color, so the graph and SIG box both show yellow while acquiring and change together after lock.
 - Added balanced lock-retention grace: acquisition still needs four consecutive qualified beats, but once locked the dashboard tolerates brief movement/noise blips before clearing BPM/IBI.
+- Added locked-only peak/cadence beat recovery for the earlobe movement case: once lock is earned, beat events can survive valley distortion when cadence remains close to the last trusted IBI, while short movement-blip intervals are rejected.
 - Made long Settings values easier to read in horizontal display rotation by keeping them at the normal Settings text size on a second line; the tiny fallback remains available only for vertical rotation.
 - Added Settings-only controls for Volume, icon-only Rotation, Display, WiFi/Bluetooth placeholders, LED Control, LED swatches, About, Version, Firmware date, runtime memory used/free, and build memory.
 - Added four display modes under Settings `Display`: `M DARK`, `M LIGHT`, `C DARK`, and `C LIGHT`.
@@ -67,7 +68,9 @@ Firmware: 0.4.18-settings-text
 - Added high-contrast mode-aware screens, larger touch targets, render-preview tools, and the current screenshot sets for the new colors and Settings screen.
 - Added the `Origin Story` starfield crawl and programmatic fanfare. The current crawl words are placeholder copy for a later writing pass.
 
-Pre-main publish note: the current UI looked great on the attached CYD, but before merging this app-shell branch back to `main`, re-check signal performance against earlier best-working builds. Raw `SIG GPIO35`, BPM, IBI, and qualified-beat analysis are the first-class product behavior; app switching, display modes, Pin Scanner, and Origin Story should be changed or gated if they slow or destabilize PulseSensor readings.
+Pre-main publish note: the current UI looked great on the attached CYD, but before merging this app-shell branch back to `main`, keep validating signal behavior by body position. Raw `SIG GPIO35`, BPM, IBI, and qualified-beat analysis are the first-class product behavior; app switching, display modes, Pin Scanner, and Origin Story should be changed or gated if they slow or destabilize PulseSensor readings.
+
+Signal-acquisition experiments, upgrades, downgrades, and hardware verdicts live in [docs/signal-behavior-log.md](docs/signal-behavior-log.md). Signal-first architecture rules live in [docs/signal-first-architecture.md](docs/signal-first-architecture.md). Broader UI and hardware experiment notes live in [docs/experiment-log.md](docs/experiment-log.md).
 
 ### v1.2.0 — 2026-05-15
 
@@ -208,11 +211,9 @@ git checkout codex/app4-pin-scanner-perf-safe-20260524
 git log -1 --oneline
 ```
 
-The current firmware/UI code commit is:
-
-```text
-82c9393 Add granular signal acquisition ladder 20260524-134500-EDT
-```
+Run `git log -1 --oneline` after checkout to see the latest pushed handoff
+commit. The latest firmware/UI code commit is
+`887cf62 Add locked peak cadence beat recovery 20260524-150000-EDT`.
 
 3. Plug in one CYD and detect the serial port:
 

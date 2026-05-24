@@ -1,5 +1,63 @@
 # CYD Hardware Experiment Log
 
+Use this file as the broad experiment index. Keep detailed PulseSensor
+acquisition and beat-detection notes in `docs/signal-behavior-log.md`, and keep
+timing/architecture rules in `docs/signal-first-architecture.md`.
+
+## Current Experiment Navigation
+
+- Signal quality is the top priority. Treat raw `SIG GPIO35`, BPM, IBI, and
+  beat qualification as more important than app shell features, display modes,
+  Pin Scanner, sounds, or story screens.
+- UI experiments should keep screenshots or render previews under
+  `docs/screenshots/` so a future chat can see what changed without this chat
+  history.
+- Hardware experiments should record firmware version, commit, sensor body
+  position, contact method, steady-contact behavior, movement behavior, and
+  whether the change was an upgrade, downgrade, or still uncertain.
+- Reversible lessons matter: keep rejected ideas with the reason they were
+  rejected, because some of the useful parts may be reused later.
+
+## 2026-05-24 — App Shell, Display Modes, Settings, And Signal Regression Pass
+
+Branch: `codex/app4-pin-scanner-perf-safe-20260524`
+
+Latest wrapped firmware at handoff: `0.4.19-peak-cadence`
+
+### UI Work That Looked Good On CYD
+
+- Compact app sequence: Pulse dashboard, Settings, App 4 `Pin Scanner`, `Your
+  App Here`, and `Origin Story`.
+- Settings owns volume, rotation, display mode, LED, About, firmware/build
+  rows, runtime memory, and scroll controls.
+- Four display modes: `M DARK`, `M LIGHT`, `C DARK`, and `C LIGHT`.
+- Settings horizontal rows keep readable size-2 text for long values by moving
+  value text to a second line; tiny value text is reserved for vertical
+  rotation only.
+- App 4 Pin Scanner starts idle and reads only the selected row.
+- Origin Story uses an offscreen sprite/fallback renderer after hardware showed
+  text-size, flicker, and blank-screen problems.
+
+### Signal Lessons From This Pass
+
+- Keep `readPulseSensor()` as the first meaningful call in `loop()`.
+- Avoid full-screen redraws in normal live Pulse updates. Draw waveform columns
+  and changed panels only.
+- Acquisition bars are user guidance, not proof of BPM lock.
+- The current best detector rule is: acquire strictly, hold gently, then after
+  lock allow bounded peak/cadence recovery for valley-distorted true positives.
+- Sensor body position matters. Recent validation used the earlobe because the
+  finger stopped giving reliable signal even though it worked well the day
+  before.
+
+### Current Verdict
+
+- UI is visually ready for a main-merge candidate.
+- Signal behavior is an upgrade candidate but still needs body-position sanity
+  passes before publishing. One `0.4.19-peak-cadence` serial window showed the
+  intended `accept=peak-cadence` recovery; another still showed a bounded
+  `grace expired` drop after rejected events.
+
 ## 2026-05-19 11:39 EDT — Signal Dashboard / Finger Coach Side Quest
 
 Branch: `codex/finger-coach-dashboard-20260519-111641-EDT`

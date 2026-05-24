@@ -204,7 +204,7 @@ git log -1 --oneline
 The current firmware/UI code commit is:
 
 ```text
-1f701dd Improve Pulse signal redraw performance 20260524-131641-EDT
+9377f91 Improve Pulse signal redraw performance 20260524-131641-EDT
 ```
 
 3. Plug in one CYD and detect the serial port:

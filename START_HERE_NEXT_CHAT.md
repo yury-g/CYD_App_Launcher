@@ -23,7 +23,7 @@ codex/app4-pin-scanner-perf-safe-20260524
 Current firmware/UI code commit:
 
 ```text
-1f701dd Improve Pulse signal redraw performance 20260524-131641-EDT
+9377f91 Improve Pulse signal redraw performance 20260524-131641-EDT
 ```
 
 Current firmware version on the attached CYD:

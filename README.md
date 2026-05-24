@@ -32,9 +32,59 @@ Current horizontal dashboard:
 | --- | --- |
 | ![Searching signal screen](docs/screenshots/searching.svg) | ![Locked qualified beat screen](docs/screenshots/locked.svg) |
 
+## Version History And Major Changes
+
+Use this section as the quick human-readable project log. See [CHANGELOG.md](CHANGELOG.md) for the full detailed history.
+
+### Current app-shell preview — 2026-05-24
+
+This is the current good development pause point for the app shell branch:
+
+```text
+Branch: codex/monochrome-ui-treatment-20260524
+Head:   0600cc5 Add Origin Story perspective crawl 20260524-093448-EDT
+```
+
+- Added a compact app shell around the Pulse dashboard: App 1 is the live Pulse dashboard, App 2 is a placeholder, and App 3 is `Origin Story`.
+- Added Settings-only controls for Volume, Rotation, Display, WiFi/Bluetooth placeholders, LED Control, LED swatches, About, Version, and Firmware date.
+- Added four display modes under Settings `Display`: `M DARK`, `M LIGHT`, `C DARK`, and `C LIGHT`.
+- Added high-contrast Settings rows, larger touch targets, render-preview tools, and the current screenshot sets for the new colors and Settings screen.
+- Added the `Origin Story` starfield crawl and programmatic fanfare. The current crawl words are placeholder copy for a later writing pass.
+
+### v1.2.0 — 2026-05-15
+
+- Added Signal Coach teaching feedback: `TOO FLAT`, `HOLD STEADY`, `GOOD WAVE`, `LOCKING`, and `QUALIFIED BEAT`.
+- Added the amplitude meter and dotted `THR 550` guide.
+- Lowered startup volume to `1/10`.
+
+### v1.1.0 — 2026-05-14
+
+- Added beat sound on the CYD speaker and touch volume controls.
+- Added the centered animated heart and cyan/white waveform behavior.
+- Added the first ESP Web Tools browser flasher prototype.
+- Reworked the README into a flash-first, student-friendly guide.
+
+### v1.0.0 — 2026-05-13
+
+- Established the known-good one-screen CYD Pulse dashboard.
+- Switched PulseSensor input to `GPIO 35` for the tested CYD hardware.
+- Added BPM, IBI, waveform, signal quality bars, rear LED pulse, and automatic detector re-arm.
+
+### v0.2.0 — 2026-04-08
+
+- Built the first complete five-app launcher sketch.
+- Added touch menu navigation and early Heartbeat, Breathing, Relaxation, HRV, and BreathFFT apps.
+- Status at that point was still incomplete and not yet hardware-verified.
+
+### v0.1.0 — 2026-04-08
+
+- Started the repository with a placeholder README and initial Git history.
+
 ## Current App Shell Development Preview
 
-This branch is continuing the app shell work on `codex/monochrome-ui-treatment-20260524`, branched from `codex/settings-app-shell-20260523`. It keeps the Pulse dashboard as App 1, adds placeholder App 2 / App 3 pages, and moves settings into a dedicated scrollable Settings screen with larger finger-friendly controls.
+This branch is the current app-shell development pause point on `codex/monochrome-ui-treatment-20260524`, branched from `codex/settings-app-shell-20260523`. It keeps the Pulse dashboard as App 1, adds placeholder App 2 plus the `Origin Story` App 3 crawl, and moves settings into a dedicated scrollable Settings screen with larger finger-friendly controls.
+
+Use these images to review the new screens, colors, and Settings treatment before flashing another CYD. The current `Origin Story` content is intentionally placeholder text; keep the renderer and layout, then drop in revised crawl copy during a later text-edit pass.
 
 ### App 1: Pulse Dashboard Render
 
@@ -56,7 +106,11 @@ This branch is continuing the app shell work on `codex/monochrome-ui-treatment-2
 | --- | --- | --- |
 | ![Settings portrait top render](docs/screenshots/settings-render/settings-portrait-top.png) | ![Settings portrait middle render](docs/screenshots/settings-render/settings-portrait-middle.png) | ![Settings portrait bottom render](docs/screenshots/settings-render/settings-portrait-bottom.png) |
 
-The render helpers are in `tools/render_pulse_app_mock.py` and `tools/render_settings_mock.py`. They are intentionally lightweight PNG mockups used for quick UI iteration before flashing the CYD.
+### App 3: Origin Story Render
+
+![Origin Story crawl contact sheet](docs/screenshots/app3-origin-crawl-render/app3-origin-contact-sheet.png)
+
+The render helpers are in `tools/render_pulse_app_mock.py`, `tools/render_settings_mock.py`, and `tools/render_app3_origin_crawl_mock.py`. They are intentionally lightweight PNG mockups used for quick UI iteration before flashing the CYD.
 
 ### Internal Design Memory: 2026-05-24 Display Modes
 
@@ -111,32 +165,56 @@ The 2026-05-24 pass explored a maximum-readability display treatment for no-glas
 
 ## Flash Your CYD
 
-### Option A — One-click web installer (recommended)
+### Option A — Current app-shell preview from source
+
+Use this path on any computer when you want the current app shell, display modes, new Settings screen, and `Origin Story` app from this branch. This does not require a Codex session.
+
+1. Install Git, Python 3, and PlatformIO:
+
+```bash
+python3 -m pip install --user platformio
+```
+
+2. Clone this repo and check out the current app-shell branch:
+
+```bash
+git clone https://github.com/yury-g/CYD_App_Launcher.git
+cd CYD_App_Launcher
+git checkout codex/monochrome-ui-treatment-20260524
+git log -1 --oneline
+```
+
+The expected pause-point head is:
+
+```text
+0600cc5 Add Origin Story perspective crawl 20260524-093448-EDT
+```
+
+3. Plug in one CYD and detect the serial port:
+
+```bash
+pio device list
+```
+
+On macOS the port usually looks like `/dev/cu.usbserial-3120`, `/dev/cu.usbserial-210`, or similar. On Windows it usually looks like `COM3`, `COM4`, or similar.
+
+4. Build and flash, replacing the port with the one you detected:
+
+```bash
+pio run -e cyd
+pio run -e cyd -t upload --upload-port /dev/cu.usbserial-3120
+```
+
+This branch includes a `platformio.ini` for repeatable local builds and uploads.
+
+### Option B — Public one-click web installer
 
 Go to **[pulsesensor.com/pages/cyd](https://pulsesensor.com/pages/cyd)** in Chrome, Edge, or Brave on a desktop or laptop. Plug in your CYD over USB. Click **Install**.
 
 The same installer is also hosted from this repo:
 **[worldfamouselectronics.github.io/PulseSensor_CYD/](https://worldfamouselectronics.github.io/PulseSensor_CYD/)**
 
-### Option B — Local USB flash with PlatformIO
-
-This branch includes a `platformio.ini` for repeatable local builds and uploads.
-
-1. Plug one CYD into USB.
-2. Detect the serial port:
-
-```bash
-pio device list
-```
-
-3. Build and flash:
-
-```bash
-pio run -e cyd
-pio run -e cyd -t upload
-```
-
-The current developer config uses `/dev/cu.usbserial-210` as `upload_port`. If your CYD appears on a different port, update `platformio.ini` before uploading. The config includes the required `TFT_eSPI` CYD display compile flags and uses `115200` upload speed.
+Important: the public one-click installer is for the published tutorial firmware unless the checked-in `firmware/` binaries have been regenerated from the current app-shell branch. To test the new screens and display modes right now, use Option A.
 
 ### Option C — Build in Arduino IDE
 
@@ -300,6 +378,7 @@ python3 tools/render_pulse_app_mock.py
 python3 tools/render_settings_mock.py
 python3 tools/render_monochrome_mock.py
 python3 tools/render_display_mode_mock.py
+python3 tools/render_app3_origin_crawl_mock.py
 ```
 
 ## Development Checkpoints

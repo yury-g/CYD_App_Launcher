@@ -65,6 +65,10 @@
 #define LOCK_QUALIFIED_BEATS 4
 #define LOCK_GRACE_BAD_BEATS 2
 #define LOCK_HOLD_GRACE_MS 2200
+#define PEAK_RECOVERY_IBI_TOLERANCE_PERCENT 28
+#define PEAK_RECOVERY_MIN_IBI_TOLERANCE_MS 120
+#define PEAK_RECOVERY_MIN_RANGE 80
+#define PEAK_RECOVERY_MIN_AMPLITUDE 12
 #define REARM_SIGNAL_RANGE 120
 #define REARM_NO_BEAT_MS 2200
 #define REARM_COOLDOWN_MS 3500
@@ -106,7 +110,7 @@
 
 // ===== APP SHELL =====
 
-#define APP_VERSION "0.4.18-settings-text"
+#define APP_VERSION "0.4.19-peak-cadence"
 #define APP_FIRMWARE_DATE "2026-05-24"
 #define APP_BUILD_RAM_USAGE "RAM 7.3%"
 #define APP_BUILD_FLASH_USAGE "Flash 28.8%"
@@ -344,6 +348,7 @@ int unqualifiedBeatStreak = 0;
 int clippedSampleScore = 0;
 int rearmCount = 0;
 const char* lastLockDropReason = "none";
+const char* lastBeatAcceptReason = "none";
 
 bool dashboardDrawn = false;
 int previousDisplayBPM = -1;
@@ -569,6 +574,9 @@ void maybePrintPerfDiagnostics();
 const char* currentAppName();
 #endif
 bool isQualifiedBeat(int bpm, int ibi, int amplitude);
+bool isPlausibleBeatTiming(int bpm, int ibi);
+bool isLockedCadenceMatch(int ibi);
+bool isPeakCadenceRecoveryBeat(int bpm, int ibi, int amplitude);
 void updateClippingScore();
 int acquisitionScoreForCurrentSignal();
 void updateSignalAcquisitionScore();
@@ -760,11 +768,12 @@ void loop() {
                       pinScannerStatusText(scannerActiveIndex));
       }
     } else {
-      Serial.printf("signal=%d amp=%d bpm=%d ibi=%d locked=%d quality=%d range=%d clip=%d qStreak=%d badStreak=%d drop=%s\n",
+      Serial.printf("signal=%d amp=%d bpm=%d ibi=%d locked=%d quality=%d range=%d clip=%d qStreak=%d badStreak=%d accept=%s drop=%s\n",
                     currentSignal, pulseAmplitude, displayBPM, displayIBI,
                     lockedSignal ? 1 : 0, signalQuality,
                     maxSignal - minSignal, clippedSampleScore,
                     qualifiedBeatStreak, unqualifiedBeatStreak,
+                    lastBeatAcceptReason,
                     lastLockDropReason);
     }
   }
@@ -1555,18 +1564,23 @@ void readPulseSensor() {
     int bpm = pulseSensor.getBeatsPerMinute();
     int ibi = pulseSensor.getInterBeatIntervalMs();
     bool qualified = isQualifiedBeat(bpm, ibi, pulseAmplitude);
+    bool strictAccepted = qualified && (!wasLocked || isLockedCadenceMatch(ibi));
+    bool recovered = !strictAccepted && wasLocked && isPeakCadenceRecoveryBeat(bpm, ibi, pulseAmplitude);
+    bool accepted = strictAccepted || recovered;
 
     lastBeatTime = now;
 
-    if (qualified) {
+    if (accepted) {
       displayBPM = bpm;
       displayIBI = ibi;
       lastQualifiedBeatTime = now;
       unqualifiedBeatStreak = 0;
       lastLockDropReason = "none";
+      lastBeatAcceptReason = strictAccepted ? "strict" : "peak-cadence";
       qualifiedBeatStreak++;
       if (qualifiedBeatStreak > LOCK_QUALIFIED_BEATS) qualifiedBeatStreak = LOCK_QUALIFIED_BEATS;
     } else if (wasLocked) {
+      lastBeatAcceptReason = "reject";
       unqualifiedBeatStreak++;
       if (wasLocked && unqualifiedBeatStreak <= LOCK_GRACE_BAD_BEATS &&
           now - lastQualifiedBeatTime <= LOCK_HOLD_GRACE_MS) {
@@ -1575,6 +1589,7 @@ void readPulseSensor() {
         dropSignalLock("grace expired");
       }
     } else {
+      lastBeatAcceptReason = "reject";
       qualifiedBeatStreak = 0;
       unqualifiedBeatStreak = 0;
     }
@@ -1582,7 +1597,7 @@ void readPulseSensor() {
     lockedSignal = qualifiedBeatStreak >= LOCK_QUALIFIED_BEATS;
     updateSignalAcquisitionScore();
 
-    if (qualified) {
+    if (accepted) {
       if (lockedSignal) {
         triggerBeatEffects();
       } else {
@@ -1691,10 +1706,38 @@ const char* currentAppName() {
 #endif
 
 bool isQualifiedBeat(int bpm, int ibi, int amplitude) {
-  if (bpm < MIN_QUALIFIED_BPM || bpm > MAX_QUALIFIED_BPM) return false;
-  if (ibi < MIN_QUALIFIED_IBI || ibi > MAX_QUALIFIED_IBI) return false;
+  if (!isPlausibleBeatTiming(bpm, ibi)) return false;
   if (amplitude < MIN_QUALIFIED_AMPLITUDE) return false;
   if (maxSignal - minSignal < SIGNAL_COACH_FLAT_RANGE) return false;
+  if (clippedSampleScore > 18) return false;
+  return true;
+}
+
+bool isPlausibleBeatTiming(int bpm, int ibi) {
+  if (bpm < MIN_QUALIFIED_BPM || bpm > MAX_QUALIFIED_BPM) return false;
+  if (ibi < MIN_QUALIFIED_IBI || ibi > MAX_QUALIFIED_IBI) return false;
+  return true;
+}
+
+bool isLockedCadenceMatch(int ibi) {
+  if (displayIBI <= 0) return false;
+  int ibiTolerance = max(PEAK_RECOVERY_MIN_IBI_TOLERANCE_MS,
+                         (displayIBI * PEAK_RECOVERY_IBI_TOLERANCE_PERCENT) / 100);
+  return abs(ibi - displayIBI) <= ibiTolerance;
+}
+
+bool isPeakCadenceRecoveryBeat(int bpm, int ibi, int amplitude) {
+  if (!lockedSignal) return false;
+  if (!isPlausibleBeatTiming(bpm, ibi)) return false;
+  if (!isLockedCadenceMatch(ibi)) return false;
+
+  int liveRange = maxSignal - minSignal;
+  // sawStartOfBeat() is already the peak-side evidence; do not require the
+  // fixed startup threshold here because post-lock movement can shift baseline.
+  bool signalStillMoving = liveRange >= PEAK_RECOVERY_MIN_RANGE ||
+                           amplitude >= PEAK_RECOVERY_MIN_AMPLITUDE;
+  if (!signalStillMoving) return false;
+
   if (clippedSampleScore > 18) return false;
   return true;
 }
@@ -1770,6 +1813,7 @@ void dropSignalLock(const char* reason) {
   lockedSignal = false;
   qualifiedBeatStreak = 0;
   unqualifiedBeatStreak = 0;
+  lastBeatAcceptReason = "none";
   displayBPM = 0;
   displayIBI = 0;
   updateSignalAcquisitionScore();
@@ -1841,6 +1885,7 @@ void rearmPulseDetector(const char* reason) {
   displayIBI = 0;
   lockedSignal = false;
   lastLockDropReason = reason;
+  lastBeatAcceptReason = "none";
   rearmCount++;
 }
 

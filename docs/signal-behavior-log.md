@@ -13,8 +13,10 @@ Acquire strictly, hold gently.
   rejection.
 - Gentle post-lock hold prevents false negatives: once locked, tolerate up to
   two unqualified beat events within 2200 ms before clearing BPM/IBI.
-- BPM and IBI are still only updated by qualified beats. Grace-held bad beats
-  preserve the last trusted BPM/IBI but do not create new readings.
+- BPM and IBI are updated by strict qualified beats. Once locked, they may also
+  update through the narrow `peak-cadence` recovery path when timing remains
+  plausible and the beat-event/range still looks alive. Grace-held rejected
+  beats preserve the last trusted BPM/IBI but do not create new readings.
 - Raw `SIG GPIO35`, BPM, IBI, and qualified-beat behavior outrank display polish,
   app switching, Pin Scanner, sounds, and story screens.
 - Always record body position and mounting method for hardware validation. Do
@@ -98,3 +100,45 @@ Verdict:
 - Mark a change as an improvement only if lock survives small movement while
   BPM/IBI remain plausible and still clear when the sensor is removed from the
   body.
+
+## 2026-05-24 - Peak/Cadence Recovery
+
+Firmware: `0.4.19-peak-cadence`
+
+Observation:
+
+- The UI and waveform looked better, and false-positive filtering was doing its
+  job.
+- With the PulseSensor on the user's earlobe, slight movement could distort the
+  valley/trough while the peaks stayed relatively stable and easy to see
+  visually.
+- Those events can be true positives that are rejected by valley-sensitive
+  amplitude/range qualification, causing beat dropouts even though peak-to-peak
+  cadence still looks plausible.
+
+Change:
+
+- First acquisition remains strict: four consecutive strictly qualified beats
+  are still required before lock.
+- After lock, even strictly qualified beat events must stay close to the current
+  trusted cadence so short movement blips do not poison BPM/IBI.
+- After lock only, a rejected beat can be accepted as `peak-cadence` if BPM/IBI
+  timing stays inside normal bounds, the new IBI is close to the last trusted
+  IBI, the beat event and live signal movement still look alive, and clipping
+  is still low.
+- Serial telemetry now includes `accept=strict`, `accept=peak-cadence`,
+  `accept=reject`, or `accept=none` so hardware notes can identify whether the
+  recovery path is helping or causing trouble.
+
+Verdict:
+
+- Flashed to `/dev/cu.usbserial-3120` and serial sanity confirmed the new
+  `accept=peak-cadence` path activates after lock while clipping stays at 0.
+- The first sanity window also showed why the locked cadence guard matters:
+  strict absolute IBI limits alone can accept short movement-blip intervals.
+- Preliminary upgrade candidate, not final proof. One later window still showed
+  a `grace expired` drop after two rejected events, so future tuning should
+  compare steady earlobe, gentle earlobe movement, and sensor-off behavior
+  before publishing.
+- Sensor body position for the motivating observation: earlobe. Mount/contact
+  method: user-held contact, exact pressure not recorded.

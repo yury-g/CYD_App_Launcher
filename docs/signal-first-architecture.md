@@ -20,8 +20,15 @@ close to the code when changing the firmware.
   lock. They may rise from raw signal range, amplitude, cleanliness, and detector
   activity before the firmware trusts BPM/IBI.
 - Acquire strictly, hold gently: first lock still requires four consecutive
-  qualified beats, but an already-locked signal may survive two bad beat events
-  within a 2200 ms window. BPM and IBI only update on qualified beats.
+  qualified beats, but an already-locked signal may survive two rejected beat
+  events within a 2200 ms window.
+- After lock, stable peak cadence can rescue true positives when slight movement
+  distorts the valley/trough. This recovery path must stay narrow: plausible
+  BPM/IBI, close cadence to the last trusted IBI, a fresh beat event with live
+  signal movement, and low clipping.
+- After lock, strict beat events also respect the same cadence guard so a short
+  movement blip cannot overwrite a stable BPM/IBI run just because it falls
+  inside the broad absolute IBI range.
 - The live waveform and `SIG GPIO35` panel must share the same state color path:
   yellow while acquiring, then the locked signal color after lock. This keeps
   the visible graph and the acquisition/lock cue from teaching different states.
@@ -44,7 +51,7 @@ flowchart TD
     E --> F{"sawStartOfBeat()?"}
     F -->|yes| G["Qualify beat\nBPM, IBI, amplitude, live range, clipping"]
     F -->|no| H["Maybe automatic re-arm\nalive signal without beat event"]
-    G --> I{"qualified?"}
+    G --> I{"strict qualified\nor locked peak/cadence recovery?"}
     I -->|yes| J["Update BPM/IBI\nreset bad-beat streak, lock after streak"]
     I -->|no| K["If unlocked, reset acquisition\nif locked, use short grace"]
     J --> L["Beat effects\nLED, heart, chime when locked"]
@@ -98,8 +105,9 @@ moment where the visible waveform is good but beat detection has lost trust.
   lock still requires consecutive qualified beats.
 - Do not drop an already-locked signal on the first unqualified beat. Use the
   lock-hold grace path so movement blips do not erase a real pulse run.
-- Do not update BPM or IBI from grace-held bad beats. Keep the last qualified
-  BPM/IBI until the next qualified beat or until lock drops.
+- Do not update BPM or IBI from grace-held rejected beats. Keep the last trusted
+  BPM/IBI until the next strict qualified beat, the locked-only peak/cadence
+  recovery path accepts a plausible true positive, or lock drops.
 - Do not give the waveform its own acquisition color palette. Use
   `signalSearchColor()` and `signalLockColor()` through `liveTraceColorForMode()`
   so the graph and `SIG GPIO35` panel stay synchronized.

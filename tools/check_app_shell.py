@@ -141,8 +141,16 @@ required_lock_hold_tokens = {
     "#define LOCK_QUALIFIED_BEATS 4": "Strict acquisition should still require four qualified beats",
     "#define LOCK_GRACE_BAD_BEATS 2": "Balanced lock hold should tolerate two unqualified beats after lock",
     "#define LOCK_HOLD_GRACE_MS 2200": "Balanced lock hold should have a 2200 ms grace window",
+    "#define PEAK_RECOVERY_IBI_TOLERANCE_PERCENT 28": "Peak/cadence recovery should keep a bounded timing tolerance",
+    "#define PEAK_RECOVERY_MIN_RANGE 80": "Peak/cadence recovery should require visible signal movement",
     "int unqualifiedBeatStreak = 0;": "Lock hold should track unqualified beats after lock",
     'const char* lastLockDropReason = "none";': "Lock drops should record a lightweight serial reason",
+    'const char* lastBeatAcceptReason = "none";': "Serial should record how the latest beat was accepted",
+    "bool isLockedCadenceMatch": "Locked signal should compare new beats against the current cadence",
+    "bool isPeakCadenceRecoveryBeat": "Locked-state peak/cadence recovery helper is missing",
+    "bool strictAccepted = qualified && (!wasLocked || isLockedCadenceMatch(ibi));": "Strict acquisition should stay unchanged, but locked strict beats should respect cadence",
+    "bool recovered = !strictAccepted && wasLocked && isPeakCadenceRecoveryBeat": "Peak/cadence recovery must stay locked-state only",
+    'lastBeatAcceptReason = strictAccepted ? "strict" : "peak-cadence";': "Accepted beats should mark strict vs peak/cadence serial reason",
     "wasLocked && unqualifiedBeatStreak <= LOCK_GRACE_BAD_BEATS": "Locked signal should survive brief bad-beat movement",
     "now - lastQualifiedBeatTime <= LOCK_HOLD_GRACE_MS": "Locked signal should survive a brief post-lock timing gap",
     'dropSignalLock("grace expired");': "Grace-expired lock drops should be tracked",
@@ -152,7 +160,8 @@ for token, message in required_lock_hold_tokens.items():
     if token not in source:
         raise SystemExit(message)
 
-if "drop=%s" not in source or "unqualifiedBeatStreak" not in source[source.index("Serial.printf(\"signal="):source.index("// ===== HARDWARE SETUP =====")]:
+serial_body = source[source.index("Serial.printf(\"signal="):source.index("// ===== HARDWARE SETUP =====")]
+if "drop=%s" not in source or "accept=%s" not in source or "unqualifiedBeatStreak" not in serial_body:
     raise SystemExit("Serial signal telemetry should include lock-hold drop and streak fields")
 
 app_nav_start = source.index("bool handleAppNavTouch(int16_t x, int16_t y) {")

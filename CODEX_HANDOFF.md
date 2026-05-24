@@ -31,7 +31,7 @@ Current firmware/UI code commit:
 Current firmware version:
 
 ```text
-0.4.14-tap-reacquire
+0.4.15-acquisition-ladder
 ```
 
 Latest hardware status:
@@ -80,6 +80,7 @@ Current UI specifics:
 - `Origin Story` stays last.
 - Signal-performance pass: `readPulseSensor()` still starts `loop()`, PulseSensor Playground remains on its ESP32 500 Hz timer interrupt, the live graph wrap no longer redraws the whole graph frame, BPM/IBI/SIG panels redraw independently, and `PERF_DIAGNOSTICS` is available but disabled by default.
 - Tap-to-reacquire is available on the Pulse dashboard below the navigation/header for the case where a learner sees a good waveform but BPM/IBI/qualified-beat detection is stuck in false negatives.
+- `SIG GPIO35` bars now show a 12-step acquisition ladder before lock, and the acquisition harmony uses an 8-note rising palette.
 - Signal-first development guidance now lives in `docs/signal-first-architecture.md`.
 
 ## Current App Shell Status

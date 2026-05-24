@@ -289,6 +289,19 @@ if "drawSignalCoachStatus();" not in dashboard_fn_body:
 if "bool shouldDrawInactiveQualitySegments() {" not in source:
     raise SystemExit("SIG GPIO quality bars need a mode guard for inactive segments")
 
+if "int acquisitionScoreForCurrentSignal()" not in source:
+    raise SystemExit("SIG GPIO quality bars need a granular acquisition score helper")
+if "void updateSignalAcquisitionScore()" not in source:
+    raise SystemExit("Pulse signal acquisition should update continuously before lock")
+if "signalQuality = qualifiedBeatStreak * 3" in source:
+    raise SystemExit("SIG GPIO quality should not jump only in 3-step beat-streak chunks")
+if "lastSignalHarmonyQuality" not in source:
+    raise SystemExit("Acquisition harmony should track score thresholds, not just beat streaks")
+if "#define SIGNAL_HARMONY_NOTE_COUNT 8" not in source:
+    raise SystemExit("Signal acquisition harmony should expose 8 notes")
+if "#define SIGNAL_HARMONY_STEP_COUNT 4" not in source:
+    raise SystemExit("Signal acquisition harmony phrase should expose 4 steps")
+
 inactive_quality_start = source.index("bool shouldDrawInactiveQualitySegments() {")
 inactive_quality_end = source.index("uint16_t beatColor()", inactive_quality_start)
 inactive_quality_body = source[inactive_quality_start:inactive_quality_end]

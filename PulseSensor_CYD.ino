@@ -69,12 +69,17 @@
 #define SIGNAL_COACH_FLAT_RANGE 90
 #define SIGNAL_COACH_FLAT_AMPLITUDE 12
 #define SIGNAL_COACH_STEADY_AMPLITUDE MIN_QUALIFIED_AMPLITUDE
+#define SIGNAL_ACQUISITION_MIN_RANGE 40
+#define SIGNAL_ACQUISITION_FULL_RANGE 220
+#define SIGNAL_ACQUISITION_MAX_SCORE_BEFORE_LOCK 11
 #define AMPLITUDE_METER_MAX 120
 
 // ===== BEAT TONE SETTINGS =====
 
 #define SPEAKER_BITS 10
 #define BEAT_CHIME_STEP_COUNT 4
+#define SIGNAL_HARMONY_NOTE_COUNT 8
+#define SIGNAL_HARMONY_STEP_COUNT 4
 #define APP3_CRAWL_FANFARE_STEP_COUNT 42
 #define APP3_CRAWL_FANFARE_LOOP_START_STEP 0
 #define APP3_CRAWL_FANFARE_LOOP_MS 15000
@@ -99,7 +104,7 @@
 
 // ===== APP SHELL =====
 
-#define APP_VERSION "0.4.14-tap-reacquire"
+#define APP_VERSION "0.4.15-acquisition-ladder"
 #define APP_FIRMWARE_DATE "2026-05-24"
 #define APP_BUILD_RAM_USAGE "RAM 7.3%"
 #define APP_BUILD_FLASH_USAGE "Flash 28.7%"
@@ -200,9 +205,11 @@ const uint8_t BEAT_CHIME_DUTIES[BEAT_CHIME_STEP_COUNT] = {56, 42, 30, 18};
 const uint16_t BEAT_CHIME_DURATIONS_MS[BEAT_CHIME_STEP_COUNT] = {58, 66, 82, 118};
 const uint8_t SCREEN_ROTATIONS[SCREEN_ROTATION_COUNT] = {1, 0, 3, 2};
 
-const uint16_t SIGNAL_HARMONY_FREQUENCIES[] = {523, 659, 784, 988, 1175};
-const uint8_t SIGNAL_HARMONY_DUTIES[] = {48, 40, 30};
-const uint16_t SIGNAL_HARMONY_DURATIONS_MS[] = {72, 84, 128};
+const uint16_t SIGNAL_HARMONY_FREQUENCIES[SIGNAL_HARMONY_NOTE_COUNT] = {
+  523, 587, 659, 698, 784, 880, 988, 1175
+};
+const uint8_t SIGNAL_HARMONY_DUTIES[SIGNAL_HARMONY_STEP_COUNT] = {40, 34, 28, 22};
+const uint16_t SIGNAL_HARMONY_DURATIONS_MS[SIGNAL_HARMONY_STEP_COUNT] = {64, 72, 88, 128};
 
 const uint16_t APP3_CRAWL_FANFARE_FREQUENCIES[APP3_CRAWL_FANFARE_STEP_COUNT] = {
   196, 0, 294, 0, 392, 0, 523, 0, 659, 784, 0,
@@ -359,6 +366,7 @@ bool signalHarmonyPlaying = false;
 uint8_t signalHarmonyStep = 0;
 uint8_t signalHarmonyBaseNote = 0;
 unsigned long signalHarmonyNextStepTime = 0;
+int lastSignalHarmonyQuality = 0;
 
 bool app3CrawlFanfarePlaying = false;
 uint8_t app3CrawlFanfareStep = 0;
@@ -560,6 +568,8 @@ const char* currentAppName();
 #endif
 bool isQualifiedBeat(int bpm, int ibi, int amplitude);
 void updateClippingScore();
+int acquisitionScoreForCurrentSignal();
+void updateSignalAcquisitionScore();
 int signalCoachState();
 const char* signalCoachText();
 int amplitudeMeterSegments(int amplitude);
@@ -1322,7 +1332,8 @@ void startSignalHarmony(int quality) {
   if (speakerVolume == 0 || beatTonePlaying || signalHarmonyPlaying) return;
   if (millis() - lastSignalHarmonyTime < 180) return;
 
-  signalHarmonyBaseNote = constrain(map(quality, 1, SIGNAL_QUALITY_STEPS, 0, 2), 0, 2);
+  uint8_t maxBaseNote = SIGNAL_HARMONY_NOTE_COUNT - SIGNAL_HARMONY_STEP_COUNT;
+  signalHarmonyBaseNote = constrain(map(quality, 1, SIGNAL_QUALITY_STEPS, 0, maxBaseNote), 0, maxBaseNote);
   signalHarmonyStep = 0;
   signalHarmonyPlaying = true;
   lastSignalHarmonyTime = millis();
@@ -1337,8 +1348,8 @@ void updateSignalHarmony() {
   if ((long)(millis() - signalHarmonyNextStepTime) < 0) return;
 
   signalHarmonyStep++;
-  if (signalHarmonyStep < 3) {
-    uint8_t note = min<uint8_t>(signalHarmonyBaseNote + signalHarmonyStep, 4);
+  if (signalHarmonyStep < SIGNAL_HARMONY_STEP_COUNT) {
+    uint8_t note = min<uint8_t>(signalHarmonyBaseNote + signalHarmonyStep, SIGNAL_HARMONY_NOTE_COUNT - 1);
     cydLedcWriteTone(SPEAKER_PIN, SPEAKER_PWM_CH, SIGNAL_HARMONY_FREQUENCIES[note]);
     cydLedcWrite(SPEAKER_PIN, SPEAKER_PWM_CH, scaledSignalHarmonyDuty(SIGNAL_HARMONY_DUTIES[signalHarmonyStep]));
     signalHarmonyNextStepTime = millis() + SIGNAL_HARMONY_DURATIONS_MS[signalHarmonyStep];
@@ -1526,6 +1537,7 @@ void readPulseSensor() {
   updateClippingScore();
   updateSignalRange();
   maybeRearmDetector();
+  updateSignalAcquisitionScore();
 
   if (pulseSensor.sawStartOfBeat()) {
 #if PERF_DIAGNOSTICS
@@ -1534,7 +1546,6 @@ void readPulseSensor() {
     int bpm = pulseSensor.getBeatsPerMinute();
     int ibi = pulseSensor.getInterBeatIntervalMs();
     bool qualified = isQualifiedBeat(bpm, ibi, pulseAmplitude);
-    int previousQuality = signalQuality;
 
     lastBeatTime = millis();
 
@@ -1544,17 +1555,12 @@ void readPulseSensor() {
       lastQualifiedBeatTime = millis();
       qualifiedBeatStreak++;
       if (qualifiedBeatStreak > LOCK_QUALIFIED_BEATS) qualifiedBeatStreak = LOCK_QUALIFIED_BEATS;
-      signalQuality = qualifiedBeatStreak * 3;
-      if (signalQuality > SIGNAL_QUALITY_STEPS) signalQuality = SIGNAL_QUALITY_STEPS;
     } else {
       qualifiedBeatStreak = 0;
-      signalQuality = 0;
     }
 
     lockedSignal = qualifiedBeatStreak >= LOCK_QUALIFIED_BEATS;
-    if (signalQuality > previousQuality && !lockedSignal) {
-      startSignalHarmony(signalQuality);
-    }
+    updateSignalAcquisitionScore();
 
     if (qualified) {
       if (lockedSignal) {
@@ -1567,10 +1573,10 @@ void readPulseSensor() {
 
   if (millis() - lastQualifiedBeatTime > NO_BEAT_TIMEOUT) {
     lockedSignal = false;
-    signalQuality = 0;
     qualifiedBeatStreak = 0;
     displayBPM = 0;
     displayIBI = 0;
+    updateSignalAcquisitionScore();
   }
 
 #if PERF_DIAGNOSTICS
@@ -1684,6 +1690,52 @@ void updateClippingScore() {
   if (clippedSampleScore > 0) clippedSampleScore--;
 }
 
+int acquisitionScoreForCurrentSignal() {
+  if (lockedSignal) return SIGNAL_QUALITY_STEPS;
+
+  int liveRange = maxSignal - minSignal;
+  int rangeScore = map(constrain(liveRange,
+                                 SIGNAL_ACQUISITION_MIN_RANGE,
+                                 SIGNAL_ACQUISITION_FULL_RANGE),
+                       SIGNAL_ACQUISITION_MIN_RANGE,
+                       SIGNAL_ACQUISITION_FULL_RANGE,
+                       0,
+                       5);
+  int amplitudeScore = map(constrain(pulseAmplitude,
+                                     SIGNAL_COACH_FLAT_AMPLITUDE,
+                                     AMPLITUDE_METER_MAX),
+                           SIGNAL_COACH_FLAT_AMPLITUDE,
+                           AMPLITUDE_METER_MAX,
+                           0,
+                           4);
+  int cleanScore = clippedSampleScore <= 4 ? 2 : (clippedSampleScore <= 18 ? 1 : 0);
+  int beatWindowScore = insideBeatWindow ? 1 : 0;
+  int streakScore = qualifiedBeatStreak * 2;
+  int score = rangeScore + amplitudeScore + cleanScore + beatWindowScore + streakScore;
+
+  if (liveRange < SIGNAL_ACQUISITION_MIN_RANGE && pulseAmplitude < SIGNAL_COACH_FLAT_AMPLITUDE) {
+    score = min(score, 2);
+  }
+
+  return constrain(score, 0, SIGNAL_ACQUISITION_MAX_SCORE_BEFORE_LOCK);
+}
+
+void updateSignalAcquisitionScore() {
+  int previousQuality = signalQuality;
+  signalQuality = acquisitionScoreForCurrentSignal();
+
+  if (signalQuality <= 1) {
+    lastSignalHarmonyQuality = 0;
+  }
+
+  if (!lockedSignal &&
+      signalQuality > previousQuality &&
+      signalQuality > lastSignalHarmonyQuality) {
+    startSignalHarmony(signalQuality);
+    lastSignalHarmonyQuality = signalQuality;
+  }
+}
+
 int signalCoachState() {
   int liveRange = maxSignal - minSignal;
 
@@ -1743,6 +1795,7 @@ void rearmPulseDetector(const char* reason) {
   lastBeatTime = millis();
   lastQualifiedBeatTime = millis();
   signalQuality = 0;
+  lastSignalHarmonyQuality = 0;
   qualifiedBeatStreak = 0;
   displayBPM = 0;
   displayIBI = 0;

@@ -16,6 +16,9 @@ close to the code when changing the firmware.
 - PulseSensor Playground samples ESP32 ADC data from a 500 Hz timer interrupt,
   but foreground drawing can still delay visible trace updates, serial output,
   and beat effects.
+- The `SIG GPIO35` bars are a user-facing acquisition ladder, not proof of BPM
+  lock. They may rise from raw signal range, amplitude, cleanliness, and detector
+  activity before the firmware trusts BPM/IBI.
 - Live Pulse dashboard work must be small, change-driven, and non-blocking.
 - Full-screen redraws are allowed on intentional screen changes, not as part of
   normal live waveform or beat updates.
@@ -39,15 +42,16 @@ flowchart TD
     K --> M["Foreground UI update"]
     H --> M
     L --> M
-    M --> N{"Active app"}
-    N -->|Pulse| O["Draw small live updates\nheart, waveform column, changed panels only"]
-    N -->|Settings| P["Draw only when appNeedsRedraw"]
-    N -->|Pin Scanner| Q["Read one tapped ADC row\nonly while active"]
-    N -->|Other apps| R["Animate at capped frame rates"]
-    O --> S["Serial sanity output\nsignal, amp, BPM, IBI, lock, quality"]
-    P --> S
-    Q --> S
-    R --> S
+    M --> N["Update acquisition ladder\n12-step SIG bars + harmony"]
+    N --> O{"Active app"}
+    O -->|Pulse| P["Draw small live updates\nheart, waveform column, changed panels only"]
+    O -->|Settings| Q["Draw only when appNeedsRedraw"]
+    O -->|Pin Scanner| R["Read one tapped ADC row\nonly while active"]
+    O -->|Other apps| S["Animate at capped frame rates"]
+    P --> T["Serial sanity output\nsignal, amp, BPM, IBI, lock, quality"]
+    Q --> T
+    R --> T
+    S --> T
 ```
 
 ## Tap-To-Reacquire
@@ -81,6 +85,8 @@ moment where the visible waveform is good but beat detection has lost trust.
   signal in scanning, but a dashboard experiment caused screen on/off reset
   behavior.
 - Do not tune beat math to hide a drawing performance problem. Measure first.
+- Do not equate acquisition bars with BPM lock. Bars can guide finger placement;
+  lock still requires consecutive qualified beats.
 - Do not ship `PERF_DIAGNOSTICS` enabled by default.
 
 ## Good Hackable Patterns

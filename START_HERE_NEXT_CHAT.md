@@ -29,7 +29,7 @@ Current firmware/UI code commit:
 Current firmware version on the attached CYD:
 
 ```text
-0.4.14-tap-reacquire
+0.4.15-acquisition-ladder
 ```
 
 Connected CYD used for the latest flash:
@@ -56,8 +56,8 @@ python3 tools/update_screenshot_contact_sheet.py
 Build memory from PlatformIO:
 
 ```text
-RAM:   7.3% (23772 / 327680 bytes)
-Flash: 28.8% (377101 / 1310720 bytes)
+RAM:   7.3% (23780 / 327680 bytes)
+Flash: 28.8% (377349 / 1310720 bytes)
 ```
 
 Current app order:
@@ -76,6 +76,7 @@ Visual/UI status:
 - App 4 Pin Scanner is manual, starts idle, and only scans the tapped row for GPIO35, GPIO22, GPIO21, or GPIO27.
 - Signal-performance pass found and fixed avoidable foreground stalls: the live graph no longer redraws the full frame on waveform wrap, BPM/IBI/SIG panels redraw independently, and opt-in `PERF_DIAGNOSTICS` serial timing remains available in firmware but is off by default.
 - Tap-to-reacquire is available on the Pulse dashboard below the navigation/header for the case where a learner sees a good waveform but BPM/IBI/qualified-beat detection is stuck in false negatives.
+- `SIG GPIO35` bars now show a 12-step acquisition ladder before lock, and the acquisition harmony uses an 8-note rising palette.
 - Signal-first development guidance now lives in `docs/signal-first-architecture.md`.
 
 Pre-main blocker:

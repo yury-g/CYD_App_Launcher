@@ -50,13 +50,14 @@ This is the current good development pause point for the app shell branch:
 
 ```text
 Branch:   codex/app4-pin-scanner-perf-safe-20260524
-Firmware: 0.4.14-tap-reacquire
+Firmware: 0.4.15-acquisition-ladder
 ```
 
 - Added a compact app shell around the Pulse dashboard: the screen order is Pulse dashboard, Settings, App 4 `Pin Scanner`, `Your App Here`, then `Origin Story` last.
 - Added a manual App 4 `Pin Scanner` for GPIO35, GPIO22, GPIO21, and GPIO27. It starts idle, scans only one tapped row at a time, guards non-ADC pins, and keeps `readPulseSensor()` first in the main loop.
 - Re-checked the Pulse signal foreground path before main publish: `readPulseSensor()` remains first in `loop()`, PulseSensor Playground still samples ESP32 ADC data from its 500 Hz timer interrupt, and the live waveform/panel redraw paths were tightened to avoid avoidable foreground stalls.
 - Added tap-to-reacquire on the Pulse dashboard: when the raw waveform looks strong but BPM/IBI/qualified-beat detection is stuck, tap below the navigation/header to re-arm the detector and clear local acquisition state.
+- Changed the compact `SIG GPIO35` bars into a 12-step acquisition ladder, so users get more gradual feedback while finding a usable signal before BPM/IBI are trusted. The acquisition harmony now has an 8-note rising palette.
 - Added Settings-only controls for Volume, icon-only Rotation, Display, WiFi/Bluetooth placeholders, LED Control, LED swatches, About, Version, Firmware date, runtime memory used/free, and build memory.
 - Added four display modes under Settings `Display`: `M DARK`, `M LIGHT`, `C DARK`, and `C LIGHT`.
 - Bumped Settings row text back up one size. Plain data rows keep the label left-justified and the value right-justified, while rows with right-side controls keep a second value line only to avoid overlap. The Memory row shows used heap plus free heap by size and percentage, and the Build row shows PlatformIO RAM/Flash usage.

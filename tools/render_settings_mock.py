@@ -17,14 +17,16 @@ COLOR_SIGNAL_YELLOW = (255, 255, 144)
 TOOLBAR_BUTTON_WIDTH = 44
 TOOLBAR_BUTTON_HEIGHT = 28
 APP_BUTTON_GAP = 2
-SETTINGS_ROW_H = 32
+SETTINGS_ROW_H = 40
 SETTINGS_ROW_COUNT = 12
 
 try:
     FONT_1 = ImageFont.truetype("/System/Library/Fonts/Menlo.ttc", 10)
+    FONT_SETTINGS = ImageFont.truetype("/System/Library/Fonts/Menlo.ttc", 16)
     FONT_2 = ImageFont.truetype("/System/Library/Fonts/Menlo.ttc", 20)
 except OSError:
     FONT_1 = ImageFont.load_default()
+    FONT_SETTINGS = ImageFont.load_default()
     FONT_2 = ImageFont.load_default()
 
 
@@ -71,10 +73,18 @@ def draw_row(draw, width, y, label, value, control=False):
     draw.rectangle((0, y, width, y + SETTINGS_ROW_H), fill=bg)
     draw.line((0, y + SETTINGS_ROW_H - 1, width, y + SETTINGS_ROW_H - 1), fill=COLOR_GRID)
     if control:
-        draw.text((10, y + 4), label, font=FONT_1, fill=COLOR_TEXT)
-        draw.text((10, y + 18), value, font=FONT_1, fill=COLOR_SIGNAL_YELLOW)
+        draw.text((10, y + 3), label, font=FONT_SETTINGS, fill=COLOR_TEXT)
+        draw.text((10, y + 21), value, font=FONT_SETTINGS, fill=COLOR_SIGNAL_YELLOW)
     else:
-        draw.text((10, y + 11), f"{label}: {value}", font=FONT_1, fill=COLOR_SIGNAL_YELLOW)
+        draw.text((10, y + 12), label, font=FONT_SETTINGS, fill=COLOR_TEXT)
+        label_w = draw.textbbox((0, 0), label, font=FONT_SETTINGS)[2]
+        value_font = FONT_SETTINGS
+        value_w = draw.textbbox((0, 0), value, font=value_font)[2]
+        if value_w > width - 28 - label_w:
+            value_font = FONT_1
+            value_w = draw.textbbox((0, 0), value, font=value_font)[2]
+        value_y = y + 12 if value_font == FONT_SETTINGS else y + 16
+        draw.text((width - 10 - value_w, value_y), value, font=value_font, fill=COLOR_SIGNAL_YELLOW)
 
 
 def render(width, height, scroll_y, filename):
@@ -113,7 +123,7 @@ def render(width, height, scroll_y, filename):
         ("LED Control", "beat pulse"),
         ("Color", "tap"),
         ("About", "PulseSensor CYD"),
-        ("Version", "0.4.11-settings-build-memory"),
+        ("Version", "0.4.12-settings-row-alignment"),
         ("Firmware", "2026-05-24"),
         ("Memory", "used 90K free 238K 72%"),
         ("Build", "RAM 7.3% Flash 28.7%"),
@@ -125,7 +135,7 @@ def render(width, height, scroll_y, filename):
             continue
         draw_row.index = index
         draw_row(draw, width, y, label, value, control=index in {0, 1, 2, 5, 6})
-        button_y = y + 2
+        button_y = y + 6
         if index == 0:
             draw_button(draw, settings_vol_minus_x, button_y, TOOLBAR_BUTTON_WIDTH, "-")
             draw_button(draw, settings_vol_plus_x, button_y, TOOLBAR_BUTTON_WIDTH, "+")
@@ -159,8 +169,8 @@ def render(width, height, scroll_y, filename):
 
 
 render(320, 240, 0, "settings-landscape-top.png")
-render(320, 240, 96, "settings-landscape-middle.png")
-render(320, 240, 223, "settings-landscape-bottom.png")
+render(320, 240, 160, "settings-landscape-middle.png")
+render(320, 240, 319, "settings-landscape-bottom.png")
 render(240, 320, 0, "settings-portrait-top.png")
-render(240, 320, 64, "settings-portrait-middle.png")
-render(240, 320, 175, "settings-portrait-bottom.png")
+render(240, 320, 140, "settings-portrait-middle.png")
+render(240, 320, 271, "settings-portrait-bottom.png")

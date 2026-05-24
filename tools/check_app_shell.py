@@ -57,7 +57,7 @@ if "APP_BUILD_RAM_USAGE" not in settings_body or "APP_BUILD_FLASH_USAGE" not in 
     raise SystemExit("Settings screen is missing build RAM/Flash usage")
 if '"rot %u"' in settings_body:
     raise SystemExit("Settings rotation value should not use ROT text")
-if 'drawSettingsButton(settingsRotateX, rowY + 2, 86, "", false);' not in settings_body:
+if 'drawSettingsButton(settingsRotateX, rowY + 6, 86, "", false);' not in settings_body:
     raise SystemExit("Settings rotation control should be icon-only")
 if '"ROT"' in settings_mock:
     raise SystemExit("Settings mock still renders ROT text instead of the rotation icon")
@@ -124,8 +124,8 @@ required_large_controls = {
     "#define TOOLBAR_BUTTON_HEIGHT 28": "toolbar buttons are not one-quarter taller",
     "#define APP_BUTTON_WIDTH TOOLBAR_BUTTON_WIDTH": "app nav width does not match toolbar width",
     "#define APP_BUTTON_HEIGHT TOOLBAR_BUTTON_HEIGHT": "app nav height does not match toolbar height",
-    "#define SETTINGS_TEXT_SIZE 1": "Settings screen text is not one size smaller",
-    "#define SETTINGS_ROW_H 32": "Settings rows are not compact enough for the smaller font",
+    "#define SETTINGS_TEXT_SIZE 2": "Settings screen text is not bumped up one size",
+    "#define SETTINGS_ROW_H 40": "Settings rows should support the larger font and touch controls",
     "#define SETTINGS_ROW_COUNT 12": "Settings screen is missing the added Memory/Build rows",
     "settingsScrollY": "Settings screen is missing scroll state",
     "handleSettingsScrollTouch": "Settings screen is missing scroll touch handling",
@@ -234,10 +234,16 @@ if "drawRotateControl();" in settings_fn_body:
 settings_row_start = source.index("void drawSettingsRow(int rowIndex, int y, const char* label, const char* value) {")
 settings_row_end = source.index("void drawSettingsControlRow", settings_row_start)
 settings_row_body = source[settings_row_start:settings_row_end]
-if 'tft.print(": ");' not in settings_row_body:
-    raise SystemExit("Settings rows should use one-line 'Label: value' layout")
+if 'tft.print(": ");' in settings_row_body:
+    raise SystemExit("Plain Settings rows should not print inline Label: value text")
 if "y + 18" in settings_row_body:
     raise SystemExit("Plain Settings rows should not force a second line")
+if "settingsRightAlignedValueX(value, valueTextSize)" not in settings_row_body:
+    raise SystemExit("Plain Settings values should be right-aligned")
+if "settingsValueTextSize(label, value)" not in settings_row_body:
+    raise SystemExit("Plain Settings rows should dynamically fit long values")
+if "int settingsRightAlignedValueX" not in source or "int settingsValueTextSize" not in source:
+    raise SystemExit("Settings right-aligned value helpers are missing")
 if "void drawSettingsControlRow" not in source:
     raise SystemExit("Settings control rows need a separate two-line fallback renderer")
 for row_token in [
@@ -249,6 +255,8 @@ for row_token in [
 ]:
     if row_token not in settings_body:
         raise SystemExit("Settings rows with right-side controls should use the control-row fallback")
+if "rowY + 6" not in settings_body:
+    raise SystemExit("Settings controls should be vertically centered in larger rows")
 
 dashboard_fn_start = source.index("void drawDashboardIfChanged() {")
 dashboard_fn_end = source.index("void drawHeader()", dashboard_fn_start)

@@ -10,12 +10,12 @@ WHITE = (255, 255, 255)
 TOOLBAR_BUTTON_WIDTH = 44
 TOOLBAR_BUTTON_HEIGHT = 28
 APP_BUTTON_GAP = 2
-SETTINGS_ROW_H = 32
+SETTINGS_ROW_H = 40
 SETTINGS_ROW_COUNT = 12
 
 try:
     FONT_1 = ImageFont.truetype("/System/Library/Fonts/Menlo.ttc", 10)
-    FONT_SETTINGS = ImageFont.truetype("/System/Library/Fonts/Menlo.ttc", 10)
+    FONT_SETTINGS = ImageFont.truetype("/System/Library/Fonts/Menlo.ttc", 16)
     FONT_2 = ImageFont.truetype("/System/Library/Fonts/Menlo.ttc", 20)
     FONT_3 = ImageFont.truetype("/System/Library/Fonts/Menlo.ttc", 30)
     FONT_4 = ImageFont.truetype("/System/Library/Fonts/Menlo.ttc", 40)
@@ -224,10 +224,18 @@ def draw_row(draw, width, y, index, label, value):
     draw.rectangle((0, y, width, y + SETTINGS_ROW_H), fill=bg)
     draw_dotted_line(draw, (0, y + SETTINGS_ROW_H - 2), (width, y + SETTINGS_ROW_H - 2), WHITE, 5, 2)
     if index in {0, 1, 2, 5, 6}:
-        draw.text((10, y + 4), label, font=FONT_SETTINGS, fill=ink)
-        draw.text((10, y + 18), value, font=FONT_SETTINGS, fill=ink)
+        draw.text((10, y + 3), label, font=FONT_SETTINGS, fill=ink)
+        draw.text((10, y + 21), value, font=FONT_SETTINGS, fill=ink)
     else:
-        draw.text((10, y + 11), f"{label}: {value}", font=FONT_SETTINGS, fill=ink)
+        draw.text((10, y + 12), label, font=FONT_SETTINGS, fill=ink)
+        label_w = text_size(draw, label, FONT_SETTINGS)[0]
+        value_font = FONT_SETTINGS
+        value_w = text_size(draw, value, value_font)[0]
+        if value_w > width - 28 - label_w:
+            value_font = FONT_1
+            value_w = text_size(draw, value, value_font)[0]
+        value_y = y + 12 if value_font == FONT_SETTINGS else y + 16
+        draw.text((width - 10 - value_w, value_y), value, font=value_font, fill=ink)
     return bg
 
 
@@ -286,7 +294,7 @@ def render_settings(width, height, scroll_y, filename, mode_variant):
         ("LED Control", "beat pulse"),
         ("Color", "tap"),
         ("About", "PulseSensor CYD"),
-        ("Version", "0.4.11-settings-build-memory"),
+        ("Version", "0.4.12-settings-row-alignment"),
         ("Firmware", "2026-05-24"),
         ("Memory", "used 90K free 238K 72%"),
         ("Build", "RAM 7.3% Flash 28.7%"),
@@ -297,7 +305,7 @@ def render_settings(width, height, scroll_y, filename, mode_variant):
         if y < content_top or y + SETTINGS_ROW_H > content_bottom:
             continue
         bg = draw_row(draw, width, y, index, label, value)
-        button_y = y + 2
+        button_y = y + 6
         if index == 0:
             draw_button(draw, settings_vol_minus_x, button_y, TOOLBAR_BUTTON_WIDTH, "-", base=bg)
             draw_button(draw, settings_vol_plus_x, button_y, TOOLBAR_BUTTON_WIDTH, "+", base=bg)
@@ -357,11 +365,11 @@ render_pulse(240, 320, False, "pulse-portrait-searching.png")
 render_pulse(240, 320, True, "pulse-portrait-locked.png")
 for mode_variant in ["cycle", "separate"]:
     render_settings(320, 240, 0, f"{mode_variant}/settings-landscape-top.png", mode_variant)
-    render_settings(320, 240, 96, f"{mode_variant}/settings-landscape-middle.png", mode_variant)
-    render_settings(320, 240, 223, f"{mode_variant}/settings-landscape-bottom.png", mode_variant)
+    render_settings(320, 240, 160, f"{mode_variant}/settings-landscape-middle.png", mode_variant)
+    render_settings(320, 240, 319, f"{mode_variant}/settings-landscape-bottom.png", mode_variant)
     render_settings(240, 320, 0, f"{mode_variant}/settings-portrait-top.png", mode_variant)
-    render_settings(240, 320, 64, f"{mode_variant}/settings-portrait-middle.png", mode_variant)
-    render_settings(240, 320, 175, f"{mode_variant}/settings-portrait-bottom.png", mode_variant)
+    render_settings(240, 320, 140, f"{mode_variant}/settings-portrait-middle.png", mode_variant)
+    render_settings(240, 320, 271, f"{mode_variant}/settings-portrait-bottom.png", mode_variant)
 render_placeholder(320, 240, 2, "app2-landscape.png")
 render_placeholder(320, 240, 3, "app3-landscape.png")
 render_placeholder(240, 320, 2, "app2-portrait.png")

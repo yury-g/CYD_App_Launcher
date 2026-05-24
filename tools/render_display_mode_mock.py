@@ -143,11 +143,11 @@ PALETTES = {
 TOOLBAR_BUTTON_WIDTH = 44
 TOOLBAR_BUTTON_HEIGHT = 28
 APP_BUTTON_GAP = 2
-SETTINGS_ROW_H = 32
+SETTINGS_ROW_H = 40
 
 try:
     FONT_1 = ImageFont.truetype("/System/Library/Fonts/Menlo.ttc", 10)
-    FONT_SETTINGS = ImageFont.truetype("/System/Library/Fonts/Menlo.ttc", 10)
+    FONT_SETTINGS = ImageFont.truetype("/System/Library/Fonts/Menlo.ttc", 16)
     FONT_2 = ImageFont.truetype("/System/Library/Fonts/Menlo.ttc", 20)
     FONT_3 = ImageFont.truetype("/System/Library/Fonts/Menlo.ttc", 30)
     FONT_4 = ImageFont.truetype("/System/Library/Fonts/Menlo.ttc", 40)
@@ -212,10 +212,10 @@ def draw_header(draw, width, p, title):
 
 
 def draw_display_row(draw, y, p, mode_variant):
-    draw.text((10, y + 4), "Display", font=FONT_SETTINGS, fill=p["label_text"])
-    draw.text((10, y + 18), p["mode_value"], font=FONT_SETTINGS, fill=p["value_text"])
+    draw.text((10, y + 3), "Display", font=FONT_SETTINGS, fill=p["label_text"])
+    draw.text((10, y + 21), p["mode_value"], font=FONT_SETTINGS, fill=p["value_text"])
     if mode_variant == "cycle":
-        draw_button(draw, 226, y + 2, 90, p["name"], p, True)
+        draw_button(draw, 226, y + 6, 90, p["name"], p, True)
     else:
         labels = [
             ("MD", "mono_dark"),
@@ -225,7 +225,7 @@ def draw_display_row(draw, y, p, mode_variant):
         ]
         x = 160
         for label, mode in labels:
-            draw_button(draw, x, y + 2, 38, label, p, active=mode == p["key"])
+            draw_button(draw, x, y + 6, 38, label, p, active=mode == p["key"])
             x += 40
     draw_dotted_line(draw, (0, y + SETTINGS_ROW_H - 2), (320, y + SETTINGS_ROW_H - 2), p["row_line"], 5, 2)
 
@@ -242,14 +242,18 @@ def draw_settings_picker(mode_key, mode_variant):
     ]
     y = 46
     for label, value in rows:
-        draw.text((10, y + 11), f"{label}: {value}", font=FONT_SETTINGS, fill=p["value_text"])
+        draw.text((10, y + 12), label, font=FONT_SETTINGS, fill=p["label_text"])
+        value_w = text_size(draw, value, FONT_SETTINGS)[0]
+        draw.text((320 - 10 - value_w, y + 12), value, font=FONT_SETTINGS, fill=p["value_text"])
         draw_dotted_line(draw, (0, y + SETTINGS_ROW_H - 2), (320, y + SETTINGS_ROW_H - 2), p["row_line"], 5, 2)
         y += SETTINGS_ROW_H
 
     draw_display_row(draw, y, p, mode_variant)
     y += SETTINGS_ROW_H
 
-    draw.text((10, y + 11), "WiFi: setup later", font=FONT_SETTINGS, fill=p["value_text"])
+    draw.text((10, y + 12), "WiFi", font=FONT_SETTINGS, fill=p["label_text"])
+    value_w = text_size(draw, "setup later", FONT_SETTINGS)[0]
+    draw.text((320 - 10 - value_w, y + 12), "setup later", font=FONT_SETTINGS, fill=p["value_text"])
     draw_dotted_line(draw, (0, y + SETTINGS_ROW_H - 2), (320, y + SETTINGS_ROW_H - 2), p["row_line"], 5, 2)
 
     scroll_y = 210

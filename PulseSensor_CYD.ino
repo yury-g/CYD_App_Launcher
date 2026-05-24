@@ -99,7 +99,7 @@
 
 // ===== APP SHELL =====
 
-#define APP_VERSION "0.4.11-settings-build-memory"
+#define APP_VERSION "0.4.12-settings-row-alignment"
 #define APP_FIRMWARE_DATE "2026-05-24"
 #define APP_BUILD_RAM_USAGE "RAM 7.3%"
 #define APP_BUILD_FLASH_USAGE "Flash 28.7%"
@@ -108,8 +108,8 @@
 #define APP_BUTTON_WIDTH TOOLBAR_BUTTON_WIDTH
 #define APP_BUTTON_HEIGHT TOOLBAR_BUTTON_HEIGHT
 #define APP_BUTTON_GAP 2
-#define SETTINGS_TEXT_SIZE 1
-#define SETTINGS_ROW_H 32
+#define SETTINGS_TEXT_SIZE 2
+#define SETTINGS_ROW_H 40
 #define SETTINGS_ROW_COUNT 12
 #define SETTINGS_SCROLL_BUTTON_W TOOLBAR_BUTTON_WIDTH
 #define SETTINGS_SCROLL_BUTTON_H TOOLBAR_BUTTON_HEIGHT
@@ -549,6 +549,9 @@ void drawAppButton(int x, int y, const char* label, bool active);
 void drawSettingsScreen();
 void drawSettingsRow(int rowIndex, int y, const char* label, const char* value);
 void drawSettingsControlRow(int rowIndex, int y, const char* label, const char* value);
+int settingsTextWidth(const char* text, int textSize);
+int settingsValueTextSize(const char* label, const char* value);
+int settingsRightAlignedValueX(const char* value, int textSize);
 uint16_t settingsRowBackground(int rowIndex);
 void drawSettingsButton(int x, int y, int w, const char* label, bool active);
 void drawSettingsDisplayModeControl(int x, int y, int w);
@@ -1686,7 +1689,7 @@ void drawSettingsScreen() {
   int rowY = settingsRowScreenY(0);
   if (rowY >= settingsContentTop() && rowY + SETTINGS_ROW_H <= settingsContentBottom()) {
     drawSettingsControlRow(0, rowY, "Volume", volumeText);
-    int buttonY = rowY + 2;
+    int buttonY = rowY + 6;
     drawSettingsButton(settingsVolMinusX, buttonY, TOOLBAR_BUTTON_WIDTH, "-", false);
     drawSettingsButton(settingsVolPlusX, buttonY, TOOLBAR_BUTTON_WIDTH, "+", false);
   }
@@ -1696,14 +1699,14 @@ void drawSettingsScreen() {
   rowY = settingsRowScreenY(1);
   if (rowY >= settingsContentTop() && rowY + SETTINGS_ROW_H <= settingsContentBottom()) {
     drawSettingsControlRow(1, rowY, "Rotation", rotationText);
-    drawSettingsButton(settingsRotateX, rowY + 2, 86, "", false);
-    drawRotateIcon(settingsRotateX, rowY + 2, 86, TOOLBAR_BUTTON_HEIGHT, buttonTextColor(false), buttonFillColor(false));
+    drawSettingsButton(settingsRotateX, rowY + 6, 86, "", false);
+    drawRotateIcon(settingsRotateX, rowY + 6, 86, TOOLBAR_BUTTON_HEIGHT, buttonTextColor(false), buttonFillColor(false));
   }
 
   rowY = settingsRowScreenY(2);
   if (rowY >= settingsContentTop() && rowY + SETTINGS_ROW_H <= settingsContentBottom()) {
     drawSettingsControlRow(2, rowY, "Display", displayModeName());
-    drawSettingsDisplayModeControl(settingsDisplayModeX, rowY + 2, 90);
+    drawSettingsDisplayModeControl(settingsDisplayModeX, rowY + 6, 90);
   }
 
   rowY = settingsRowScreenY(3);
@@ -1719,13 +1722,13 @@ void drawSettingsScreen() {
   rowY = settingsRowScreenY(5);
   if (rowY >= settingsContentTop() && rowY + SETTINGS_ROW_H <= settingsContentBottom()) {
     drawSettingsControlRow(5, rowY, "LED Control", beatLedEnabled ? "beat pulse" : "off");
-    drawSettingsButton(settingsLedX, rowY + 2, 86, beatLedEnabled ? "BEAT" : "OFF", beatLedEnabled);
+    drawSettingsButton(settingsLedX, rowY + 6, 86, beatLedEnabled ? "BEAT" : "OFF", beatLedEnabled);
   }
 
   rowY = settingsRowScreenY(6);
   if (rowY >= settingsContentTop() && rowY + SETTINGS_ROW_H <= settingsContentBottom()) {
     drawSettingsControlRow(6, rowY, "Color", "tap");
-    int swatchY = rowY + 2;
+    int swatchY = rowY + 6;
     drawSettingsSwatch(settingsColorRedX, swatchY, COLOR_RED, heartbeatLedColor.red > 0 && heartbeatLedColor.green == 0);
     drawSettingsSwatch(settingsColorYellowX, swatchY, COLOR_SIGNAL_YELLOW, heartbeatLedColor.red > 0 && heartbeatLedColor.green > 0);
     drawSettingsSwatch(settingsColorCyanX, swatchY, COLOR_CYAN, heartbeatLedColor.blue > 0);
@@ -1777,10 +1780,13 @@ void drawSettingsRow(int rowIndex, int y, const char* label, const char* value) 
 
   tft.setTextSize(SETTINGS_TEXT_SIZE);
   tft.setTextColor(textColor(), bg);
-  tft.setCursor(10, y + 11);
+  tft.setCursor(10, y + 12);
   tft.print(label);
-  tft.print(": ");
+  int valueTextSize = settingsValueTextSize(label, value);
+  int valueY = y + max(2, (SETTINGS_ROW_H - (8 * valueTextSize)) / 2);
   tft.setTextColor(displayValueTextColor(), bg);
+  tft.setTextSize(valueTextSize);
+  tft.setCursor(settingsRightAlignedValueX(value, valueTextSize), valueY);
   tft.print(value);
 }
 
@@ -1791,11 +1797,28 @@ void drawSettingsControlRow(int rowIndex, int y, const char* label, const char* 
 
   tft.setTextSize(SETTINGS_TEXT_SIZE);
   tft.setTextColor(textColor(), bg);
-  tft.setCursor(10, y + 4);
+  tft.setCursor(10, y + 3);
   tft.print(label);
   tft.setTextColor(displayValueTextColor(), bg);
-  tft.setCursor(10, y + 18);
+  tft.setCursor(10, y + 21);
   tft.print(value);
+}
+
+int settingsTextWidth(const char* text, int textSize) {
+  return strlen(text) * 6 * textSize;
+}
+
+int settingsValueTextSize(const char* label, const char* value) {
+  int labelW = settingsTextWidth(label, SETTINGS_TEXT_SIZE);
+  int valueW = settingsTextWidth(value, SETTINGS_TEXT_SIZE);
+  int availableValueW = screenWidth - 20 - labelW - 8;
+  if (valueW <= availableValueW) return SETTINGS_TEXT_SIZE;
+  return 1;
+}
+
+int settingsRightAlignedValueX(const char* value, int textSize) {
+  int valueW = settingsTextWidth(value, textSize);
+  return max(10, screenWidth - 10 - valueW);
 }
 
 uint16_t settingsRowBackground(int rowIndex) {

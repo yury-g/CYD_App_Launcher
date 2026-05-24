@@ -519,7 +519,7 @@ void readTouchControls() {
   mapTouchPoint(point, &x, &y);
 
   if (handleAppNavTouch(x, y) ||
-      (currentApp == APP_PULSE && (handleRotateTouch(x, y) || handleVolumeTouch(x, y))) ||
+      (currentApp == APP_PULSE && handleRotateTouch(x, y)) ||
       (currentApp == APP_SETTINGS && handleSettingsTouch(x, y))) {
     lastControlTouchTime = millis();
   }
@@ -1152,7 +1152,6 @@ void drawHeader() {
   tft.setCursor(10, portraitLayout ? 7 : 8);
   tft.print("PulseSensor.com");
   drawAppNavControls();
-  drawVolumeControl();
   drawRotateControl();
 
   tft.setTextColor(COLOR_TEXT, COLOR_BG);

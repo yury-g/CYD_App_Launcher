@@ -25,7 +25,7 @@ codex/app4-pin-scanner-perf-safe-20260524
 Current firmware/UI code commit:
 
 ```text
-9377f91 Improve Pulse signal redraw performance 20260524-131641-EDT
+4e97afd Add tap reacquire and signal-first architecture note 20260524-133000-EDT
 ```
 
 Current firmware version:

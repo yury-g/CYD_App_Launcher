@@ -8,6 +8,7 @@ required_tokens = [
     "About",
     "Version",
     "Firmware",
+    "Memory",
     "WiFi",
     "Bluetooth",
     "LED Control",
@@ -130,12 +131,16 @@ required_large_controls = {
     "Pin Scanner": "App 4 pin scanner title is missing",
     "PIN_SCANNER_PIN_COUNT": "App 4 pin scanner pin table is missing",
     "ScannerPin scannerPins[]": "App 4 pin scanner data model is missing",
-    "#define PIN_SCANNER_PIN_COUNT 2": "App 4 should only scan connector-safe external analog candidates",
+    "#define PIN_SCANNER_PIN_COUNT 4": "App 4 should list GPIO35, GPIO22, GPIO21, and GPIO27",
+    "scannerActiveIndex = -1": "App 4 scanner should start with no active pin selected",
+    "handlePinScannerTouch": "App 4 scanner should let one pin be selected at a time",
+    "isPinScannerAdcCapable": "App 4 scanner should guard non-ADC pins before reading",
+    "pinScannerStatusText": "App 4 scanner should explain inactive and non-ADC pin states",
     "HOT_MOVEMENT_MIN": "App 4 pin scanner hot movement threshold is missing",
     "SORT_INTERVAL_MS": "App 4 pin scanner sort interval is missing",
     "SORT_HYSTERESIS": "App 4 pin scanner sort hysteresis is missing",
     "setupPinScanner": "App 4 pin scanner setup is missing",
-    "updatePinScannerReadings": "App 4 pin scanner readings are not updated",
+    "updateActivePinScannerReading": "App 4 pin scanner should update only the selected pin",
     "maybeSortScannerPins": "App 4 pin scanner auto-sort is missing",
     "drawApp4PinScanner": "App 4 pin scanner renderer is missing",
     "drawPinScannerRow": "App 4 pin scanner row renderer is missing",
@@ -183,11 +188,26 @@ app3_fn_body = source[app3_fn_start:app3_fn_end]
 if "tft.fillRect(0, headerHeight" in app3_fn_body:
     raise SystemExit("Origin Story crawl clears the live TFT area directly, causing flicker")
 
-if "if (next > APP_PIN_SCANNER) next = APP_PULSE;" not in source:
-    raise SystemExit("App next navigation does not include App 4 before wrapping")
+expected_app_order = [
+    "APP_PULSE",
+    "APP_SETTINGS",
+    "APP_PIN_SCANNER",
+    "APP_PLACEHOLDER_1",
+    "APP_PLACEHOLDER_2",
+    "APP_COUNT",
+]
+enum_start = source.index("enum AppId {")
+enum_end = source.index("};", enum_start)
+enum_body = source[enum_start:enum_end]
+enum_positions = [enum_body.index(token) for token in expected_app_order]
+if enum_positions != sorted(enum_positions):
+    raise SystemExit("App order should be Pulse, Settings, Pin Scanner, your-app-here, Origin Story")
 
-if "currentApp == APP_SETTINGS ? APP_PIN_SCANNER" not in source:
-    raise SystemExit("App previous navigation does not include App 4")
+if "if (next > APP_PLACEHOLDER_2) next = APP_PULSE;" not in source:
+    raise SystemExit("App next navigation should wrap only after final Origin Story screen")
+
+if "previous == APP_PULSE ? APP_PLACEHOLDER_2" not in source:
+    raise SystemExit("App previous navigation should wrap back to final Origin Story screen")
 
 app4_branch_start = source.index("} else if (currentApp == APP_PIN_SCANNER) {")
 app4_branch_end = source.index("\n  }", app4_branch_start)
@@ -206,11 +226,19 @@ if "displayModeName()" not in app4_fn_body:
 scanner_start = source.index("ScannerPin scannerPins[] = {")
 scanner_end = source.index("};", scanner_start)
 scanner_body = source[scanner_start:scanner_end]
-for unsafe_pin in ['"IO22"', '"LDR IO34"', '"IO32"', '"IO33"', ", 22,", ", 32,", ", 33,"]:
+for unsafe_pin in ['"LDR IO34"', '"IO32"', '"IO33"', ", 32,", ", 33,"]:
     if unsafe_pin in scanner_body:
         raise SystemExit(f"App 4 pin scanner includes unsafe integrated-app scan target: {unsafe_pin}")
-for required_pin in ['"P3  IO35"', '"CN1 IO27"']:
+for required_pin in ['"P3  IO35"', '"IO22"', '"BL  IO21"', '"CN1 IO27"']:
     if required_pin not in scanner_body:
         raise SystemExit(f"App 4 pin scanner is missing external connector target: {required_pin}")
+
+active_update_start = source.index("void updateActivePinScannerReading() {")
+active_update_end = source.index("void maybeSortScannerPins()", active_update_start)
+active_update_body = source[active_update_start:active_update_end]
+if "analogRead(21)" in active_update_body or "analogRead(22)" in active_update_body:
+    raise SystemExit("App 4 scanner still directly reads known non-ADC pins")
+if "isPinScannerAdcCapable(scannerPins[scannerActiveIndex].pin)" not in active_update_body:
+    raise SystemExit("App 4 scanner does not guard analogRead with ADC capability")
 
 print("App shell checks passed")

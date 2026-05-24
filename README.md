@@ -50,14 +50,16 @@ This branch adds the standalone CYD Analog Pin Scanner as App 4 inside the launc
 
 ```text
 Branch: codex/app4-pin-scanner-20260524
-Firmware: 0.4.9-safe-pin-scanner
+Firmware: 0.4.10-manual-pin-scanner
 Source scanner: yury-g/CYD_Analog_Pin_Scanner c203d85
 ```
 
 - Added App 4 `Pin Scanner`, based on the standalone `CYD_Analog_Pin_Scanner` diagnostic sketch.
-- Scans only connector-safe external analog candidates `GPIO 35` on `P3` and `GPIO 27` on `CN1` with 12-bit ADC readings, movement tracking, rail warnings, and auto-sort by movement.
-- Excludes `GPIO 22` because it is not an ESP32 ADC input, excludes `GPIO 32` and `GPIO 33` because this firmware uses them for the touch controller, and excludes `GPIO 34` because it is the onboard LDR path rather than a shipped-cable sensor connector target.
-- Keeps the Pulse app on 10-bit ADC reads and switches to 12-bit only while App 4 is active.
+- Lists `GPIO 35`, `GPIO 22`, `GPIO 21`, and `GPIO 27`, starts with scanning inactive, and lets you tap one pin row at a time.
+- Reads only ADC-capable test targets (`GPIO 35` and `GPIO 27`) and guards `GPIO 22` / `GPIO 21` with status text instead of calling `analogRead()` on them.
+- Keeps the Pulse app on 10-bit ADC reads and switches to 12-bit only while App 4 is active on an ADC-capable row.
+- Reordered the app flow so Settings is after Pulse, Pin Scanner is after Settings, `your app here` stays second-to-last, and `Origin Story` stays the final app screen.
+- Added a Settings `Memory` row showing free heap on the current device.
 - Added App 4 mockups for `M DARK`, `M LIGHT`, `C DARK`, and `C LIGHT`, plus a contact sheet under `docs/screenshots/app4-pin-scanner-render/`.
 
 ### App-shell preview — 2026-05-24

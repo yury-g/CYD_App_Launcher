@@ -75,7 +75,11 @@
 
 #define SPEAKER_BITS 10
 #define BEAT_CHIME_STEP_COUNT 4
-#define APP3_CRAWL_FANFARE_STEP_COUNT 22
+#define APP3_CRAWL_FANFARE_STEP_COUNT 42
+#define APP3_CRAWL_FANFARE_LOOP_START_STEP 0
+#define APP3_CRAWL_FANFARE_LOOP_MS 15000
+#define APP3_ORIGIN_CRAWL_LINE_COUNT 39
+#define APP3_CRAWL_FRAME_MS 72
 #define HEART_MIN_SIZE 8
 #define HEART_MAX_SIZE 15
 #define VOLUME_MIN 0
@@ -86,7 +90,7 @@
 
 // ===== APP SHELL =====
 
-#define APP_VERSION "0.4.2-app3-fanfare"
+#define APP_VERSION "0.4.3-app3-crawl"
 #define APP_FIRMWARE_DATE "2026-05-24"
 #define TOOLBAR_BUTTON_WIDTH 44
 #define TOOLBAR_BUTTON_HEIGHT 28
@@ -187,15 +191,63 @@ const uint16_t SIGNAL_HARMONY_DURATIONS_MS[] = {72, 84, 128};
 
 const uint16_t APP3_CRAWL_FANFARE_FREQUENCIES[APP3_CRAWL_FANFARE_STEP_COUNT] = {
   196, 0, 294, 0, 392, 0, 523, 0, 659, 784, 0,
-  196, 294, 392, 587, 392, 294, 220, 330, 440, 660, 0
+  196, 294, 392, 587, 392, 294, 220, 330, 440, 660, 0,
+  196, 247, 330, 247, 392, 294, 494, 392, 330, 587, 0,
+  220, 330, 440, 330, 554, 440, 660, 784, 0
 };
 const uint8_t APP3_CRAWL_FANFARE_DUTIES[APP3_CRAWL_FANFARE_STEP_COUNT] = {
   42, 0, 40, 0, 38, 0, 34, 0, 30, 26, 0,
-  22, 18, 20, 18, 18, 16, 20, 18, 16, 14, 0
+  22, 18, 20, 18, 18, 16, 20, 18, 16, 14, 0,
+  18, 14, 16, 14, 18, 14, 16, 14, 18, 14, 0,
+  16, 14, 16, 14, 18, 14, 16, 12, 0
 };
 const uint16_t APP3_CRAWL_FANFARE_DURATIONS_MS[APP3_CRAWL_FANFARE_STEP_COUNT] = {
-  260, 45, 260, 45, 300, 55, 380, 65, 220, 520, 160,
-  180, 130, 180, 220, 160, 160, 260, 160, 180, 420, 260
+  520, 80, 420, 70, 520, 80, 640, 110, 360, 740, 180,
+  320, 240, 280, 420, 260, 280, 360, 260, 320, 560, 220,
+  240, 240, 360, 260, 360, 240, 520, 240, 360, 520, 240,
+  320, 220, 320, 240, 520, 320, 640, 480, 1120
+};
+
+const char* const APP3_ORIGIN_CRAWL_LINES[APP3_ORIGIN_CRAWL_LINE_COUNT] = {
+  "EPISODE PPG",
+  "A TINY SENSOR",
+  "FINDS THE BEAT",
+  "",
+  "From Brooklyn shops",
+  "and Parsons classrooms,",
+  "Joel Murphy and Yury Gitman",
+  "built an open hardware",
+  "heart-rate sensor",
+  "for makers.",
+  "",
+  "World Famous Electronics",
+  "began as a Kickstarter",
+  "project in 2012,",
+  "then kept making",
+  "PulseSensor and teaching",
+  "it in public.",
+  "",
+  "The sensor shines green light",
+  "into capillary tissue and watches",
+  "the returning brightness. Each",
+  "pulse wave nudges the signal.",
+  "",
+  "Its origin is delightfully practical:",
+  "breadboards, op-amps, filters,",
+  "a phone-style light sensor,",
+  "and a reverse-mount green LED",
+  "that made finger placement better.",
+  "",
+  "Now the signal lands here,",
+  "on a Cheap Yellow Display:",
+  "open, tiny, and alive with code.",
+  "",
+  "Send us your feature requests,",
+  "firmware update ideas,",
+  "and wild classroom wishes.",
+  "",
+  "Thanks for supporting",
+  "PulseSensor since 2012."
 };
 
 // ===== LIVE SENSOR STATE =====
@@ -351,6 +403,8 @@ int placeholderLastY = -1;
 int placeholderDx = 2;
 int placeholderDy = 2;
 unsigned long lastPlaceholderMove = 0;
+unsigned long app3CrawlStartTime = 0;
+unsigned long lastApp3CrawlFrame = 0;
 
 // ===== FORWARD DECLARATIONS =====
 
@@ -431,6 +485,8 @@ void drawSettingsSwatch(int x, int y, uint16_t color, bool active);
 void drawSettingsScrollControls();
 void drawPlaceholderApp(const char* title, const char* message);
 void drawPlaceholderText(const char* message, uint16_t color);
+void drawApp3OriginCrawl();
+void drawApp3Starfield();
 void drawRotateControl();
 void drawRotateIcon(int x, int y, int w, int h, uint16_t color, uint16_t bg);
 void drawVolumeControl();
@@ -504,7 +560,7 @@ void loop() {
   } else if (currentApp == APP_PLACEHOLDER_1) {
     drawPlaceholderApp("App 2", "your app here");
   } else if (currentApp == APP_PLACEHOLDER_2) {
-    drawPlaceholderApp("App 3", "your app here too");
+    drawApp3OriginCrawl();
   } else if (appNeedsRedraw) {
     drawSettingsScreen();
   }
@@ -1004,6 +1060,8 @@ void resetPlaceholderState() {
   placeholderDx = 2;
   placeholderDy = 2;
   lastPlaceholderMove = 0;
+  app3CrawlStartTime = millis();
+  lastApp3CrawlFrame = 0;
 }
 
 uint16_t scaledChimeDuty(uint8_t step) {
@@ -1102,7 +1160,7 @@ void updateApp3CrawlFanfare() {
 
   app3CrawlFanfareStep++;
   if (app3CrawlFanfareStep >= APP3_CRAWL_FANFARE_STEP_COUNT) {
-    app3CrawlFanfareStep = 11;
+    app3CrawlFanfareStep = APP3_CRAWL_FANFARE_LOOP_START_STEP;
   }
   playApp3CrawlFanfareStep();
 }
@@ -1360,7 +1418,7 @@ void drawActiveApp() {
   } else if (currentApp == APP_PLACEHOLDER_2) {
     tft.fillScreen(screenBgColor());
     appNeedsRedraw = true;
-    drawPlaceholderApp("App 3", "your app here too");
+    drawApp3OriginCrawl();
   }
 }
 
@@ -1610,6 +1668,74 @@ void drawPlaceholderText(const char* message, uint16_t color) {
   tft.print(message);
   placeholderLastX = placeholderX;
   placeholderLastY = placeholderY;
+}
+
+void drawApp3OriginCrawl() {
+  unsigned long now = millis();
+  if (!appNeedsRedraw && now - lastApp3CrawlFrame < APP3_CRAWL_FRAME_MS) return;
+  lastApp3CrawlFrame = now;
+
+  uint16_t bg = COLOR_BG;
+  uint16_t gold = displayMode == DISPLAY_COLOR_LIGHT ? COLOR_LIGHT_AMBER : COLOR_SIGNAL_YELLOW;
+  uint16_t dimGold = displayMode == DISPLAY_MONO_DARK || displayMode == DISPLAY_MONO_LIGHT ? textColor() : COLOR_AMBER;
+
+  if (appNeedsRedraw) {
+    appNeedsRedraw = false;
+    tft.fillScreen(bg);
+    app3CrawlStartTime = now;
+  }
+
+  tft.fillRect(0, headerHeight, screenWidth, screenHeight - headerHeight, bg);
+  tft.fillRect(0, 0, screenWidth, headerHeight, bg);
+  tft.drawFastHLine(0, headerHeight - 1, screenWidth, gridColor());
+  drawApp3Starfield();
+
+  tft.setTextSize(1);
+  tft.setTextColor(textColor(), bg);
+  tft.setCursor(portraitLayout ? 10 : 10, portraitLayout ? 38 : 8);
+  tft.print("PulseSensor.com");
+  tft.setTextColor(gold, bg);
+  tft.setCursor(portraitLayout ? 10 : 10, portraitLayout ? 58 : 25);
+  tft.print("APP 3  ORIGIN CRAWL");
+  drawAppNavControls();
+
+  int crawlTop = headerHeight + 6;
+  int crawlBottom = screenHeight - 4;
+  int lineHeight = 13;
+  unsigned long elapsed = now - app3CrawlStartTime;
+  int travel = APP3_ORIGIN_CRAWL_LINE_COUNT * lineHeight + (crawlBottom - crawlTop) + 40;
+  int offset = (elapsed / 90) % travel;
+  int baseY = crawlBottom - offset;
+
+  tft.setTextSize(1);
+  for (int i = 0; i < APP3_ORIGIN_CRAWL_LINE_COUNT; i++) {
+    const char* line = APP3_ORIGIN_CRAWL_LINES[i];
+    if (line[0] == '\0') continue;
+    int y = baseY + i * lineHeight;
+    if (y < crawlTop || y > crawlBottom - 8) continue;
+
+    uint16_t color = i < 3 ? gold : dimGold;
+    int textW = strlen(line) * 6;
+    int x = max(0, (screenWidth - textW) / 2);
+    tft.setTextColor(color, bg);
+    tft.setCursor(x, y);
+    tft.print(line);
+  }
+}
+
+void drawApp3Starfield() {
+  const uint16_t stars[][2] = {
+    {18, 55}, {42, 94}, {64, 148}, {86, 72}, {109, 210}, {130, 118},
+    {151, 60}, {173, 169}, {195, 96}, {217, 222}, {240, 142},
+    {263, 75}, {286, 190}, {306, 114}, {28, 222}, {300, 55}
+  };
+  uint16_t starColor = displayMode == DISPLAY_MONO_DARK || displayMode == DISPLAY_MONO_LIGHT ? textColor() : COLOR_TEXT;
+  for (int i = 0; i < 16; i++) {
+    int x = stars[i][0];
+    int y = stars[i][1];
+    if (x >= screenWidth || y < headerHeight || y >= screenHeight) continue;
+    tft.drawPixel(x, y, starColor);
+  }
 }
 
 void drawRotateControl() {

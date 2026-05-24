@@ -1,6 +1,7 @@
 # CYD App Launcher — Student Version — Changelog
 
 ## Unreleased
+- 2026-05-24 09:15:15 EDT App 3 origin-crawl firmware pass: replaced App 3's bouncing placeholder on-device with a black starfield and scrolling PulseSensor origin crawl, extended the original CYD speaker fanfare to a tracked 15-second loop, and bumped firmware version to `0.4.3-app3-crawl`.
 - 2026-05-24 09:08:58 EDT App 3 origin-crawl mockup: added a closing ask for feature requests, firmware update ideas, and classroom wishes, plus a thank-you for supporting PulseSensor since 2012.
 - 2026-05-24 09:06:39 EDT App 3 origin-crawl branch: added an original programmatic CYD speaker fanfare for App 3, with a short heroic title sting and looping digital arpeggio scaled by Settings volume, and bumped firmware version to `0.4.2-app3-fanfare` for hardware listening.
 - 2026-05-24 08:56:35 EDT monochrome UI branch: changed the startup default to the black-background `C DARK` display mode, bumped firmware version to `0.4.1-color-dark-start`, and gave `C LIGHT` inactive navigation/button cells a dark blue high-contrast fill with white text so they no longer disappear into the white app background.

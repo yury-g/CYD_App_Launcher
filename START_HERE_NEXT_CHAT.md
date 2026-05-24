@@ -29,7 +29,7 @@ The branch adds an app shell around the Pulse dashboard:
 - Rotation now lives in Settings only; the persistent top rotate button was removed.
 - App navigation remains persistent as a three-button previous/next/Settings nav bar, with mode-aware outlines/fills and no top-bar rotate control.
 - Display mode cycles through `M DARK`, `M LIGHT`, `C DARK`, and `C LIGHT`.
-- Firmware version is `0.4.2-app3-fanfare`.
+- Firmware version is `0.4.3-app3-crawl`.
 - Firmware date shown in Settings is `2026-05-24`.
 - Guard script: `python3 tools/check_app_shell.py`.
 
@@ -38,6 +38,8 @@ The branch adds an app shell around the Pulse dashboard:
 2026-05-24 08:56:35 EDT hardware/UI follow-up: startup now defaults to the black-background `C DARK` color display mode instead of `M DARK`. `C LIGHT` inactive app navigation and Settings button cells now use a dark blue high-contrast fill with white text so button backgrounds remain distinct from the white app background. Tracking guard `tools/check_app_shell.py` now asserts both preferences.
 
 2026-05-24 09:06:39 EDT App 3 audio experiment: App 3 now starts an original programmatic "origin crawl" fanfare on entry, using the CYD speaker with a short title sting and looping arpeggio. The tone sequence is generated with `ledcWriteTone()`, respects Settings volume, stops when leaving App 3, and is tracked by `tools/check_app_shell.py`. This is a hardware listening pass, not yet a hardware-approved tag.
+
+2026-05-24 09:15:15 EDT App 3 firmware pass: App 3 no longer renders the bouncing `your app here too` placeholder. It now renders a black starfield and scrolling PulseSensor origin crawl directly in firmware, including the feature-request / firmware-update ask and the since-2012 thank-you. The App 3 fanfare table was extended to a tracked 15-second loop. This was built and flashed for hardware review.
 
 2026-05-24 hardware note: the app-shell firmware was built and flashed to `/dev/cu.usbserial-3120` on the connected ESP32-D0WD-V3 CYD, MAC `f4:65:0b:a9:f2:e8`. Touch ergonomics fixes changed compact toolbar routing to split adjacent app-nav/rotate hit targets at their midpoints, enlarged the visible app-nav and rotate controls from 22x22 to 44x28, converted Settings to a scrollable large-text row list with bigger row-local touch controls, widened Settings bottom scroll buttons to split the full bottom bar, changed Settings rows to alternating yellow/green Pulse dashboard backgrounds with black text, and redesigned App 1 metric tiles to use the same yellow/green high-contrast language.
 

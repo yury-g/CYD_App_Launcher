@@ -12,7 +12,6 @@ required_tokens = [
     "Bluetooth",
     "LED Control",
     "your app here",
-    "your app here too",
     "APP_PLACEHOLDER_1",
     "APP_PLACEHOLDER_2",
     "APP_SETTINGS",
@@ -104,6 +103,11 @@ required_large_controls = {
     "startApp3CrawlFanfare": "App 3 origin crawl fanfare does not start on app entry",
     "updateApp3CrawlFanfare": "App 3 origin crawl fanfare does not update from the main loop",
     "stopApp3CrawlFanfare": "App 3 origin crawl fanfare does not stop when leaving App 3",
+    "APP3_CRAWL_FANFARE_LOOP_START_STEP": "App 3 fanfare does not have a separate loop start",
+    "APP3_CRAWL_FANFARE_LOOP_MS 15000": "App 3 fanfare loop is not tracked as a 15-second loop",
+    "drawApp3OriginCrawl": "App 3 origin crawl renderer is missing",
+    "APP3_ORIGIN_CRAWL_LINE_COUNT": "App 3 origin crawl copy is missing",
+    "Send us your feature requests,": "App 3 origin crawl is missing the feature-request ask",
 }
 for token, message in required_large_controls.items():
     if token not in source:
@@ -128,5 +132,13 @@ if "drawAppNavControls();" not in settings_fn_body:
     raise SystemExit("Settings screen does not draw persistent nav controls")
 if "drawRotateControl();" in settings_fn_body:
     raise SystemExit("Settings screen still draws the removed top-bar rotate control")
+
+app3_branch_start = source.index("} else if (currentApp == APP_PLACEHOLDER_2) {")
+app3_branch_end = source.index("\n  }", app3_branch_start)
+app3_branch_body = source[app3_branch_start:app3_branch_end]
+if 'drawPlaceholderApp("App 3", "your app here too")' in app3_branch_body:
+    raise SystemExit("App 3 still renders the bouncing placeholder")
+if "drawApp3OriginCrawl();" not in app3_branch_body:
+    raise SystemExit("App 3 does not render the origin crawl")
 
 print("App shell checks passed")

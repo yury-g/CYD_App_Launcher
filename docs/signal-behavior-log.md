@@ -49,8 +49,16 @@ Change:
 
 Verdict:
 
-- Pending hardware long-run sanity check. This version is expected to improve
-  movement tolerance without relaxing BPM/IBI qualification.
+- Preliminary upgrade candidate from serial sanity after flashing to
+  `/dev/cu.usbserial-3120`; still needs user-visible finger-on-sensor judgement.
+- 60 s steady window: 121 parsed signal lines, 66.1% locked, `badStreak` reached
+  2, live range 80-141, max clipping score 0, BPM mean 70.9. Drop reasons were
+  `none` for 111 lines and `grace expired` for 10 lines.
+- 60 s gentle movement/pressure window: 120 parsed signal lines, 94.2% locked,
+  `badStreak` reached 2, live range 80-155, max clipping score 0, BPM mean 74.5.
+  Drop reasons were `none` for 116 lines and `grace expired` for 4 lines.
+- The grace path is active and bounded: unqualified beat streak did not exceed
+  the planned 2-beat hold. BPM/IBI still came only from qualified readings.
 
 ## Test Notes To Keep
 

@@ -50,7 +50,7 @@ This is the current good development pause point for the app shell branch:
 
 ```text
 Branch:   codex/app4-pin-scanner-perf-safe-20260524
-Firmware: 0.4.17-lock-hold-grace
+Firmware: 0.4.18-settings-text
 ```
 
 - Added a compact app shell around the Pulse dashboard: the screen order is Pulse dashboard, Settings, App 4 `Pin Scanner`, `Your App Here`, then `Origin Story` last.
@@ -60,6 +60,7 @@ Firmware: 0.4.17-lock-hold-grace
 - Changed the compact `SIG GPIO35` bars into a 12-step acquisition ladder, so users get more gradual feedback while finding a usable signal before BPM/IBI are trusted. The acquisition harmony now has an 8-note rising palette.
 - Matched the live waveform line color to the `SIG GPIO35` panel state color, so the graph and SIG box both show yellow while acquiring and change together after lock.
 - Added balanced lock-retention grace: acquisition still needs four consecutive qualified beats, but once locked the dashboard tolerates brief movement/noise blips before clearing BPM/IBI.
+- Made long Settings values easier to read in horizontal display rotation by keeping them at the normal Settings text size on a second line; the tiny fallback remains available only for vertical rotation.
 - Added Settings-only controls for Volume, icon-only Rotation, Display, WiFi/Bluetooth placeholders, LED Control, LED swatches, About, Version, Firmware date, runtime memory used/free, and build memory.
 - Added four display modes under Settings `Display`: `M DARK`, `M LIGHT`, `C DARK`, and `C LIGHT`.
 - Bumped Settings row text back up one size. Plain data rows keep the label left-justified and the value right-justified, while rows with right-side controls keep a second value line only to avoid overlap. The Memory row shows used heap plus free heap by size and percentage, and the Build row shows PlatformIO RAM/Flash usage.

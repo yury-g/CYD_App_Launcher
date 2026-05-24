@@ -76,10 +76,14 @@ def draw_row(draw, width, y, label, value, control=False):
         draw.text((10, y + 3), label, font=FONT_SETTINGS, fill=COLOR_TEXT)
         draw.text((10, y + 21), value, font=FONT_SETTINGS, fill=COLOR_SIGNAL_YELLOW)
     else:
-        draw.text((10, y + 12), label, font=FONT_SETTINGS, fill=COLOR_TEXT)
         label_w = draw.textbbox((0, 0), label, font=FONT_SETTINGS)[2]
         value_font = FONT_SETTINGS
         value_w = draw.textbbox((0, 0), value, font=value_font)[2]
+        if value_w > width - 28 - label_w and width >= 300:
+            draw.text((10, y + 3), label, font=FONT_SETTINGS, fill=COLOR_TEXT)
+            draw.text((10, y + 21), value, font=FONT_SETTINGS, fill=COLOR_SIGNAL_YELLOW)
+            return COLOR_BG
+        draw.text((10, y + 12), label, font=FONT_SETTINGS, fill=COLOR_TEXT)
         if value_w > width - 28 - label_w:
             value_font = FONT_1
             value_w = draw.textbbox((0, 0), value, font=value_font)[2]
@@ -123,10 +127,10 @@ def render(width, height, scroll_y, filename):
         ("LED Control", "beat pulse"),
         ("Color", "tap"),
         ("About", "PulseSensor CYD"),
-        ("Version", "0.4.12-settings-row-alignment"),
+        ("Version", "0.4.18-settings-text"),
         ("Firmware", "2026-05-24"),
         ("Memory", "used 90K free 238K 72%"),
-        ("Build", "RAM 7.3% Flash 28.7%"),
+        ("Build", "RAM 7.3% Flash 28.8%"),
     ]
 
     for index, (label, value) in enumerate(rows):

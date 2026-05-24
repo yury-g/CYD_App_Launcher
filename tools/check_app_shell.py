@@ -32,6 +32,13 @@ missing = [token for token in required_tokens if token not in source]
 if missing:
     raise SystemExit("Missing app shell tokens: " + ", ".join(missing))
 
+version_marker = '#define APP_VERSION "'
+version_start = source.index(version_marker) + len(version_marker)
+version_end = source.index('"', version_start)
+app_version = source[version_start:version_end]
+if len(app_version) > 25:
+    raise SystemExit("APP_VERSION is too wide for landscape Settings size-2 text")
+
 header_start = source.index("void drawHeader() {")
 header_end = source.index("void drawAppNavControls()", header_start)
 header_body = source[header_start:header_end]
@@ -61,6 +68,14 @@ if 'drawSettingsButton(settingsRotateX, rowY + 6, 86, "", false);' not in settin
     raise SystemExit("Settings rotation control should be icon-only")
 if '"ROT"' in settings_mock:
     raise SystemExit("Settings mock still renders ROT text instead of the rotation icon")
+if "bool settingsValueNeedsCompactText" not in source:
+    raise SystemExit("Settings value fit check should be shared before choosing tiny text")
+if "if (!portraitLayout && settingsValueNeedsCompactText(label, value))" not in source:
+    raise SystemExit("Landscape Settings rows should avoid tiny value text by using two-line text")
+if "return portraitLayout ? 1 : SETTINGS_TEXT_SIZE;" not in source:
+    raise SystemExit("The smallest Settings value text should be limited to vertical display rotation")
+if "value_w > width - 28 - label_w and width >= 300" not in settings_mock:
+    raise SystemExit("Settings mock should keep landscape fallback text larger")
 
 read_touch_start = source.index("void readTouchControls() {")
 read_touch_end = source.index("void mapTouchPoint", read_touch_start)

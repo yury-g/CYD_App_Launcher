@@ -106,7 +106,7 @@
 
 // ===== APP SHELL =====
 
-#define APP_VERSION "0.4.17-lock-hold-grace"
+#define APP_VERSION "0.4.18-settings-text"
 #define APP_FIRMWARE_DATE "2026-05-24"
 #define APP_BUILD_RAM_USAGE "RAM 7.3%"
 #define APP_BUILD_FLASH_USAGE "Flash 28.8%"
@@ -591,6 +591,7 @@ void drawSettingsRow(int rowIndex, int y, const char* label, const char* value);
 void drawSettingsControlRow(int rowIndex, int y, const char* label, const char* value);
 int settingsTextWidth(const char* text, int textSize);
 int settingsValueTextSize(const char* label, const char* value);
+bool settingsValueNeedsCompactText(const char* label, const char* value);
 int settingsRightAlignedValueX(const char* value, int textSize);
 uint16_t settingsRowBackground(int rowIndex);
 void drawSettingsButton(int x, int y, int w, const char* label, bool active);
@@ -2085,6 +2086,17 @@ void drawSettingsRow(int rowIndex, int y, const char* label, const char* value) 
   tft.fillRect(0, y, screenWidth, SETTINGS_ROW_H, bg);
   drawDottedHLine(0, y + SETTINGS_ROW_H - 2, screenWidth, gridColor(), 5, 2);
 
+  if (!portraitLayout && settingsValueNeedsCompactText(label, value)) {
+    tft.setTextSize(SETTINGS_TEXT_SIZE);
+    tft.setTextColor(textColor(), bg);
+    tft.setCursor(10, y + 3);
+    tft.print(label);
+    tft.setTextColor(displayValueTextColor(), bg);
+    tft.setCursor(10, y + 21);
+    tft.print(value);
+    return;
+  }
+
   tft.setTextSize(SETTINGS_TEXT_SIZE);
   tft.setTextColor(textColor(), bg);
   tft.setCursor(10, y + 12);
@@ -2116,11 +2128,15 @@ int settingsTextWidth(const char* text, int textSize) {
 }
 
 int settingsValueTextSize(const char* label, const char* value) {
+  if (!settingsValueNeedsCompactText(label, value)) return SETTINGS_TEXT_SIZE;
+  return portraitLayout ? 1 : SETTINGS_TEXT_SIZE;
+}
+
+bool settingsValueNeedsCompactText(const char* label, const char* value) {
   int labelW = settingsTextWidth(label, SETTINGS_TEXT_SIZE);
   int valueW = settingsTextWidth(value, SETTINGS_TEXT_SIZE);
   int availableValueW = screenWidth - 20 - labelW - 8;
-  if (valueW <= availableValueW) return SETTINGS_TEXT_SIZE;
-  return 1;
+  return valueW > availableValueW;
 }
 
 int settingsRightAlignedValueX(const char* value, int textSize) {

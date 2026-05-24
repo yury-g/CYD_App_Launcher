@@ -27,6 +27,51 @@ Acquire strictly, hold gently.
   not compare finger, earlobe, wrist, or loose bench readings as if they are the
   same test condition.
 
+## 2026-05-24 - Stopping Point And Placement Clarification
+
+Firmware on device: `0.4.24-front-id`
+
+Firmware commit/ref: `d04c21a` / `good-working-0.4.24-front-id-20260524`
+
+User-visible result:
+
+- After reporting a possible long-run regression where the waveform became
+  noisy/jagged and the dashboard could not hold qualified beats, the user later
+  reported the same device state was "working like a champ" with better earlobe
+  placement.
+- No firmware was changed between the regression report and the good behavior.
+- Treat this as evidence that body placement/contact can mimic a signal-core
+  regression. Do not invent new beat math until the symptom is reproduced with a
+  logged stable-contact test.
+
+Research findings from the audit:
+
+- The movement-resilience path was not lost. Current signal-core history still
+  includes lock-hold grace (`0.4.17`), locked peak/cadence recovery (`0.4.19`),
+  peak-to-peak scoring (`0.4.20`), pre-lock cadence consistency and raw logging
+  (`0.4.21`), and clipping/motion-artifact honesty (`0.4.23`).
+- `0.4.24-front-id` is a tracking/front-screen identity change only; it does not
+  change sampling, clipping guards, acquisition thresholds, BPM/IBI
+  qualification, or diagnostic fields.
+- The later `0.4.25-stable-wave` branch change is drawing-only: fixed ADC
+  viewport for the live trace and no beat circles over the raw waveform. It does
+  not change beat qualification.
+- A short non-mutating serial watch during the questionable state showed clean
+  non-railed input (`clip=0`) with `range` roughly `80..129`, `p2p` roughly
+  `3..7`, and occasional `accept=strict`, but `qStreak` did not hold long enough
+  for lock. That pattern fits inconsistent contact/cadence more than the old
+  rail-to-rail wiring failure.
+
+Next diagnostic if the symptom returns:
+
+- First flash/check internal `main` at `0.4.24-front-id`.
+- Record body position and contact method before judging behavior.
+- Capture serial or `rawDiag` and compare `range`, `clip`, `p2p`, `qStreak`,
+  `badStreak`, `accept`, and `drop`.
+- If contact/wiring is uncertain, use App 4 Pin Scanner to compare GPIO35
+  against GPIO27. Keep GPIO21/GPIO22 guarded; they are not the dashboard analog
+  input candidates.
+
 ## 2026-05-24 - Failed Experiment Closure
 
 Branch: `codex/signal-core-polish-publish-prep-20260524`

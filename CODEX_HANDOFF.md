@@ -10,6 +10,41 @@ Quick start for future chats: read `START_HERE_NEXT_CHAT.md` first, then this fi
 
 This section supersedes older branch/path references below. Older notes remain as useful history.
 
+## Latest Stopping Point: 2026-05-24 No More Development Today
+
+The user wants to stop development here and resume from the internal GitHub repo
+later.
+
+Next time, point the AI at:
+
+```text
+https://github.com/yury-g/CYD_App_Launcher
+```
+
+Then ask it to flash the connected CYD with the current favorite build already
+on the device:
+
+```text
+Firmware: 0.4.24-front-id
+Firmware commit: d04c21a Add first screen version identity 20260524
+Ref: good-working-0.4.24-front-id-20260524
+Branch: main
+```
+
+No more firmware/UI development is requested before that first flash/sanity
+check.
+
+Latest hardware/user note:
+
+- The apparent signal degradation/no-lock edge case cleared without a code
+  change once earlobe placement improved.
+- The user reported the current device state was "working like a champ" and
+  suspected the earlier issue was user placement.
+- Keep `0.4.24-front-id` as the preferred first flash and comparison point.
+- Keep the regression research notes for later: if the symptom returns, capture
+  serial evidence first and compare placement/wiring/GPIO35/GPIO27 before
+  changing beat math.
+
 Current local path:
 
 ```text
@@ -47,7 +82,9 @@ Latest hardware status:
 - The weird waveform behavior was real: the attached CYD showed rail-to-rail `SIG GPIO35` input with `signal` hitting `0`/`1023`, `range=1023`, `clip=100`, and unusable BPM/IBI.
 - `0.4.23-clip-guard` only made the failure visible and safe: while railed, serial showed `quality=0`, `p2p=0`, `locked=0`, `BPM=0`, `IBI=0`, `rawDiag=0`, and no re-arm spam.
 - `0.4.24-front-id` keeps the same signal behavior and adds `APP_VERSION` plus `APP_FIRMWARE_DATE` directly under `PulseSensor.com` on the first Pulse dashboard screen for fast hardware/version tracking.
-- Next action is to flash current internal `main` and compare. If `main` also rails, investigate physical/electrical causes before touching beat math.
+- Next action is to flash current internal `main` (`0.4.24-front-id`) and
+  compare. If it fails again, investigate physical/electrical causes before
+  touching beat math.
 - Built with PlatformIO in release env `cyd` and diagnostic env `cyd_diag`.
 - Release build defaults raw CSV diagnostics off and reports `0.4.24-front-id`; diagnostic build enables 50 Hz `rawDiag` CSV and reports `0.4.24-front-id-log`.
 - Upload target remains `/dev/cu.usbserial-3120`; latest known attached CYD MAC is `f4:2d:c9:9d:af:cc`.

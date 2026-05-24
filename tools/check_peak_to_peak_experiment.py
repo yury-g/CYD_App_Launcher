@@ -4,7 +4,7 @@ source = Path("PulseSensor_CYD.ino").read_text()
 
 required = {
     "#define PEAK_TO_PEAK_EXPERIMENT 1": "experiment switch must be enabled",
-    '#define APP_VERSION "0.4.20-peak2peak"': "firmware version must identify the experiment",
+    '#define APP_VERSION "0.4.21-signal-log"': "firmware version must identify the active signal-log experiment",
     "bool isPeakToPeakCandidateBeat": "candidate helper is missing",
     "int peakToPeakScoreForCurrentSignal": "acquisition scoring hook is missing",
     "bool peakToPeakAccepted = PEAK_TO_PEAK_EXPERIMENT &&": "read path must use peak-to-peak acceptance",

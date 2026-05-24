@@ -156,7 +156,7 @@ required_lock_hold_tokens = {
     'const char* lastBeatAcceptReason = "none";': "Serial should record how the latest beat was accepted",
     "bool isLockedCadenceMatch": "Locked signal should compare new beats against the current cadence",
     "bool isPeakCadenceRecoveryBeat": "Locked-state peak/cadence recovery helper is missing",
-    "bool strictAccepted = qualified && (!wasLocked || isLockedCadenceMatch(ibi));": "Strict acquisition should stay unchanged, but locked strict beats should respect cadence",
+    "bool strictAccepted = qualified && (wasLocked ? isLockedCadenceMatch(ibi) : isAcquisitionCadenceMatch(ibi));": "Strict acquisition should require cadence consistency before and after lock",
     "bool peakToPeakAccepted = PEAK_TO_PEAK_EXPERIMENT &&": "Peak-to-peak experiment should have an explicit acceptance path",
     "bool recovered = !strictAccepted && !peakToPeakAccepted && wasLocked &&": "Peak/cadence fallback must stay locked-state only after peak-to-peak",
     'lastBeatAcceptReason = strictAccepted ? "strict" : (peakToPeakAccepted ? "peak2peak" : "peak-cadence");': "Accepted beats should mark strict vs peak-to-peak vs peak/cadence serial reason",

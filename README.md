@@ -50,7 +50,7 @@ This is the current good development pause point for the app shell branch:
 
 ```text
 Branch:   codex/app4-pin-scanner-perf-safe-20260524
-Firmware: 0.4.20-peak2peak
+Firmware: 0.4.21-signal-log
 ```
 
 - Added a compact app shell around the Pulse dashboard: the screen order is Pulse dashboard, Settings, App 4 `Pin Scanner`, `Your App Here`, then `Origin Story` last.
@@ -61,6 +61,7 @@ Firmware: 0.4.20-peak2peak
 - Matched the live waveform line color to the `SIG GPIO35` panel state color, so the graph and SIG box both show yellow while acquiring and change together after lock.
 - Added balanced lock-retention grace: acquisition still needs four consecutive qualified beats, but once locked the dashboard tolerates brief movement/noise blips before clearing BPM/IBI.
 - Added locked-only peak/cadence beat recovery, then an enabled peak-to-peak experiment for the earlobe movement case: once lock is earned, beat events can survive valley distortion when cadence remains close to the last trusted IBI, while short movement-blip intervals are rejected.
+- Added raw signal logging diagnostics and an offline analyzer for the same-earlobe investigation. The latest 44.2 s capture accepted 47 firmware beats, found 47 independent raw peaks, and had matching median IBI/BPM (`918 ms` firmware vs `920 ms` independent), with zero short accepted IBIs below 700 ms.
 - Made long Settings values easier to read in horizontal display rotation by keeping them at the normal Settings text size on a second line; the tiny fallback remains available only for vertical rotation.
 - Added Settings-only controls for Volume, icon-only Rotation, Display, WiFi/Bluetooth placeholders, LED Control, LED swatches, About, Version, Firmware date, runtime memory used/free, and build memory.
 - Added four display modes under Settings `Display`: `M DARK`, `M LIGHT`, `C DARK`, and `C LIGHT`.
@@ -136,6 +137,8 @@ Use these images to review the new screens, colors, and Settings treatment befor
 ![Origin Story crawl contact sheet](docs/screenshots/app3-origin-crawl-render/app3-origin-contact-sheet.png)
 
 The render helpers are in `tools/render_pulse_app_mock.py`, `tools/render_settings_mock.py`, `tools/render_app4_pin_scanner_mock.py`, and `tools/render_app3_origin_crawl_mock.py`. They are intentionally lightweight PNG mockups used for quick UI iteration before flashing the CYD.
+
+The signal diagnostic helpers are `tools/capture_signal_log.py`, `tools/analyze_signal_log.py`, and `tools/check_signal_diagnostics.py`. Raw captures are written under local `logs/` and intentionally ignored by Git.
 
 Signal-first firmware architecture and future development rules live in [docs/signal-first-architecture.md](docs/signal-first-architecture.md). Read that before changing PulseSensor sampling, beat qualification, graph drawing, app switching, or diagnostic tools.
 
@@ -213,7 +216,7 @@ git log -1 --oneline
 
 Run `git log -1 --oneline` after checkout to see the latest pushed handoff
 commit. The latest firmware/UI code commit is
-`02a5001 Add peak to peak signal experiment 20260524`.
+the current `HEAD` commit for this branch.
 
 3. Plug in one CYD and detect the serial port:
 

@@ -17,6 +17,10 @@ Acquire strictly, hold gently.
   update through the narrow `peak-cadence` recovery path when timing remains
   plausible and the beat-event/range still looks alive. Grace-held rejected
   beats preserve the last trusted BPM/IBI but do not create new readings.
+- Peak-to-peak scoring is useful, but it must be bounded by clipping, rolling
+  range, and cadence. The 2026-05-24 same-earlobe logs showed that raw peak
+  shape can be excellent while detector acquisition still accepts short double
+  beats unless pre-lock cadence consistency is enforced.
 - Raw `SIG GPIO35`, BPM, IBI, and qualified-beat behavior outrank display polish,
   app switching, Pin Scanner, sounds, and story screens.
 - Always record body position and mounting method for hardware validation. Do
@@ -39,6 +43,75 @@ Serial summary:
 User-visible behavior:
 Verdict:
 ```
+
+## 2026-05-24 - Raw Signal Log Diagnostics
+
+Firmware: `0.4.21-signal-log`
+
+Design:
+
+- Added `RAW_SIGNAL_DIAGNOSTICS`, enabled on this diagnostic branch, to stream
+  `rawDiag` CSV rows at 50 Hz and immediately on beat decisions.
+- Added `tools/capture_signal_log.py` to capture serial rows and
+  `tools/analyze_signal_log.py` to run an independent raw peak detector against
+  the captured waveform.
+- Changed clipping score decay from foreground-loop based to time based, so
+  display/app redraw speed cannot erase recent rail hits too quickly.
+- Added a rolling-range motion-artifact guard for qualified and peak-to-peak
+  candidate beats.
+- Added pre-lock cadence consistency. The first beat in an acquisition run may
+  seed cadence, but later acquisition beats must stay close to the current
+  candidate IBI and cannot be shorter than 70% of that IBI.
+
+Evidence:
+
+```text
+Date/time: 2026-05-24 EDT
+Firmware: 0.4.21-signal-log
+Sensor body position: earlobe, same position as the prior noisy/smooth tests
+Mount/contact method: same user earlobe placement; exact pressure not recorded
+Condition: Codex-side serial capture while user stayed connected
+Duration: 44.2 s final acquisition-cadence capture
+Serial summary:
+  - Final capture path: logs/signal-log-ear-acqcadence-20260524.csv
+  - Rows: 2212
+  - Firmware beat events: 47 accepted, 0 rejected
+  - Independent raw peaks: 47
+  - Firmware accepted median IBI/BPM: 918 ms / 65.3 BPM
+  - Independent median IBI/BPM: 920 ms / 65.2 BPM
+  - Firmware accepted IBI range: 830-988 ms
+  - Independent IBI range: 829-988 ms
+  - Clip rows: 0
+  - Motion/noise windows: 0
+```
+
+Comparison against earlier captures from the same investigation:
+
+```text
+Initial raw diagnostics: accepted_noisy=6, short_accepted=5, max_range=984
+Time-based clip decay: accepted_noisy=4, short_accepted=4, max_range=1015
+Motion-range gate only: accepted_noisy=0, short_accepted=40, max_range=162
+Acquisition cadence guard: accepted_noisy=0, short_accepted=0, max_range=402
+```
+
+Interpretation:
+
+- The smooth-to-noisy behavior appears to include at least two distinct cases:
+  real clipping/rail or huge rolling-range movement, and smaller double-detect
+  cadence errors during otherwise clean-looking raw signal.
+- The old clipping score could decay according to foreground loop speed, so
+  fast loops could make recent rail hits look clean before the signal was truly
+  stable again.
+- The peak-to-peak/motion-range work correctly rejected obvious noisy accepted
+  beats, but acquisition could still lock onto short double detections until
+  cadence consistency was added before lock.
+
+Verdict:
+
+- Strong diagnostic improvement for this earlobe run, not a public publish
+  verdict. Keep `0.4.21-signal-log` internal until the user visually sanity
+  checks the CYD and decides whether to keep raw CSV diagnostics enabled or gate
+  them off for a normal release build.
 
 ## 2026-05-24 - Peak-To-Peak Experiment
 

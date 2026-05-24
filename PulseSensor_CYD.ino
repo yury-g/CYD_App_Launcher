@@ -65,6 +65,8 @@
 #define LOCK_QUALIFIED_BEATS 4
 #define LOCK_GRACE_BAD_BEATS 2
 #define LOCK_HOLD_GRACE_MS 2200
+#define ACQUISITION_CADENCE_TOLERANCE_PERCENT 35
+#define ACQUISITION_CADENCE_MIN_IBI_PERCENT 70
 #define PEAK_TO_PEAK_EXPERIMENT 1
 #define PEAK_TO_PEAK_MIN_RANGE 70
 #define PEAK_TO_PEAK_STRONG_RANGE 135
@@ -89,6 +91,7 @@
 #define SIGNAL_ACQUISITION_MIN_RANGE 40
 #define SIGNAL_ACQUISITION_FULL_RANGE 220
 #define SIGNAL_ACQUISITION_MAX_SCORE_BEFORE_LOCK 11
+#define SIGNAL_MOTION_ARTIFACT_RANGE 420
 #define AMPLITUDE_METER_MAX 120
 
 // ===== BEAT TONE SETTINGS =====
@@ -121,10 +124,10 @@
 
 // ===== APP SHELL =====
 
-#define APP_VERSION "0.4.20-peak2peak"
+#define APP_VERSION "0.4.21-signal-log"
 #define APP_FIRMWARE_DATE "2026-05-24"
 #define APP_BUILD_RAM_USAGE "RAM 7.3%"
-#define APP_BUILD_FLASH_USAGE "Flash 28.8%"
+#define APP_BUILD_FLASH_USAGE "Flash 28.9%"
 #define TOOLBAR_BUTTON_WIDTH 44
 #define TOOLBAR_BUTTON_HEIGHT 28
 #define APP_BUTTON_WIDTH TOOLBAR_BUTTON_WIDTH
@@ -139,6 +142,9 @@
 #define CONTROL_TOUCH_PAD 8
 #define PERF_DIAGNOSTICS 0
 #define PERF_DIAGNOSTICS_MS 2000
+#define RAW_SIGNAL_DIAGNOSTICS 1
+#define RAW_SIGNAL_DIAGNOSTICS_MS 20
+#define CLIPPING_SCORE_DECAY_MS 20
 
 // ===== TOUCH CALIBRATION =====
 
@@ -345,6 +351,7 @@ unsigned long lastBeatTime = 0;
 unsigned long lastQualifiedBeatTime = 0;
 unsigned long lastGraphDraw = 0;
 unsigned long lastSerialPrint = 0;
+unsigned long lastRawDiagnosticPrint = 0;
 unsigned long lastDetectorRearmTime = 0;
 unsigned long lastControlTouchTime = 0;
 unsigned long lastSignalHarmonyTime = 0;
@@ -361,6 +368,9 @@ int clippedSampleScore = 0;
 int rearmCount = 0;
 const char* lastLockDropReason = "none";
 const char* lastBeatAcceptReason = "none";
+bool rawDiagnosticsHeaderPrinted = false;
+bool rawDiagnosticsBeatPending = false;
+const char* rawDiagnosticsBeatAcceptReason = "none";
 
 bool dashboardDrawn = false;
 int previousDisplayBPM = -1;
@@ -577,6 +587,7 @@ bool isPinScannerRailed(int value);
 bool isPinScannerAdcCapable(uint8_t pin);
 const char* pinScannerStatusText(int index);
 void readPulseSensor();
+void printRawSignalDiagnostics();
 #if PERF_DIAGNOSTICS
 void notePerfReadStart(uint32_t readStartUs);
 void notePerfReadEnd(uint32_t readStartUs, bool signalChanged);
@@ -587,6 +598,7 @@ const char* currentAppName();
 #endif
 bool isQualifiedBeat(int bpm, int ibi, int amplitude);
 bool isPlausibleBeatTiming(int bpm, int ibi);
+bool isAcquisitionCadenceMatch(int ibi);
 bool isLockedCadenceMatch(int ibi);
 bool isPeakToPeakCadenceMatch(int ibi);
 bool isPeakCadenceRecoveryBeat(int bpm, int ibi, int amplitude);
@@ -770,7 +782,9 @@ void loop() {
   maybePrintPerfDiagnostics();
 #endif
 
-  if (millis() - lastSerialPrint >= 500) {
+  printRawSignalDiagnostics();
+
+  if (!RAW_SIGNAL_DIAGNOSTICS && millis() - lastSerialPrint >= 500) {
     lastSerialPrint = millis();
     if (currentApp == APP_PIN_SCANNER) {
       if (scannerActiveIndex < 0) {
@@ -1580,7 +1594,7 @@ void readPulseSensor() {
     int bpm = pulseSensor.getBeatsPerMinute();
     int ibi = pulseSensor.getInterBeatIntervalMs();
     bool qualified = isQualifiedBeat(bpm, ibi, pulseAmplitude);
-    bool strictAccepted = qualified && (!wasLocked || isLockedCadenceMatch(ibi));
+    bool strictAccepted = qualified && (wasLocked ? isLockedCadenceMatch(ibi) : isAcquisitionCadenceMatch(ibi));
     bool peakToPeakAccepted = PEAK_TO_PEAK_EXPERIMENT &&
                               !strictAccepted &&
                               isPeakToPeakCandidateBeat(bpm, ibi, pulseAmplitude, wasLocked);
@@ -1616,6 +1630,8 @@ void readPulseSensor() {
 
     lockedSignal = qualifiedBeatStreak >= LOCK_QUALIFIED_BEATS;
     updateSignalAcquisitionScore();
+    rawDiagnosticsBeatPending = true;
+    rawDiagnosticsBeatAcceptReason = lastBeatAcceptReason;
 
     if (accepted) {
       if (lockedSignal) {
@@ -1638,6 +1654,42 @@ void readPulseSensor() {
 #if PERF_DIAGNOSTICS
   notePerfReadEnd(readStartUs, signalChanged);
 #endif
+}
+
+void printRawSignalDiagnostics() {
+  if (!RAW_SIGNAL_DIAGNOSTICS) return;
+
+  unsigned long now = millis();
+  if (!rawDiagnosticsHeaderPrinted) {
+    Serial.println("rawDiag,ms,signal,amp,bpm,ibi,locked,quality,p2p,range,clip,inside,beat,accept,drop,qStreak,badStreak");
+    rawDiagnosticsHeaderPrinted = true;
+  }
+
+  if (now - lastRawDiagnosticPrint < RAW_SIGNAL_DIAGNOSTICS_MS && !rawDiagnosticsBeatPending) return;
+  lastRawDiagnosticPrint = now;
+
+  int beat = rawDiagnosticsBeatPending ? 1 : 0;
+  const char* acceptReason = rawDiagnosticsBeatPending ? rawDiagnosticsBeatAcceptReason : "none";
+  Serial.printf("rawDiag,%lu,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%s,%s,%d,%d\n",
+                now,
+                currentSignal,
+                pulseAmplitude,
+                displayBPM,
+                displayIBI,
+                lockedSignal ? 1 : 0,
+                signalQuality,
+                peakToPeakScore,
+                maxSignal - minSignal,
+                clippedSampleScore,
+                insideBeatWindow ? 1 : 0,
+                beat,
+                acceptReason,
+                lastLockDropReason,
+                qualifiedBeatStreak,
+                unqualifiedBeatStreak);
+
+  rawDiagnosticsBeatPending = false;
+  rawDiagnosticsBeatAcceptReason = "none";
 }
 
 #if PERF_DIAGNOSTICS
@@ -1729,6 +1781,7 @@ bool isQualifiedBeat(int bpm, int ibi, int amplitude) {
   if (!isPlausibleBeatTiming(bpm, ibi)) return false;
   if (amplitude < MIN_QUALIFIED_AMPLITUDE) return false;
   if (maxSignal - minSignal < SIGNAL_COACH_FLAT_RANGE) return false;
+  if (maxSignal - minSignal > SIGNAL_MOTION_ARTIFACT_RANGE) return false;
   if (clippedSampleScore > 18) return false;
   return true;
 }
@@ -1737,6 +1790,14 @@ bool isPlausibleBeatTiming(int bpm, int ibi) {
   if (bpm < MIN_QUALIFIED_BPM || bpm > MAX_QUALIFIED_BPM) return false;
   if (ibi < MIN_QUALIFIED_IBI || ibi > MAX_QUALIFIED_IBI) return false;
   return true;
+}
+
+bool isAcquisitionCadenceMatch(int ibi) {
+  if (qualifiedBeatStreak <= 0 || displayIBI <= 0) return true;
+  if (ibi < (displayIBI * ACQUISITION_CADENCE_MIN_IBI_PERCENT) / 100) return false;
+  int ibiTolerance = max(PEAK_RECOVERY_MIN_IBI_TOLERANCE_MS,
+                         (displayIBI * ACQUISITION_CADENCE_TOLERANCE_PERCENT) / 100);
+  return abs(ibi - displayIBI) <= ibiTolerance;
 }
 
 bool isLockedCadenceMatch(int ibi) {
@@ -1799,6 +1860,7 @@ int peakToPeakScoreForCurrentSignal() {
 
 bool isPeakToPeakCandidateBeat(int bpm, int ibi, int amplitude, bool wasLocked) {
   if (!isPlausibleBeatTiming(bpm, ibi)) return false;
+  if (maxSignal - minSignal > SIGNAL_MOTION_ARTIFACT_RANGE) return false;
   if (clippedSampleScore > 18) return false;
 
   int requiredScore = wasLocked ? PEAK_TO_PEAK_LOCKED_MIN_SCORE : PEAK_TO_PEAK_ACQUIRE_MIN_SCORE;
@@ -1809,19 +1871,26 @@ bool isPeakToPeakCandidateBeat(int bpm, int ibi, int amplitude, bool wasLocked) 
       peakToPeakScore < PEAK_TO_PEAK_FIRST_BEAT_SCORE) {
     return false;
   }
+  if (!isAcquisitionCadenceMatch(ibi)) return false;
   return amplitude >= PEAK_TO_PEAK_MIN_AMPLITUDE || (maxSignal - minSignal) >= PEAK_TO_PEAK_MIN_RANGE;
 }
 
 void updateClippingScore() {
+  static unsigned long lastClipDecayMs = 0;
+  unsigned long now = millis();
   bool clipped = currentSignal <= 8 || currentSignal >= 1015;
 
   if (clipped) {
     clippedSampleScore += 8;
     if (clippedSampleScore > 100) clippedSampleScore = 100;
+    lastClipDecayMs = now;
     return;
   }
 
-  if (clippedSampleScore > 0) clippedSampleScore--;
+  if (clippedSampleScore > 0 && now - lastClipDecayMs >= CLIPPING_SCORE_DECAY_MS) {
+    clippedSampleScore--;
+    lastClipDecayMs = now;
+  }
 }
 
 int acquisitionScoreForCurrentSignal() {

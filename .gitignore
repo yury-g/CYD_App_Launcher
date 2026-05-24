@@ -1,5 +1,6 @@
 .pio/
 build/
+logs/
 *.elf
 *.hex
 *.map

@@ -60,6 +60,9 @@ missing_nav_layout = [line for line in required_nav_layout if line not in config
 if missing_nav_layout:
     raise SystemExit("App nav is not attached to rotate button")
 
+if "#define APP_BUTTON_SIZE CONTROL_BUTTON_SIZE" not in source:
+    raise SystemExit("App nav buttons are not using the rotate button size")
+
 for fn_name in [
     "void drawHeader() {",
     "void drawSettingsScreen() {",

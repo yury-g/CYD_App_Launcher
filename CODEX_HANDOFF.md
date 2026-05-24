@@ -37,11 +37,13 @@ The current branch wraps the one-screen Pulse dashboard in a small app shell:
 - Volume is Settings-only and no longer appears in the top toolbar.
 - Rotation is Settings-only and no longer appears as a persistent top-toolbar button.
 - App navigation remains persistent as a three-button previous/next/Settings nav bar, with mode-aware outlines/fills and no top-toolbar rotate button.
-- Firmware version for this branch: `0.4.0-display-modes`.
+- Firmware version for this branch: `0.4.1-color-dark-start`.
 - Firmware date shown in Settings: `2026-05-24`.
 - Guard script: `python3 tools/check_app_shell.py`.
 
 2026-05-24 display-mode continuation: added Settings `Display` cycling through `M DARK`, `M LIGHT`, `C DARK`, and `C LIGHT`. `M DARK`/`M LIGHT` are true monochrome treatments. `C DARK` preserves the main dark color family, and `C LIGHT` is a high-contrast light color treatment with blue values/search trace, amber searching accents, cyan/teal locked outlines, and green locked SIG bars. The top nav bar was also changed to the compact three-button previous/next/Settings layout, with rotation moved fully into Settings and the freed header space used for the centered fat heart. Render review files live in `docs/screenshots/display-mode-render/review-20260524-display-modes-v2/`; monochrome black/white review files live in `docs/screenshots/monochrome-render/`.
+
+2026-05-24 08:56:35 EDT display-mode hardware follow-up: changed startup default to the black-background `C DARK` mode, bumped Settings version text to `0.4.1-color-dark-start`, and gave `C LIGHT` inactive app-nav/Settings button cells a dark blue fill with white text so the cells contrast against the white app background. `tools/check_app_shell.py` now tracks the default mode and light-mode nav-fill requirements.
 
 2026-05-24 continuation: the compact toolbar hit testing was tuned for real CYD touch ergonomics. App nav and rotate still look grouped, but their padded tap regions are now split at the midpoint between adjacent button centers, preventing the previous overlap where taps near rotate could be claimed by Settings or taps near nav boundaries could choose the earlier button. The same midpoint approach is used for the Settings color swatches.
 

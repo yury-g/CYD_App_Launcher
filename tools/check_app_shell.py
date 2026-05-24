@@ -81,6 +81,7 @@ if missing_nav_layout:
     raise SystemExit("App nav is not attached to rotate button")
 
 required_large_controls = {
+    "DisplayMode displayMode = DISPLAY_COLOR_DARK;": "Default startup display mode is not color dark on black",
     "#define TOOLBAR_BUTTON_WIDTH 44": "toolbar buttons are not double-width",
     "#define TOOLBAR_BUTTON_HEIGHT 28": "toolbar buttons are not one-quarter taller",
     "#define APP_BUTTON_WIDTH TOOLBAR_BUTTON_WIDTH": "app nav width does not match toolbar width",
@@ -98,6 +99,7 @@ required_large_controls = {
     "drawSettingsDisplayModeControl": "Settings screen is missing display mode control",
     "handleSettingsDisplayModeTouch": "Settings screen is missing display mode touch handling",
     "displayValueTextColor": "Settings value text is not separately colorable",
+    "COLOR_LIGHT_NAV_FILL": "Color light app nav buttons are missing a high-contrast inactive fill",
 }
 for token, message in required_large_controls.items():
     if token not in source:

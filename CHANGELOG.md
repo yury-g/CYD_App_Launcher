@@ -1,6 +1,7 @@
 # CYD App Launcher — Student Version — Changelog
 
 ## Unreleased
+- 2026-05-24 08:56:35 EDT monochrome UI branch: changed the startup default to the black-background `C DARK` display mode, bumped firmware version to `0.4.1-color-dark-start`, and gave `C LIGHT` inactive navigation/button cells a dark blue high-contrast fill with white text so they no longer disappear into the white app background.
 - 2026-05-24 monochrome UI branch: added firmware display modes `M DARK`, `M LIGHT`, `C DARK`, and `C LIGHT` under Settings `Display`, moved rotation to Settings-only, removed the top-bar rotate button, and bumped firmware version to `0.4.0-display-modes` for local hardware color-scheme testing.
 - 2026-05-24 monochrome UI branch: updated the persistent app nav bar to the three-button previous/next/Settings layout, with mode-aware monochrome/color outlines and no top-bar rotate control, leaving more header room for the centered fat heart.
 - 2026-05-24 monochrome UI branch: expanded the README with an internal visual design-memory section showing the display-mode contact sheet, Settings picker variants, Pulse searching/locked variants, and true black/white exploration images.

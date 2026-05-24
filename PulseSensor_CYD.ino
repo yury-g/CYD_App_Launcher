@@ -85,7 +85,7 @@
 
 // ===== APP SHELL =====
 
-#define APP_VERSION "0.4.0-display-modes"
+#define APP_VERSION "0.4.1-color-dark-start"
 #define APP_FIRMWARE_DATE "2026-05-24"
 #define TOOLBAR_BUTTON_WIDTH 44
 #define TOOLBAR_BUTTON_HEIGHT 28
@@ -141,6 +141,7 @@
 #define COLOR_LIGHT_GREEN 0x04A0
 #define COLOR_LIGHT_AMBER 0xBC20
 #define COLOR_LIGHT_INACTIVE 0x94B2
+#define COLOR_LIGHT_NAV_FILL 0x001F
 
 enum SignalCoachState {
   COACH_SIGNAL_SEARCH,
@@ -304,7 +305,7 @@ bool beatLedEnabled = true;
 // ===== APP SHELL STATE =====
 
 AppId currentApp = APP_PULSE;
-DisplayMode displayMode = DISPLAY_MONO_DARK;
+DisplayMode displayMode = DISPLAY_COLOR_DARK;
 bool appNeedsRedraw = true;
 int appPrevButtonX = 122;
 int appNextButtonX = 146;
@@ -438,6 +439,7 @@ uint16_t textColor();
 uint16_t displayValueTextColor();
 uint16_t buttonFillColor(bool active);
 uint16_t buttonOutlineColor(bool active);
+uint16_t buttonTextColor(bool active);
 uint16_t signalSearchColor();
 uint16_t signalLockColor();
 uint16_t inactiveColor();
@@ -1349,7 +1351,7 @@ void drawAppButton(int x, int y, const char* label, bool active) {
   uint16_t outline = buttonOutlineColor(active);
   tft.fillRoundRect(x, y, APP_BUTTON_WIDTH, APP_BUTTON_HEIGHT, 4, fill);
   tft.drawRoundRect(x, y, APP_BUTTON_WIDTH, APP_BUTTON_HEIGHT, 4, outline);
-  drawCenteredText(label, x, y + 10, APP_BUTTON_WIDTH, 1, textColor(), fill);
+  drawCenteredText(label, x, y + 10, APP_BUTTON_WIDTH, 1, buttonTextColor(active), fill);
 }
 
 void drawSettingsScreen() {
@@ -1382,7 +1384,7 @@ void drawSettingsScreen() {
   if (rowY >= settingsContentTop() && rowY + SETTINGS_ROW_H <= settingsContentBottom()) {
     drawSettingsRow(1, rowY, "Rotation", rotationText);
     drawSettingsButton(settingsRotateX, rowY + 8, 86, "", false);
-    drawRotateIcon(settingsRotateX, rowY + 8, 86, TOOLBAR_BUTTON_HEIGHT, textColor(), buttonFillColor(false));
+    drawRotateIcon(settingsRotateX, rowY + 8, 86, TOOLBAR_BUTTON_HEIGHT, buttonTextColor(false), buttonFillColor(false));
   }
 
   rowY = settingsRowScreenY(2);
@@ -1457,7 +1459,7 @@ void drawSettingsButton(int x, int y, int w, const char* label, bool active) {
   uint16_t outline = buttonOutlineColor(active);
   tft.fillRoundRect(x, y, w, TOOLBAR_BUTTON_HEIGHT, 4, fill);
   tft.drawRoundRect(x, y, w, TOOLBAR_BUTTON_HEIGHT, 4, outline);
-  drawCenteredText(label, x, y + 6, w, 2, textColor(), fill);
+  drawCenteredText(label, x, y + 6, w, 2, buttonTextColor(active), fill);
 }
 
 void drawSettingsDisplayModeControl(int x, int y, int w) {
@@ -1919,13 +1921,18 @@ uint16_t displayValueTextColor() {
 
 uint16_t buttonFillColor(bool active) {
   if (displayMode == DISPLAY_COLOR_DARK) return active ? COLOR_CYAN_DARK : COLOR_BG;
-  if (displayMode == DISPLAY_COLOR_LIGHT) return active ? COLOR_LIGHT_BUTTON_FILL : COLOR_TEXT;
+  if (displayMode == DISPLAY_COLOR_LIGHT) return active ? COLOR_LIGHT_BUTTON_FILL : COLOR_LIGHT_NAV_FILL;
   return screenBgColor();
 }
 
 uint16_t buttonOutlineColor(bool active) {
   if (displayMode == DISPLAY_COLOR_DARK) return active ? COLOR_CYAN : COLOR_GRID;
   if (displayMode == DISPLAY_COLOR_LIGHT) return COLOR_LIGHT_BLUE;
+  return textColor();
+}
+
+uint16_t buttonTextColor(bool active) {
+  if (displayMode == DISPLAY_COLOR_LIGHT && !active) return COLOR_TEXT;
   return textColor();
 }
 

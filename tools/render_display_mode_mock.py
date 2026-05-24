@@ -41,7 +41,11 @@ PALETTES = {
         "title": "Color Dark",
         "mode_value": "color dark",
         "button_fill": MAIN["cyan_dark"],
+        "button_active_fill": MAIN["cyan_dark"],
+        "button_inactive_fill": MAIN["bg"],
         "button_outline": MAIN["cyan"],
+        "button_active_text": MAIN["text"],
+        "button_inactive_text": MAIN["text"],
         "row_line": MAIN["grid"],
         "inactive": MAIN["grid"],
         "label_text": MAIN["text"],
@@ -66,7 +70,11 @@ PALETTES = {
         "red_dark": (120, 0, 0),
         "signal_yellow": (190, 135, 0),
         "button_fill": (225, 250, 255),
+        "button_active_fill": (225, 250, 255),
+        "button_inactive_fill": (0, 0, 255),
         "button_outline": (0, 92, 180),
+        "button_active_text": (0, 0, 0),
+        "button_inactive_text": (255, 255, 255),
         "row_line": (0, 0, 0),
         "inactive": (150, 150, 150),
         "label_text": (0, 0, 0),
@@ -91,7 +99,11 @@ PALETTES = {
         "red_dark": (0, 0, 0),
         "signal_yellow": (255, 255, 255),
         "button_fill": (0, 0, 0),
+        "button_active_fill": (0, 0, 0),
+        "button_inactive_fill": (0, 0, 0),
         "button_outline": (255, 255, 255),
+        "button_active_text": (255, 255, 255),
+        "button_inactive_text": (255, 255, 255),
         "row_line": (255, 255, 255),
         "inactive": (255, 255, 255),
         "label_text": (255, 255, 255),
@@ -116,7 +128,11 @@ PALETTES = {
         "red_dark": (255, 255, 255),
         "signal_yellow": (0, 0, 0),
         "button_fill": (255, 255, 255),
+        "button_active_fill": (255, 255, 255),
+        "button_inactive_fill": (255, 255, 255),
         "button_outline": (0, 0, 0),
+        "button_active_text": (0, 0, 0),
+        "button_inactive_text": (0, 0, 0),
         "row_line": (0, 0, 0),
         "inactive": (0, 0, 0),
         "label_text": (0, 0, 0),
@@ -166,14 +182,16 @@ def draw_dotted_line(draw, start, end, fill, step=5, thickness=1):
 
 def draw_button(draw, x, y, w, label, p, active=False):
     width = 3 if active else 2
+    fill = p["button_active_fill"] if active else p["button_inactive_fill"]
+    text = p["button_active_text"] if active else p["button_inactive_text"]
     draw.rounded_rectangle(
         (x, y, x + w - 1, y + TOOLBAR_BUTTON_HEIGHT - 1),
         radius=4,
-        fill=p["button_fill"],
+        fill=fill,
         outline=p["button_outline"],
         width=width,
     )
-    draw_centered(draw, label, x, y + 4, w, FONT_2 if len(label) <= 2 else FONT_1, p["text"])
+    draw_centered(draw, label, x, y + 4, w, FONT_2 if len(label) <= 2 else FONT_1, text)
 
 
 def draw_nav(draw, width, p):

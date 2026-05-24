@@ -86,10 +86,6 @@ PALETTES = {
 PINS = [
     ("P3  IO35", 2810, 316, False),
     ("CN1 IO27", 1948, 114, False),
-    ("IO22", 1512, 58, False),
-    ("LDR IO34", 4077, 7, True),
-    ("IO32", 32, 4, True),
-    ("IO33", 2066, 2, False),
 ]
 
 try:
@@ -128,23 +124,23 @@ def draw_screen(mode_key):
 
     hot_index = 0
     for idx, (label, value, movement, railed) in enumerate(PINS):
-        y = 50 + idx * 28
+        y = 66 + idx * 48
         hot = idx == hot_index
-        dotted_line(draw, y + 27, p)
+        dotted_line(draw, y + 45, p)
         if hot:
-            draw.rectangle((0, y + 2, 3, y + 24), fill=p["hot"])
-        draw.text((8, y + 5), label, font=FONT_1, fill=p["hot"] if hot else p["text"])
-        draw.rectangle((82, y + 8, 225, y + 19), outline=p["grid"])
+            draw.rectangle((0, y + 2, 3, y + 42), fill=p["hot"])
+        draw.text((8, y + 12), label, font=FONT_1, fill=p["hot"] if hot else p["text"])
+        draw.rectangle((82, y + 15, 225, y + 26), outline=p["grid"])
         fill_w = max(0, int((value / 4095) * 144) - 2)
-        draw.rectangle((83, y + 9, 83 + fill_w, y + 18), fill=p["hot"] if hot else p["bar"])
-        draw.text((244, y + 2), f"{value:4d}", font=FONT_1, fill=p["value"])
-        draw.text((244, y + 13), f"d{movement:4d}", font=FONT_1, fill=p["hot"] if hot else p["text"])
+        draw.rectangle((83, y + 16, 83 + fill_w, y + 25), fill=p["hot"] if hot else p["bar"])
+        draw.text((244, y + 9), f"{value:4d}", font=FONT_1, fill=p["value"])
+        draw.text((244, y + 20), f"d{movement:4d}", font=FONT_1, fill=p["hot"] if hot else p["text"])
         if hot:
-            draw.text((292, y + 2), "hot", font=FONT_1, fill=p["hot"])
+            draw.text((292, y + 9), "hot", font=FONT_1, fill=p["hot"])
         if railed:
-            draw.text((292, y + 13), "rail", font=FONT_1, fill=p["rail"])
+            draw.text((292, y + 20), "rail", font=FONT_1, fill=p["rail"])
 
-    draw.text((8, 226), "Known: IO35 IO22 IO27  HOT=movement", font=FONT_1, fill=p["text"])
+    draw.text((8, 226), "External ADC: IO35 IO27  HOT=movement", font=FONT_1, fill=p["text"])
     path = OUT_DIR / f"app4-pin-scanner-{mode_key}.png"
     image.save(path)
     print(path)

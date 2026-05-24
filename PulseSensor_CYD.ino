@@ -84,7 +84,7 @@
 #define APP3_CRAWL_TEXT_SIZE 2
 #define APP3_CRAWL_MIN_TEXT_SIZE 1
 #define APP3_CRAWL_HORIZON_Y 8
-#define PIN_SCANNER_PIN_COUNT 6
+#define PIN_SCANNER_PIN_COUNT 2
 #define PIN_SCANNER_ADC_MAX_VALUE 4095
 #define HOT_MOVEMENT_MIN 20
 #define SORT_INTERVAL_MS 3000
@@ -100,7 +100,7 @@
 
 // ===== APP SHELL =====
 
-#define APP_VERSION "0.4.8-pin-scanner"
+#define APP_VERSION "0.4.9-safe-pin-scanner"
 #define APP_FIRMWARE_DATE "2026-05-24"
 #define TOOLBAR_BUTTON_WIDTH 44
 #define TOOLBAR_BUTTON_HEIGHT 28
@@ -302,11 +302,7 @@ struct ScannerPin {
 
 ScannerPin scannerPins[] = {
   {"P3  IO35", 35, 0, PIN_SCANNER_ADC_MAX_VALUE, 0, 0},
-  {"IO22", 22, 0, PIN_SCANNER_ADC_MAX_VALUE, 0, 0},
   {"CN1 IO27", 27, 0, PIN_SCANNER_ADC_MAX_VALUE, 0, 0},
-  {"LDR IO34", 34, 0, PIN_SCANNER_ADC_MAX_VALUE, 0, 0},
-  {"IO32", 32, 0, PIN_SCANNER_ADC_MAX_VALUE, 0, 0},
-  {"IO33", 33, 0, PIN_SCANNER_ADC_MAX_VALUE, 0, 0},
 };
 
 // ===== LIVE SENSOR STATE =====
@@ -1871,7 +1867,7 @@ void drawApp4PinScanner() {
   tft.setTextSize(1);
   tft.setTextColor(inactiveColor(), bg);
   tft.setCursor(8, footerY);
-  tft.print("Known: IO35 IO22 IO27  HOT=movement");
+  tft.print("External ADC: IO35 IO27  HOT=movement");
 }
 
 void drawPinScannerRow(int index, int y, int rowH, bool hot) {

@@ -130,6 +130,7 @@ required_large_controls = {
     "Pin Scanner": "App 4 pin scanner title is missing",
     "PIN_SCANNER_PIN_COUNT": "App 4 pin scanner pin table is missing",
     "ScannerPin scannerPins[]": "App 4 pin scanner data model is missing",
+    "#define PIN_SCANNER_PIN_COUNT 2": "App 4 should only scan connector-safe external analog candidates",
     "HOT_MOVEMENT_MIN": "App 4 pin scanner hot movement threshold is missing",
     "SORT_INTERVAL_MS": "App 4 pin scanner sort interval is missing",
     "SORT_HYSTERESIS": "App 4 pin scanner sort hysteresis is missing",
@@ -201,5 +202,15 @@ if "drawAppNavControls();" not in app4_fn_body:
     raise SystemExit("App 4 pin scanner does not draw persistent nav controls")
 if "displayModeName()" not in app4_fn_body:
     raise SystemExit("App 4 pin scanner does not show the active display mode")
+
+scanner_start = source.index("ScannerPin scannerPins[] = {")
+scanner_end = source.index("};", scanner_start)
+scanner_body = source[scanner_start:scanner_end]
+for unsafe_pin in ['"IO22"', '"LDR IO34"', '"IO32"', '"IO33"', ", 22,", ", 32,", ", 33,"]:
+    if unsafe_pin in scanner_body:
+        raise SystemExit(f"App 4 pin scanner includes unsafe integrated-app scan target: {unsafe_pin}")
+for required_pin in ['"P3  IO35"', '"CN1 IO27"']:
+    if required_pin not in scanner_body:
+        raise SystemExit(f"App 4 pin scanner is missing external connector target: {required_pin}")
 
 print("App shell checks passed")

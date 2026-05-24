@@ -50,12 +50,13 @@ This branch adds the standalone CYD Analog Pin Scanner as App 4 inside the launc
 
 ```text
 Branch: codex/app4-pin-scanner-20260524
-Firmware: 0.4.8-pin-scanner
+Firmware: 0.4.9-safe-pin-scanner
 Source scanner: yury-g/CYD_Analog_Pin_Scanner c203d85
 ```
 
 - Added App 4 `Pin Scanner`, based on the standalone `CYD_Analog_Pin_Scanner` diagnostic sketch.
-- Scans `GPIO 35`, `GPIO 22`, `GPIO 27`, `GPIO 34`, `GPIO 32`, and `GPIO 33` with 12-bit ADC readings, movement tracking, rail warnings, and auto-sort by movement.
+- Scans only connector-safe external analog candidates `GPIO 35` on `P3` and `GPIO 27` on `CN1` with 12-bit ADC readings, movement tracking, rail warnings, and auto-sort by movement.
+- Excludes `GPIO 22` because it is not an ESP32 ADC input, excludes `GPIO 32` and `GPIO 33` because this firmware uses them for the touch controller, and excludes `GPIO 34` because it is the onboard LDR path rather than a shipped-cable sensor connector target.
 - Keeps the Pulse app on 10-bit ADC reads and switches to 12-bit only while App 4 is active.
 - Added App 4 mockups for `M DARK`, `M LIGHT`, `C DARK`, and `C LIGHT`, plus a contact sheet under `docs/screenshots/app4-pin-scanner-render/`.
 

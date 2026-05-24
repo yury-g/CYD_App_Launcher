@@ -1,6 +1,7 @@
 # CYD App Launcher — Student Version — Changelog
 
 ## Unreleased
+- 2026-05-24 App 4 crash fix: narrowed the integrated pin scanner to connector-safe external analog candidates `GPIO35` on `P3` and `GPIO27` on `CN1`; removed `GPIO22` because it is not ADC-capable in the ESP32 analog API, removed `GPIO32`/`GPIO33` because they are used by the touch controller, and removed onboard `GPIO34`/LDR from the shipped-cable scanner target list; firmware version is `0.4.9-safe-pin-scanner`.
 - 2026-05-24 App 4 pin-scanner experiment: integrated the standalone `CYD_Analog_Pin_Scanner` sketch as launcher App 4, scanning `GPIO 35`, `GPIO 22`, `GPIO 27`, `GPIO 34`, `GPIO 32`, and `GPIO 33` with 12-bit ADC reads, movement tracking, rail warnings, and auto-sort by movement; firmware version is `0.4.8-pin-scanner`.
 - 2026-05-24 App 4 visual treatment: added mode-aware `M DARK`, `M LIGHT`, `C DARK`, and `C LIGHT` pin-scanner colors, generated App 4 PNG mockups/contact sheet, and added `tools/update_screenshot_contact_sheet.py` for refreshing the GitHub screenshot folder README.
 - 2026-05-24 app-shell pause documentation: expanded the README into a readable major-change log, added the current branch/head as the good app-shell pause point, included Origin Story render previews, and documented a non-Codex PlatformIO source-flash path for another computer.

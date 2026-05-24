@@ -42,7 +42,7 @@ This is the current good development pause point for the app shell branch:
 
 ```text
 Branch: codex/monochrome-ui-treatment-20260524
-Head:   0600cc5 Add Origin Story perspective crawl 20260524-093448-EDT
+Head:   d7c9f3e Clarify public installer versus app shell preview
 ```
 
 - Added a compact app shell around the Pulse dashboard: App 1 is the live Pulse dashboard, App 2 is a placeholder, and App 3 is `Origin Story`.
@@ -187,7 +187,7 @@ git log -1 --oneline
 The expected pause-point head is:
 
 ```text
-0600cc5 Add Origin Story perspective crawl 20260524-093448-EDT
+d7c9f3e Clarify public installer versus app shell preview
 ```
 
 3. Plug in one CYD and detect the serial port:

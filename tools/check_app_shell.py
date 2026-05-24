@@ -14,6 +14,7 @@ required_tokens = [
     "your app here",
     "APP_PLACEHOLDER_1",
     "APP_PLACEHOLDER_2",
+    "APP_PIN_SCANNER",
     "APP_SETTINGS",
     "DISPLAY_MONO_DARK",
     "DISPLAY_MONO_LIGHT",
@@ -126,6 +127,22 @@ required_large_controls = {
     "drawApp3CrawlLinePerspective": "Origin Story crawl is missing perspective fade/shrink rendering",
     "APP3_CRAWL_HORIZON_Y": "Origin Story crawl is missing a horizontal vanishing point",
     "APP3_CRAWL_MIN_TEXT_SIZE": "Origin Story crawl cannot shrink toward the horizon",
+    "Pin Scanner": "App 4 pin scanner title is missing",
+    "PIN_SCANNER_PIN_COUNT": "App 4 pin scanner pin table is missing",
+    "ScannerPin scannerPins[]": "App 4 pin scanner data model is missing",
+    "HOT_MOVEMENT_MIN": "App 4 pin scanner hot movement threshold is missing",
+    "SORT_INTERVAL_MS": "App 4 pin scanner sort interval is missing",
+    "SORT_HYSTERESIS": "App 4 pin scanner sort hysteresis is missing",
+    "setupPinScanner": "App 4 pin scanner setup is missing",
+    "updatePinScannerReadings": "App 4 pin scanner readings are not updated",
+    "maybeSortScannerPins": "App 4 pin scanner auto-sort is missing",
+    "drawApp4PinScanner": "App 4 pin scanner renderer is missing",
+    "drawPinScannerRow": "App 4 pin scanner row renderer is missing",
+    "pinScannerHotColor": "App 4 pin scanner hot color is not mode-aware",
+    "pinScannerBarColor": "App 4 pin scanner bar color is not mode-aware",
+    "pinScannerRailColor": "App 4 pin scanner rail color is not mode-aware",
+    "analogReadResolution(12);": "App 4 pin scanner does not switch ADC reads to 12-bit",
+    "analogReadResolution(10);": "Pulse app does not restore 10-bit ADC reads",
 }
 for token, message in required_large_controls.items():
     if token not in source:
@@ -164,5 +181,25 @@ app3_fn_end = source.index("bool ensureApp3CrawlSprite", app3_fn_start)
 app3_fn_body = source[app3_fn_start:app3_fn_end]
 if "tft.fillRect(0, headerHeight" in app3_fn_body:
     raise SystemExit("Origin Story crawl clears the live TFT area directly, causing flicker")
+
+if "if (next > APP_PIN_SCANNER) next = APP_PULSE;" not in source:
+    raise SystemExit("App next navigation does not include App 4 before wrapping")
+
+if "currentApp == APP_SETTINGS ? APP_PIN_SCANNER" not in source:
+    raise SystemExit("App previous navigation does not include App 4")
+
+app4_branch_start = source.index("} else if (currentApp == APP_PIN_SCANNER) {")
+app4_branch_end = source.index("\n  }", app4_branch_start)
+app4_branch_body = source[app4_branch_start:app4_branch_end]
+if "drawApp4PinScanner();" not in app4_branch_body:
+    raise SystemExit("App 4 does not render the pin scanner")
+
+app4_fn_start = source.index("void drawApp4PinScanner() {")
+app4_fn_end = source.index("void drawPinScannerRow", app4_fn_start)
+app4_fn_body = source[app4_fn_start:app4_fn_end]
+if "drawAppNavControls();" not in app4_fn_body:
+    raise SystemExit("App 4 pin scanner does not draw persistent nav controls")
+if "displayModeName()" not in app4_fn_body:
+    raise SystemExit("App 4 pin scanner does not show the active display mode")
 
 print("App shell checks passed")

@@ -84,6 +84,12 @@
 #define APP3_CRAWL_TEXT_SIZE 2
 #define APP3_CRAWL_MIN_TEXT_SIZE 1
 #define APP3_CRAWL_HORIZON_Y 8
+#define PIN_SCANNER_PIN_COUNT 6
+#define PIN_SCANNER_ADC_MAX_VALUE 4095
+#define HOT_MOVEMENT_MIN 20
+#define SORT_INTERVAL_MS 3000
+#define SORT_HYSTERESIS 8
+#define PIN_SCANNER_DRAW_MS 100
 #define HEART_MIN_SIZE 8
 #define HEART_MAX_SIZE 15
 #define VOLUME_MIN 0
@@ -94,7 +100,7 @@
 
 // ===== APP SHELL =====
 
-#define APP_VERSION "0.4.7-origin-perspective"
+#define APP_VERSION "0.4.8-pin-scanner"
 #define APP_FIRMWARE_DATE "2026-05-24"
 #define TOOLBAR_BUTTON_WIDTH 44
 #define TOOLBAR_BUTTON_HEIGHT 28
@@ -165,6 +171,7 @@ enum AppId {
   APP_PULSE,
   APP_PLACEHOLDER_1,
   APP_PLACEHOLDER_2,
+  APP_PIN_SCANNER,
   APP_SETTINGS,
   APP_COUNT
 };
@@ -282,6 +289,24 @@ const char* const APP3_ORIGIN_CRAWL_LINES[APP3_ORIGIN_CRAWL_LINE_COUNT] = {
   "",
   "Thanks for supporting",
   "PulseSensor since 2012."
+};
+
+struct ScannerPin {
+  const char* label;
+  uint8_t pin;
+  int value;
+  int minValue;
+  int maxValue;
+  int movement;
+};
+
+ScannerPin scannerPins[] = {
+  {"P3  IO35", 35, 0, PIN_SCANNER_ADC_MAX_VALUE, 0, 0},
+  {"IO22", 22, 0, PIN_SCANNER_ADC_MAX_VALUE, 0, 0},
+  {"CN1 IO27", 27, 0, PIN_SCANNER_ADC_MAX_VALUE, 0, 0},
+  {"LDR IO34", 34, 0, PIN_SCANNER_ADC_MAX_VALUE, 0, 0},
+  {"IO32", 32, 0, PIN_SCANNER_ADC_MAX_VALUE, 0, 0},
+  {"IO33", 33, 0, PIN_SCANNER_ADC_MAX_VALUE, 0, 0},
 };
 
 // ===== LIVE SENSOR STATE =====
@@ -442,6 +467,8 @@ unsigned long lastApp3CrawlFrame = 0;
 bool app3CrawlSpriteReady = false;
 int app3CrawlSpriteW = 0;
 int app3CrawlSpriteH = 0;
+unsigned long lastPinScannerDraw = 0;
+unsigned long lastPinScannerSort = 0;
 
 // ===== FORWARD DECLARATIONS =====
 
@@ -498,6 +525,11 @@ void playApp3CrawlFanfareStep();
 void triggerRearLedPulse(RearLedColor color);
 void triggerBeatEffects();
 void setupPulseSensor();
+void setupPinScanner();
+void updatePinScannerReadings();
+void maybeSortScannerPins();
+int hottestScannerPinIndex();
+bool isPinScannerRailed(int value);
 void readPulseSensor();
 bool isQualifiedBeat(int bpm, int ibi, int amplitude);
 void updateClippingScore();
@@ -523,6 +555,8 @@ void drawSettingsScrollControls();
 void drawPlaceholderApp(const char* title, const char* message);
 void drawPlaceholderText(const char* message, uint16_t color);
 void drawApp3OriginCrawl();
+void drawApp4PinScanner();
+void drawPinScannerRow(int index, int y, int rowH, bool hot);
 bool ensureApp3CrawlSprite(int w, int h);
 uint16_t app3Blend565(uint16_t from, uint16_t to, int amount);
 void drawApp3CrawlLinePerspective(const char* line, int localY, uint16_t baseColor,
@@ -570,6 +604,9 @@ uint16_t signalLockColor();
 uint16_t inactiveColor();
 uint16_t beatColor();
 uint16_t liveTraceColorForMode();
+uint16_t pinScannerHotColor();
+uint16_t pinScannerBarColor(bool hot);
+uint16_t pinScannerRailColor();
 
 void setup() {
   Serial.begin(115200);
@@ -592,12 +629,12 @@ void setup() {
 }
 
 void loop() {
-  readPulseSensor();
   readTouchControls();
   updateLED();
   updateBeatChime();
   updateSignalHarmony();
   updateApp3CrawlFanfare();
+  if (currentApp != APP_PIN_SCANNER) readPulseSensor();
 
   if (currentApp == APP_PULSE) {
     drawBeatHeart();
@@ -607,15 +644,29 @@ void loop() {
     drawPlaceholderApp("App 2", "your app here");
   } else if (currentApp == APP_PLACEHOLDER_2) {
     drawApp3OriginCrawl();
+  } else if (currentApp == APP_PIN_SCANNER) {
+    updatePinScannerReadings();
+    maybeSortScannerPins();
+    drawApp4PinScanner();
   } else if (appNeedsRedraw) {
     drawSettingsScreen();
   }
 
   if (millis() - lastSerialPrint >= 500) {
     lastSerialPrint = millis();
-    Serial.printf("signal=%d amp=%d bpm=%d ibi=%d locked=%d quality=%d\n",
-                  currentSignal, pulseAmplitude, displayBPM, displayIBI,
-                  lockedSignal ? 1 : 0, signalQuality);
+    if (currentApp == APP_PIN_SCANNER) {
+      for (int i = 0; i < PIN_SCANNER_PIN_COUNT; i++) {
+        Serial.printf("%s=%4d d%4d%s",
+                      scannerPins[i].label,
+                      scannerPins[i].value,
+                      scannerPins[i].movement,
+                      i == PIN_SCANNER_PIN_COUNT - 1 ? "\n" : "  ");
+      }
+    } else {
+      Serial.printf("signal=%d amp=%d bpm=%d ibi=%d locked=%d quality=%d\n",
+                    currentSignal, pulseAmplitude, displayBPM, displayIBI,
+                    lockedSignal ? 1 : 0, signalQuality);
+    }
   }
 }
 
@@ -948,9 +999,13 @@ void switchApp(AppId app) {
   if (app >= APP_COUNT) return;
   bool enteringSettings = currentApp != APP_SETTINGS && app == APP_SETTINGS;
   bool enteringApp3 = currentApp != APP_PLACEHOLDER_2 && app == APP_PLACEHOLDER_2;
+  bool enteringPinScanner = currentApp != APP_PIN_SCANNER && app == APP_PIN_SCANNER;
+  bool leavingPinScanner = currentApp == APP_PIN_SCANNER && app != APP_PIN_SCANNER;
   currentApp = app;
   stopSignalHarmony();
   if (!enteringApp3) stopApp3CrawlFanfare();
+  if (enteringPinScanner) setupPinScanner();
+  if (leavingPinScanner) setupPulseSensor();
   dashboardDrawn = false;
   appNeedsRedraw = true;
   if (enteringSettings) settingsScrollY = 0;
@@ -961,13 +1016,13 @@ void switchApp(AppId app) {
 
 void nextApp() {
   uint8_t next = currentApp == APP_SETTINGS ? APP_PULSE : (uint8_t)currentApp + 1;
-  if (next > APP_PLACEHOLDER_2) next = APP_PULSE;
+  if (next > APP_PIN_SCANNER) next = APP_PULSE;
   switchApp((AppId)next);
 }
 
 void previousApp() {
-  uint8_t previous = currentApp == APP_SETTINGS ? APP_PLACEHOLDER_2 : (uint8_t)currentApp;
-  previous = previous == APP_PULSE ? APP_PLACEHOLDER_2 : previous - 1;
+  uint8_t previous = currentApp == APP_SETTINGS ? APP_PIN_SCANNER : (uint8_t)currentApp;
+  previous = previous == APP_PULSE ? APP_PIN_SCANNER : previous - 1;
   switchApp((AppId)previous);
 }
 
@@ -1291,6 +1346,67 @@ void setupPulseSensor() {
   }
 }
 
+void setupPinScanner() {
+  analogReadResolution(12);
+  analogSetAttenuation(ADC_11db);
+
+  for (int i = 0; i < PIN_SCANNER_PIN_COUNT; i++) {
+    pinMode(scannerPins[i].pin, INPUT);
+    scannerPins[i].value = 0;
+    scannerPins[i].minValue = PIN_SCANNER_ADC_MAX_VALUE;
+    scannerPins[i].maxValue = 0;
+    scannerPins[i].movement = 0;
+  }
+
+  lastPinScannerDraw = 0;
+  lastPinScannerSort = millis();
+}
+
+void updatePinScannerReadings() {
+  for (int i = 0; i < PIN_SCANNER_PIN_COUNT; i++) {
+    long total = 0;
+    for (int sample = 0; sample < 8; sample++) {
+      total += analogRead(scannerPins[i].pin);
+      delayMicroseconds(150);
+    }
+
+    scannerPins[i].value = total / 8;
+    if (scannerPins[i].value < scannerPins[i].minValue) scannerPins[i].minValue = scannerPins[i].value;
+    if (scannerPins[i].value > scannerPins[i].maxValue) scannerPins[i].maxValue = scannerPins[i].value;
+    scannerPins[i].movement = scannerPins[i].maxValue - scannerPins[i].minValue;
+
+    if (scannerPins[i].minValue < scannerPins[i].value) scannerPins[i].minValue++;
+    if (scannerPins[i].maxValue > scannerPins[i].value) scannerPins[i].maxValue--;
+  }
+}
+
+void maybeSortScannerPins() {
+  if (millis() - lastPinScannerSort < SORT_INTERVAL_MS) return;
+  lastPinScannerSort = millis();
+
+  for (int pass = 0; pass < PIN_SCANNER_PIN_COUNT - 1; pass++) {
+    for (int i = 0; i < PIN_SCANNER_PIN_COUNT - 1 - pass; i++) {
+      if (scannerPins[i + 1].movement > scannerPins[i].movement + SORT_HYSTERESIS) {
+        ScannerPin temp = scannerPins[i];
+        scannerPins[i] = scannerPins[i + 1];
+        scannerPins[i + 1] = temp;
+      }
+    }
+  }
+}
+
+int hottestScannerPinIndex() {
+  int hotIndex = 0;
+  for (int i = 1; i < PIN_SCANNER_PIN_COUNT; i++) {
+    if (scannerPins[i].movement > scannerPins[hotIndex].movement) hotIndex = i;
+  }
+  return hotIndex;
+}
+
+bool isPinScannerRailed(int value) {
+  return value < 20 || value > PIN_SCANNER_ADC_MAX_VALUE - 20;
+}
+
 // ===== SENSOR AND BEAT LOGIC =====
 
 void readPulseSensor() {
@@ -1465,6 +1581,10 @@ void drawActiveApp() {
     tft.fillScreen(screenBgColor());
     appNeedsRedraw = true;
     drawApp3OriginCrawl();
+  } else if (currentApp == APP_PIN_SCANNER) {
+    tft.fillScreen(screenBgColor());
+    appNeedsRedraw = true;
+    drawApp4PinScanner();
   }
 }
 
@@ -1714,6 +1834,96 @@ void drawPlaceholderText(const char* message, uint16_t color) {
   tft.print(message);
   placeholderLastX = placeholderX;
   placeholderLastY = placeholderY;
+}
+
+void drawApp4PinScanner() {
+  if (!appNeedsRedraw && millis() - lastPinScannerDraw < PIN_SCANNER_DRAW_MS) return;
+  lastPinScannerDraw = millis();
+
+  uint16_t bg = screenBgColor();
+  int contentTop = headerHeight + 8;
+  int footerY = screenHeight - 14;
+  int rowAreaH = max(1, footerY - contentTop - 4);
+  int rowH = max(24, rowAreaH / PIN_SCANNER_PIN_COUNT);
+
+  if (appNeedsRedraw) {
+    appNeedsRedraw = false;
+    tft.fillScreen(bg);
+    tft.fillRect(0, 0, screenWidth, headerHeight, bg);
+    tft.drawFastHLine(0, headerHeight - 1, screenWidth, gridColor());
+    tft.setTextSize(1);
+    tft.setTextColor(textColor(), bg);
+    tft.setCursor(10, portraitLayout ? 38 : 8);
+    tft.print("Pin Scanner");
+    tft.setCursor(10, portraitLayout ? 54 : 24);
+    tft.print(displayModeName());
+    tft.print(" raw ADC 0..4095");
+    drawAppNavControls();
+  }
+
+  int hotIndex = hottestScannerPinIndex();
+  for (int i = 0; i < PIN_SCANNER_PIN_COUNT; i++) {
+    bool hot = i == hotIndex && scannerPins[i].movement > HOT_MOVEMENT_MIN;
+    drawPinScannerRow(i, contentTop + i * rowH, rowH, hot);
+  }
+
+  tft.fillRect(0, footerY - 1, screenWidth, 15, bg);
+  tft.setTextSize(1);
+  tft.setTextColor(inactiveColor(), bg);
+  tft.setCursor(8, footerY);
+  tft.print("Known: IO35 IO22 IO27  HOT=movement");
+}
+
+void drawPinScannerRow(int index, int y, int rowH, bool hot) {
+  uint16_t bg = screenBgColor();
+  uint16_t rowText = hot ? pinScannerHotColor() : textColor();
+  uint16_t barColor = pinScannerBarColor(hot);
+  int labelX = 8;
+  int barX = portraitLayout ? 72 : 82;
+  int valueX = portraitLayout ? screenWidth - 74 : screenWidth - 76;
+  int railX = screenWidth - 30;
+  int barW = max(38, valueX - barX - 8);
+  int barH = 12;
+  int barY = y + max(6, (rowH - barH) / 2);
+  int value = constrain(scannerPins[index].value, 0, PIN_SCANNER_ADC_MAX_VALUE);
+  int fillW = map(value, 0, PIN_SCANNER_ADC_MAX_VALUE, 0, barW);
+
+  tft.fillRect(0, y, screenWidth, rowH, bg);
+  drawDottedHLine(0, y + rowH - 1, screenWidth, gridSoftColor(), 5, 1);
+
+  if (hot) {
+    tft.fillRect(0, y + 2, 4, rowH - 4, pinScannerHotColor());
+  }
+
+  tft.setTextSize(1);
+  tft.setTextColor(rowText, bg);
+  tft.setCursor(labelX, y + 5);
+  tft.print(scannerPins[index].label);
+
+  tft.drawRect(barX, barY, barW, barH, gridColor());
+  if (fillW > 2) {
+    tft.fillRect(barX + 1, barY + 1, fillW - 2, barH - 2, barColor);
+  }
+
+  tft.setTextColor(displayValueTextColor(), bg);
+  tft.setCursor(valueX, y + 2);
+  tft.printf("%4d", value);
+
+  tft.setTextColor(hot ? pinScannerHotColor() : inactiveColor(), bg);
+  tft.setCursor(valueX, y + 13);
+  tft.printf("d%4d", scannerPins[index].movement);
+
+  if (hot) {
+    tft.setTextColor(pinScannerHotColor(), bg);
+    tft.setCursor(railX, y + 2);
+    tft.print("hot");
+  }
+
+  if (isPinScannerRailed(value)) {
+    tft.setTextColor(pinScannerRailColor(), bg);
+    tft.setCursor(railX, y + 13);
+    tft.print("rail");
+  }
 }
 
 uint16_t app3Blend565(uint16_t from, uint16_t to, int amount) {
@@ -2296,6 +2506,25 @@ uint16_t liveTraceColorForMode() {
   if (lockedSignal) return textColor();
   if (displayMode == DISPLAY_COLOR_DARK) return COLOR_ACQUIRE_BLUE;
   if (displayMode == DISPLAY_COLOR_LIGHT) return COLOR_LIGHT_TRACE_BLUE;
+  return textColor();
+}
+
+uint16_t pinScannerHotColor() {
+  if (displayMode == DISPLAY_COLOR_DARK) return COLOR_SIGNAL_YELLOW;
+  if (displayMode == DISPLAY_COLOR_LIGHT) return COLOR_LIGHT_AMBER;
+  return textColor();
+}
+
+uint16_t pinScannerBarColor(bool hot) {
+  if (hot) return pinScannerHotColor();
+  if (displayMode == DISPLAY_COLOR_DARK) return COLOR_CYAN;
+  if (displayMode == DISPLAY_COLOR_LIGHT) return COLOR_LIGHT_BLUE;
+  return textColor();
+}
+
+uint16_t pinScannerRailColor() {
+  if (displayMode == DISPLAY_COLOR_DARK) return COLOR_RED;
+  if (displayMode == DISPLAY_COLOR_LIGHT) return COLOR_RED_DARK;
   return textColor();
 }
 

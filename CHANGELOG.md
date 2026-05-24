@@ -1,6 +1,8 @@
 # CYD App Launcher — Student Version — Changelog
 
 ## Unreleased
+- 2026-05-24 App 4 pin-scanner experiment: integrated the standalone `CYD_Analog_Pin_Scanner` sketch as launcher App 4, scanning `GPIO 35`, `GPIO 22`, `GPIO 27`, `GPIO 34`, `GPIO 32`, and `GPIO 33` with 12-bit ADC reads, movement tracking, rail warnings, and auto-sort by movement; firmware version is `0.4.8-pin-scanner`.
+- 2026-05-24 App 4 visual treatment: added mode-aware `M DARK`, `M LIGHT`, `C DARK`, and `C LIGHT` pin-scanner colors, generated App 4 PNG mockups/contact sheet, and added `tools/update_screenshot_contact_sheet.py` for refreshing the GitHub screenshot folder README.
 - 2026-05-24 app-shell pause documentation: expanded the README into a readable major-change log, added the current branch/head as the good app-shell pause point, included Origin Story render previews, and documented a non-Codex PlatformIO source-flash path for another computer.
 - 2026-05-24 09:34:48 EDT Origin Story hardware trial: doubled the crawl speed, added a horizontal vanishing line, and made crawl rows shrink to 1x text and fade into the black background as they approach the top horizon; firmware version is `0.4.7-origin-perspective`.
 - 2026-05-24 09:30:51 EDT Origin Story provenance pass: added OSHWA certification details for Pulse Sensor Amped (`US000075`, certified August 30, 2017), the `WorldFamousElectronics/PulseSensor_Amped_Arduino` GitHub repo, and current repo-love stats (`249` stars, `207` forks as of May 24, 2026); firmware version is `0.4.6-origin-oshw`.

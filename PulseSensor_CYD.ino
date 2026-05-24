@@ -86,6 +86,7 @@
 // ===== APP SHELL =====
 
 #define APP_VERSION "0.3.0-app-shell"
+#define APP_FIRMWARE_DATE "2026-05-24"
 #define APP_BUTTON_SIZE 20
 #define APP_BUTTON_GAP 2
 #define SETTINGS_ROW_H 25
@@ -1182,7 +1183,8 @@ void drawSettingsScreen() {
   tft.setTextSize(1);
   tft.setTextColor(COLOR_TEXT, COLOR_BG);
   tft.setCursor(10, portraitLayout ? 7 : 8);
-  tft.print("Settings");
+  tft.print("Settings ");
+  tft.print(APP_FIRMWARE_DATE);
   drawAppNavControls();
   drawRotateControl();
 
@@ -1216,11 +1218,14 @@ void drawSettingsScreen() {
 
   tft.setTextSize(1);
   tft.setTextColor(COLOR_MUTED, COLOR_BG);
-  tft.setCursor(10, screenHeight - 27);
+  tft.setCursor(10, screenHeight - 39);
   tft.print("About: PulseSensor CYD dashboard");
-  tft.setCursor(10, screenHeight - 14);
+  tft.setCursor(10, screenHeight - 26);
   tft.print("Version ");
   tft.print(APP_VERSION);
+  tft.setCursor(10, screenHeight - 13);
+  tft.print("Firmware ");
+  tft.print(APP_FIRMWARE_DATE);
 }
 
 void drawSettingsRow(int y, const char* label, const char* value) {

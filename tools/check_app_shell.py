@@ -4,8 +4,10 @@ source = Path("PulseSensor_CYD.ino").read_text()
 
 required_tokens = [
     "APP_VERSION",
+    "APP_FIRMWARE_DATE",
     "About",
     "Version",
+    "Firmware",
     "WiFi",
     "Bluetooth",
     "LED Control",
@@ -31,6 +33,10 @@ settings_end = source.index("void drawSettingsRow", settings_start)
 settings_body = source[settings_start:settings_end]
 if '"Volume"' not in settings_body:
     raise SystemExit("Settings screen is missing Volume")
+if "APP_FIRMWARE_DATE" not in settings_body:
+    raise SystemExit("Settings screen is missing firmware date")
+if '"Settings "' not in settings_body:
+    raise SystemExit("Settings title is missing firmware date")
 
 read_touch_start = source.index("void readTouchControls() {")
 read_touch_end = source.index("void mapTouchPoint", read_touch_start)

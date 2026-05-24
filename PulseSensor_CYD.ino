@@ -80,7 +80,10 @@
 #define APP3_CRAWL_FANFARE_LOOP_MS 15000
 #define APP3_ORIGIN_CRAWL_LINE_COUNT 68
 #define APP3_CRAWL_FRAME_MS 72
+#define APP3_CRAWL_SPEED_MS 52
 #define APP3_CRAWL_TEXT_SIZE 2
+#define APP3_CRAWL_MIN_TEXT_SIZE 1
+#define APP3_CRAWL_HORIZON_Y 8
 #define HEART_MIN_SIZE 8
 #define HEART_MAX_SIZE 15
 #define VOLUME_MIN 0
@@ -91,7 +94,7 @@
 
 // ===== APP SHELL =====
 
-#define APP_VERSION "0.4.6-origin-oshw"
+#define APP_VERSION "0.4.7-origin-perspective"
 #define APP_FIRMWARE_DATE "2026-05-24"
 #define TOOLBAR_BUTTON_WIDTH 44
 #define TOOLBAR_BUTTON_HEIGHT 28
@@ -521,6 +524,11 @@ void drawPlaceholderApp(const char* title, const char* message);
 void drawPlaceholderText(const char* message, uint16_t color);
 void drawApp3OriginCrawl();
 bool ensureApp3CrawlSprite(int w, int h);
+uint16_t app3Blend565(uint16_t from, uint16_t to, int amount);
+void drawApp3CrawlLinePerspective(const char* line, int localY, uint16_t baseColor,
+                                  uint16_t bg, int crawlTop, int crawlBottom);
+void drawApp3CrawlLinePerspectiveDirect(const char* line, int localY, uint16_t baseColor,
+                                        uint16_t bg, int crawlTop, int crawlBottom);
 void drawApp3OriginCrawlDirectFallback(uint16_t bg, uint16_t gold, uint16_t dimGold,
                                        int crawlTop, int crawlBottom, int lineHeight,
                                        int baseY);
@@ -1708,6 +1716,62 @@ void drawPlaceholderText(const char* message, uint16_t color) {
   placeholderLastY = placeholderY;
 }
 
+uint16_t app3Blend565(uint16_t from, uint16_t to, int amount) {
+  amount = constrain(amount, 0, 255);
+  int fromR = (from >> 11) & 0x1F;
+  int fromG = (from >> 5) & 0x3F;
+  int fromB = from & 0x1F;
+  int toR = (to >> 11) & 0x1F;
+  int toG = (to >> 5) & 0x3F;
+  int toB = to & 0x1F;
+  int outR = fromR + ((toR - fromR) * amount) / 255;
+  int outG = fromG + ((toG - fromG) * amount) / 255;
+  int outB = fromB + ((toB - fromB) * amount) / 255;
+  return (outR << 11) | (outG << 5) | outB;
+}
+
+void drawApp3CrawlLinePerspective(const char* line, int localY, uint16_t baseColor,
+                                  uint16_t bg, int crawlTop, int crawlBottom) {
+  if (line[0] == '\0') return;
+  if (localY < crawlTop || localY > crawlBottom - 8) return;
+
+  int depth = map(constrain(localY, APP3_CRAWL_HORIZON_Y, crawlBottom),
+                  APP3_CRAWL_HORIZON_Y, crawlBottom, 0, 255);
+  if (depth < 20) return;
+
+  int textSize = depth < 116 ? APP3_CRAWL_MIN_TEXT_SIZE : APP3_CRAWL_TEXT_SIZE;
+  int textW = strlen(line) * 6 * textSize;
+  int vanishingW = map(depth, 0, 255, screenWidth / 3, screenWidth);
+  int x = (screenWidth - min(textW, vanishingW)) / 2;
+  if (textW < vanishingW) x = (screenWidth - textW) / 2;
+
+  app3CrawlSprite.setTextSize(textSize);
+  app3CrawlSprite.setTextColor(app3Blend565(bg, baseColor, depth), bg);
+  app3CrawlSprite.setCursor(max(0, x), localY);
+  app3CrawlSprite.print(line);
+}
+
+void drawApp3CrawlLinePerspectiveDirect(const char* line, int localY, uint16_t baseColor,
+                                        uint16_t bg, int crawlTop, int crawlBottom) {
+  if (line[0] == '\0') return;
+  if (localY < crawlTop || localY > crawlBottom - 8) return;
+
+  int depth = map(constrain(localY, APP3_CRAWL_HORIZON_Y, crawlBottom),
+                  APP3_CRAWL_HORIZON_Y, crawlBottom, 0, 255);
+  if (depth < 20) return;
+
+  int textSize = depth < 116 ? APP3_CRAWL_MIN_TEXT_SIZE : APP3_CRAWL_TEXT_SIZE;
+  int textW = strlen(line) * 6 * textSize;
+  int vanishingW = map(depth, 0, 255, screenWidth / 3, screenWidth);
+  int x = (screenWidth - min(textW, vanishingW)) / 2;
+  if (textW < vanishingW) x = (screenWidth - textW) / 2;
+
+  tft.setTextSize(textSize);
+  tft.setTextColor(app3Blend565(bg, baseColor, depth), bg);
+  tft.setCursor(max(0, x), headerHeight + localY);
+  tft.print(line);
+}
+
 void drawApp3OriginCrawl() {
   unsigned long now = millis();
   if (!appNeedsRedraw && now - lastApp3CrawlFrame < APP3_CRAWL_FRAME_MS) return;
@@ -1739,7 +1803,7 @@ void drawApp3OriginCrawl() {
   int lineHeight = 24;
   unsigned long elapsed = now - app3CrawlStartTime;
   int travel = APP3_ORIGIN_CRAWL_LINE_COUNT * lineHeight + (crawlBottom - crawlTop) + 40;
-  int offset = (elapsed / 105) % travel;
+  int offset = (elapsed / APP3_CRAWL_SPEED_MS) % travel;
   int baseY = crawlBottom - lineHeight - offset;
 
   if (!ensureApp3CrawlSprite(screenWidth, contentH)) {
@@ -1749,20 +1813,13 @@ void drawApp3OriginCrawl() {
 
   app3CrawlSprite.fillSprite(bg);
   drawApp3Starfield();
+  app3CrawlSprite.drawFastHLine(46, APP3_CRAWL_HORIZON_Y, screenWidth - 92, app3Blend565(bg, dimGold, 72));
 
-  app3CrawlSprite.setTextSize(APP3_CRAWL_TEXT_SIZE);
   for (int i = 0; i < APP3_ORIGIN_CRAWL_LINE_COUNT; i++) {
     const char* line = APP3_ORIGIN_CRAWL_LINES[i];
-    if (line[0] == '\0') continue;
     int y = baseY + i * lineHeight;
-    if (y < crawlTop || y > crawlBottom - lineHeight) continue;
-
     uint16_t color = i < 3 ? gold : dimGold;
-    int textW = strlen(line) * 6 * APP3_CRAWL_TEXT_SIZE;
-    int x = max(0, (screenWidth - textW) / 2);
-    app3CrawlSprite.setTextColor(color, bg);
-    app3CrawlSprite.setCursor(x, y);
-    app3CrawlSprite.print(line);
+    drawApp3CrawlLinePerspective(line, y, color, bg, crawlTop, crawlBottom);
   }
 
   app3CrawlSprite.pushSprite(0, headerHeight);
@@ -1788,19 +1845,12 @@ void drawApp3OriginCrawlDirectFallback(uint16_t bg, uint16_t gold, uint16_t dimG
                                        int crawlTop, int crawlBottom, int lineHeight,
                                        int baseY) {
   tft.fillRect(0, headerHeight, screenWidth, screenHeight - headerHeight, bg);
-  tft.setTextSize(APP3_CRAWL_TEXT_SIZE);
+  tft.drawFastHLine(46, headerHeight + APP3_CRAWL_HORIZON_Y, screenWidth - 92, app3Blend565(bg, dimGold, 72));
   for (int i = 0; i < APP3_ORIGIN_CRAWL_LINE_COUNT; i++) {
     const char* line = APP3_ORIGIN_CRAWL_LINES[i];
-    if (line[0] == '\0') continue;
     int localY = baseY + i * lineHeight;
-    if (localY < crawlTop || localY > crawlBottom - lineHeight) continue;
-
     uint16_t color = i < 3 ? gold : dimGold;
-    int textW = strlen(line) * 6 * APP3_CRAWL_TEXT_SIZE;
-    int x = max(0, (screenWidth - textW) / 2);
-    tft.setTextColor(color, bg);
-    tft.setCursor(x, headerHeight + localY);
-    tft.print(line);
+    drawApp3CrawlLinePerspectiveDirect(line, localY, color, bg, crawlTop, crawlBottom);
   }
 }
 

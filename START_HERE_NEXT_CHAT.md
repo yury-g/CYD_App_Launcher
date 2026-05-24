@@ -29,7 +29,7 @@ The branch adds an app shell around the Pulse dashboard:
 - Rotation now lives in Settings only; the persistent top rotate button was removed.
 - App navigation remains persistent as a three-button previous/next/Settings nav bar, with mode-aware outlines/fills and no top-bar rotate control.
 - Display mode cycles through `M DARK`, `M LIGHT`, `C DARK`, and `C LIGHT`.
-- Firmware version is `0.4.6-origin-oshw`.
+- Firmware version is `0.4.7-origin-perspective`.
 - Firmware date shown in Settings is `2026-05-24`.
 - Guard script: `python3 tools/check_app_shell.py`.
 
@@ -48,6 +48,8 @@ The branch adds an app shell around the Pulse dashboard:
 2026-05-24 09:25:59 EDT Origin Story blank-screen fix: user reported Origin Story became a black screen. Firmware now uses an 8-bit crawl sprite to reduce memory, starts the first large text line inside the visible area immediately, and includes a direct large-text fallback renderer if sprite allocation fails. This version was built and flashed for hardware review.
 
 2026-05-24 09:30:51 EDT Origin Story provenance pass: added Pulse Sensor Amped OSHWA certification details (`US000075`, certified August 30, 2017), the `WorldFamousElectronics/PulseSensor_Amped_Arduino` GitHub repo, and a dated repo-love line showing `249` stars and `207` forks as of May 24, 2026. Firmware version is now `0.4.6-origin-oshw`.
+
+2026-05-24 09:34:48 EDT Origin Story perspective-speed pass: crawl speed was doubled and the renderer now fades/shrinks text toward a horizontal vanishing line at the top of the content area. This build was compiled and flashed to the connected CYD for review.
 
 2026-05-24 hardware note: the app-shell firmware was built and flashed to `/dev/cu.usbserial-3120` on the connected ESP32-D0WD-V3 CYD, MAC `f4:65:0b:a9:f2:e8`. Touch ergonomics fixes changed compact toolbar routing to split adjacent app-nav/rotate hit targets at their midpoints, enlarged the visible app-nav and rotate controls from 22x22 to 44x28, converted Settings to a scrollable large-text row list with bigger row-local touch controls, widened Settings bottom scroll buttons to split the full bottom bar, changed Settings rows to alternating yellow/green Pulse dashboard backgrounds with black text, and redesigned App 1 metric tiles to use the same yellow/green high-contrast language.
 

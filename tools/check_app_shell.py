@@ -117,10 +117,15 @@ required_large_controls = {
     "TFT_eSprite app3CrawlSprite": "Origin Story crawl is missing an offscreen sprite",
     "ensureApp3CrawlSprite": "Origin Story crawl sprite is not managed for rotation changes",
     "app3CrawlSprite.pushSprite": "Origin Story crawl frames are not pushed from an offscreen sprite",
-    "app3CrawlSprite.setTextSize(APP3_CRAWL_TEXT_SIZE)": "Origin Story crawl does not use the enlarged text size",
+    "APP3_CRAWL_TEXT_SIZE": "Origin Story crawl does not keep the enlarged text size",
+    "app3CrawlSprite.setTextSize(textSize)": "Origin Story crawl does not apply perspective text scaling",
     "app3CrawlSprite.setColorDepth(8)": "Origin Story crawl sprite is not using lower-memory 8-bit color",
     "drawApp3OriginCrawlDirectFallback": "Origin Story crawl has no visible fallback if sprite allocation fails",
     "int baseY = crawlBottom - lineHeight - offset;": "Origin Story crawl starts below the visible area",
+    "#define APP3_CRAWL_SPEED_MS 52": "Origin Story crawl speed is not approximately 2x faster",
+    "drawApp3CrawlLinePerspective": "Origin Story crawl is missing perspective fade/shrink rendering",
+    "APP3_CRAWL_HORIZON_Y": "Origin Story crawl is missing a horizontal vanishing point",
+    "APP3_CRAWL_MIN_TEXT_SIZE": "Origin Story crawl cannot shrink toward the horizon",
 }
 for token, message in required_large_controls.items():
     if token not in source:

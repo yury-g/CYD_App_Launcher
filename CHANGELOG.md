@@ -1,6 +1,7 @@
 # CYD App Launcher — Student Version — Changelog
 
 ## Unreleased
+- 2026-05-24 09:34:48 EDT Origin Story hardware trial: doubled the crawl speed, added a horizontal vanishing line, and made crawl rows shrink to 1x text and fade into the black background as they approach the top horizon; firmware version is `0.4.7-origin-perspective`.
 - 2026-05-24 09:30:51 EDT Origin Story provenance pass: added OSHWA certification details for Pulse Sensor Amped (`US000075`, certified August 30, 2017), the `WorldFamousElectronics/PulseSensor_Amped_Arduino` GitHub repo, and current repo-love stats (`249` stars, `207` forks as of May 24, 2026); firmware version is `0.4.6-origin-oshw`.
 - 2026-05-24 09:25:59 EDT Origin Story blank-screen fix: changed the crawl sprite to lower-memory 8-bit color, made the first crawl line visible immediately, and added a direct large-text fallback renderer if sprite allocation fails; firmware version is `0.4.5-origin-visible`.
 - 2026-05-24 09:22:21 EDT Origin Story hardware pass: enlarged the scrolling crawl text to 2x, reflowed the copy into CYD-width lines, moved the animated crawl into an offscreen `TFT_eSprite` to reduce direct clear/redraw flicker, and bumped firmware version to `0.4.4-origin-readable`.

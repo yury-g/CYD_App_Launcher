@@ -37,7 +37,7 @@ The current branch wraps the one-screen Pulse dashboard in a small app shell:
 - Volume is Settings-only and no longer appears in the top toolbar.
 - Rotation is Settings-only and no longer appears as a persistent top-toolbar button.
 - App navigation remains persistent as a three-button previous/next/Settings nav bar, with mode-aware outlines/fills and no top-toolbar rotate button.
-- Firmware version for this branch: `0.4.6-origin-oshw`.
+- Firmware version for this branch: `0.4.7-origin-perspective`.
 - Firmware date shown in Settings: `2026-05-24`.
 - Guard script: `python3 tools/check_app_shell.py`.
 
@@ -56,6 +56,8 @@ The current branch wraps the one-screen Pulse dashboard in a small app shell:
 2026-05-24 09:25:59 EDT Origin Story blank-screen fix: user reported the Origin Story page became totally black. Likely causes were the first large line starting below the visible content area and/or full-size sprite allocation failure. Firmware now uses an 8-bit sprite, starts text visibly on the first frame, and falls back to direct large-text rendering if sprite allocation fails.
 
 2026-05-24 09:30:51 EDT Origin Story provenance pass: the crawl now includes Pulse Sensor Amped OSHWA registration `US000075`, certification date August 30, 2017, the `WorldFamousElectronics/PulseSensor_Amped_Arduino` GitHub repo, and a dated repo-love note showing `249` stars and `207` forks as of May 24, 2026.
+
+2026-05-24 09:34:48 EDT Origin Story perspective-speed pass: the crawl speed is doubled with `APP3_CRAWL_SPEED_MS 52`, and crawl lines now use a perspective renderer that fades and shrinks them toward a horizontal origin line. This build was compiled and flashed to the connected CYD for review.
 
 2026-05-24 continuation: the compact toolbar hit testing was tuned for real CYD touch ergonomics. App nav and rotate still look grouped, but their padded tap regions are now split at the midpoint between adjacent button centers, preventing the previous overlap where taps near rotate could be claimed by Settings or taps near nav boundaries could choose the earlier button. The same midpoint approach is used for the Settings color swatches.
 

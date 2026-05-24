@@ -20,8 +20,8 @@ try:
     FONT_1 = ImageFont.truetype("/System/Library/Fonts/Menlo.ttc", 10)
     FONT_2 = ImageFont.truetype("/System/Library/Fonts/Menlo.ttc", 20)
     FONT_3 = ImageFont.truetype("/System/Library/Fonts/Menlo.ttc", 30)
-    FONT_CRAWL = ImageFont.truetype("/System/Library/Fonts/Menlo.ttc", 14)
-    FONT_CRAWL_SMALL = ImageFont.truetype("/System/Library/Fonts/Menlo.ttc", 11)
+    FONT_CRAWL = ImageFont.truetype("/System/Library/Fonts/Menlo.ttc", 20)
+    FONT_CRAWL_SMALL = ImageFont.truetype("/System/Library/Fonts/Menlo.ttc", 10)
 except OSError:
     FONT_1 = ImageFont.load_default()
     FONT_2 = ImageFont.load_default()
@@ -167,17 +167,20 @@ def draw_title_card(draw, width, height):
 
 
 def draw_crawl(draw, width, height, offset, frame):
-    horizon_y = 54
+    horizon_y = 50
     base_y = 230 - offset
-    line_gap = 18
+    line_gap = 24
     center_x = width // 2
     draw.polygon([(44, height), (276, height), (173, horizon_y), (147, horizon_y)], fill=(3, 3, 0))
+    draw.line((46, horizon_y, width - 46, horizon_y), fill=(42, 32, 7))
     for idx, line in enumerate(CRAWL_LINES):
         y = base_y + idx * line_gap
         if y < horizon_y - 10 or y > height + 24:
             continue
         depth = max(0.0, min(1.0, (y - horizon_y) / (height - horizon_y)))
-        font = FONT_CRAWL if depth > 0.42 else FONT_CRAWL_SMALL
+        if depth < 0.08:
+            continue
+        font = FONT_CRAWL if depth > 0.45 else FONT_CRAWL_SMALL
         color_mix = int(100 + depth * 155)
         fill = (color_mix, int(78 + depth * 136), int(8 + depth * 64))
         text_w, text_h = text_size(draw, line, font)
@@ -216,11 +219,11 @@ def render(filename, frame, offset=None, title_card=False):
 
 frames = [
     ("app3-origin-title.png", 0, None, True),
-    ("app3-origin-crawl-start.png", 1, 40, False),
-    ("app3-origin-crawl-mid.png", 2, 128, False),
-    ("app3-origin-crawl-late.png", 3, 216, False),
-    ("app3-origin-crawl-close.png", 4, 532, False),
-    ("app3-origin-crawl-thanks.png", 5, 746, False),
+    ("app3-origin-crawl-start.png", 1, 80, False),
+    ("app3-origin-crawl-mid.png", 2, 256, False),
+    ("app3-origin-crawl-late.png", 3, 432, False),
+    ("app3-origin-crawl-close.png", 4, 1050, False),
+    ("app3-origin-crawl-thanks.png", 5, 1460, False),
 ]
 
 for filename, frame, offset, title_card in frames:

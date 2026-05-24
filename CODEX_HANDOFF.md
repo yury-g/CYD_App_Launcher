@@ -25,34 +25,36 @@ codex/signal-core-polish-publish-prep-20260524
 Current firmware/UI code commit:
 
 ```text
-HEAD Signal-core polish publish prep 20260524
+HEAD Add clipping quality guard 20260524
 ```
 
 Latest signal-behavior log commit:
 
 ```text
-HEAD Signal-core polish publish prep 20260524
+HEAD Add clipping quality guard 20260524
 ```
 
 Current firmware version:
 
 ```text
-0.4.22-core-polish
+0.4.23-clip-guard
 ```
 
 Latest hardware status:
 
 - Built with PlatformIO in release env `cyd` and diagnostic env `cyd_diag`.
-- Release build defaults raw CSV diagnostics off and reports `0.4.22-core-polish`; diagnostic build enables 50 Hz `rawDiag` CSV and reports `0.4.22-core-polish-log`.
+- Release build defaults raw CSV diagnostics off and reports `0.4.23-clip-guard`; diagnostic build enables 50 Hz `rawDiag` CSV and reports `0.4.23-clip-guard-log`.
 - Upload target remains `/dev/cu.usbserial-3120`; latest known attached CYD MAC is `f4:2d:c9:9d:af:cc`.
+- User reported the `0.4.22` waveform looked much worse and filled the screen with bar-like noise. Release serial confirmed the ADC was genuinely saturated/clipped, but exposed a UI/control bug: `quality=10/11`, `p2p=6/7`, and detector re-arm messages could appear while `clip=100`.
+- `0.4.23-clip-guard` fixes that: clipped or motion-artifact input forces acquisition quality and peak-to-peak score to `0`, blocks detector re-arm, and shows `ADJUST SENSOR`. A 14 s release serial window after flashing showed `rawDiag=0`, `quality=0`, `p2p=0`, `locked=0`, `BPM=0`, `IBI=0`, and no re-arm messages while the ADC remained railed.
 - Flashed `cyd_diag` and captured `logs/signal-log-ear-core-polish-60s-20260524.csv`: 59.3 s, 2997 rows, 8 accepted firmware beat events, 104 rejected, 0 row-level accepted noisy beats, and 1 accepted short IBI of 646 ms near the transition into clipped/noisy behavior.
 - The longer diagnostic capture `logs/signal-log-ear-core-polish-180s-20260524.csv` was stopped at the user's request after 122.1 s. It was almost entirely saturated/clipped: 6010 rows, 6008 clip rows, 369 rejected beat events, and 0 accepted beats. This is good safety behavior but not a clean steady-contact accuracy proof.
 - Flashed the final `cyd` release build afterward. An 8 s serial check produced 17 normal summary lines and 0 `rawDiag` CSV rows; the signal was still saturated (`signal=1023`, `clip=100`), so BPM/IBI stayed at 0 while unlocked.
-- PlatformIO release memory was `RAM 7.3% (23764 / 327680)` and `Flash 28.9% (378277 / 1310720)`. Diagnostic memory was `RAM 7.3% (23764 / 327680)` and `Flash 28.9% (378313 / 1310720)`.
+- PlatformIO release memory is `RAM 7.3% (23764 / 327680)` and `Flash 28.9% (378349 / 1310720)`. Diagnostic memory is `RAM 7.3% (23764 / 327680)` and `Flash 28.9% (378397 / 1310720)`.
 - The cleanest same-earlobe accuracy evidence remains the previous `0.4.21-signal-log` capture: 44.2 s, 47 firmware accepted beats, 47 independent raw peaks, firmware median IBI/BPM `918 ms / 65.3`, independent median IBI/BPM `920 ms / 65.2`, zero clip rows, zero motion/noise windows, and zero accepted short IBIs below 700 ms.
 - User confirmed the current UI looks great and is visually ready to publish back to `main`.
 
-Do not merge to `main` yet. Signal-performance code checks and earlobe serial sanity passes have been done, but the latest `0.4.22` hardware captures became saturated. The user should still do one real stable-contact visual/signal sanity pass before any main merge or public release.
+Do not merge to `main` yet. Signal-performance code checks and earlobe serial sanity passes have been done, but the latest hardware signal remains saturated/railed. The user should still do one real stable-contact visual/signal sanity pass before any main merge or public release.
 
 Performance priority:
 
@@ -100,6 +102,7 @@ Current UI specifics:
 - Locked beat detection now adds a peak/cadence recovery path for the user-observed earlobe case where slight movement distorts the valley while peaks remain visually stable. After lock, both strict and recovered beats must stay close to the current cadence before updating BPM/IBI.
 - `0.4.20-peak2peak` adds an enabled peak-to-peak experiment. It scores live peak-to-peak waveform movement, can let high-score peak-to-peak candidate beats help acquisition, and can accept bounded peak-to-peak candidates while locked. The tuned window uses a wider cadence tolerance than strict recovery but rejects short movement-blip intervals below 70% of the current IBI.
 - Expanded serial telemetry now includes live range, clipping score, qualified streak, unqualified streak, `p2p` score, beat accept reason, and lock-drop reason.
+- `0.4.23-clip-guard` fixes the bad-waveform/false-progress regression: clipped rail noise no longer fills acquisition quality bars, no longer raises peak-to-peak score, no longer re-arms the detector, and shows `ADJUST SENSOR` while preserving BPM/IBI rejection.
 - `0.4.22-core-polish` preserves the single-file Arduino source, removes dead top-bar volume/rotate paths, shares app-frame/header and Settings row helpers, groups beat acceptance in `BeatDecision` without changing thresholds, releases the Origin Story sprite on app exit/rotation, and adds `tools/check_core_polish.py`.
 - `0.4.21-signal-log` adds raw CSV diagnostics, `tools/capture_signal_log.py`, `tools/analyze_signal_log.py`, `tools/check_signal_diagnostics.py`, time-based clipping-score decay, a rolling-range motion-artifact guard, and pre-lock cadence consistency. It directly addresses the same-earlobe smooth/noisy investigation: clipping and huge rolling range caused some degraded readings, and clean raw signal could still produce short/double acquisition beats until cadence was checked before lock.
 - Serial sanity after flashing `0.4.20-peak2peak` on the same earlobe position confirmed `accept=peak2peak` events during locked runs with clipping at 0. The tuned path looked bounded in serial, but later weak/short-interval sections still dropped lock, so this remains an experiment candidate rather than a publish verdict.

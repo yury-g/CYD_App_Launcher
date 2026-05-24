@@ -44,6 +44,56 @@ User-visible behavior:
 Verdict:
 ```
 
+## 2026-05-24 - Clipping Quality Guard
+
+Firmware: `0.4.23-clip-guard` release, `0.4.23-clip-guard-log` diagnostic
+
+Problem:
+
+- After flashing `0.4.22-core-polish`, the user reported the waveform looked
+  much worse and the screen was filling with bar-like noise.
+- Live release serial confirmed the ADC was genuinely railed/clipped, but also
+  exposed a firmware/UI bug: clipped rail-to-rail input could still show
+  `quality=10` or `quality=11`, `p2p=6` or `p2p=7`, and repeated detector
+  re-arm messages even though BPM/IBI stayed rejected.
+
+Fix:
+
+- Added shared clipping/artifact helpers:
+  `signalIsRecentlyClipped()`, `signalRangeIsMotionArtifact()`, and
+  `signalLooksCleanForAcquisition()`.
+- Acquisition quality and peak-to-peak score now return `0` when recent rail
+  clipping or motion-artifact range is present.
+- Detector re-arm now requires a clean acquisition signal, not only a large
+  live range.
+- The dashboard coach can show `ADJUST SENSOR` for clipped/artifact input.
+
+Hardware evidence:
+
+```text
+Date/time: 2026-05-24 EDT
+Firmware: 0.4.23-clip-guard release
+Sensor body position: earlobe, same placement as the reported bad waveform
+Condition: release build flashed after the bad-waveform report
+Before fix, 0.4.22 release serial:
+  - signal=0 / later 1023, amp=1023, range about 995-1023, clip=100
+  - quality stayed 10-11, p2p stayed 6-7
+  - repeated "Re-arming PulseSensor detector: alive signal without beat event"
+After fix, 0.4.23 release serial:
+  - 14 s serial window, 29 summary lines, 0 rawDiag CSV rows
+  - signal still railed from 0 through 1023, amp=1023, range=1023, clip=100
+  - quality=0, p2p=0, locked=0, BPM=0, IBI=0
+  - no detector re-arm messages in the capture
+```
+
+Verdict:
+
+- The bad waveform is real clipped/railed input, not just a renderer artifact.
+- The firmware no longer treats that rail noise as acquisition progress or a
+  peak-to-peak candidate. This protects BPM/IBI and removes the false progress
+  bars/harmony/re-arm behavior.
+- A clean stable-contact pass is still required before main/public release.
+
 ## 2026-05-24 - Signal-Core Polish Build Modes
 
 Firmware: `0.4.22-core-polish` release, `0.4.22-core-polish-log` diagnostic

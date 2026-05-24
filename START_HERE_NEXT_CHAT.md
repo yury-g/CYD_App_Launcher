@@ -23,19 +23,19 @@ codex/signal-core-polish-publish-prep-20260524
 Current firmware/UI code commit:
 
 ```text
-HEAD Signal-core polish publish prep 20260524
+HEAD Add clipping quality guard 20260524
 ```
 
 Latest signal-behavior log commit:
 
 ```text
-HEAD Signal-core polish publish prep 20260524
+HEAD Add clipping quality guard 20260524
 ```
 
 Current firmware version on the attached CYD:
 
 ```text
-0.4.22-core-polish
+0.4.23-clip-guard
 ```
 
 Connected CYD used for the latest flash:
@@ -51,6 +51,7 @@ Latest verified commands from this pause point:
 ```sh
 python3 tools/check_app_shell.py
 python3 tools/check_core_polish.py
+python3 tools/check_clipping_quality_guard.py
 python3 tools/check_signal_diagnostics.py
 python3 tools/check_peak_to_peak_experiment.py
 git diff --check
@@ -74,9 +75,9 @@ Build memory from PlatformIO:
 
 ```text
 Release RAM:   7.3% (23764 / 327680 bytes)
-Release Flash: 28.9% (378277 / 1310720 bytes)
+Release Flash: 28.9% (378349 / 1310720 bytes)
 Diag RAM:      7.3% (23764 / 327680 bytes)
-Diag Flash:    28.9% (378313 / 1310720 bytes)
+Diag Flash:    28.9% (378397 / 1310720 bytes)
 ```
 
 Rollback anchors before signal-core polish:
@@ -118,6 +119,7 @@ Visual/UI status:
 - Locked beat detection now adds a peak/cadence recovery path for the user-observed earlobe case where slight movement distorts the valley while peaks remain visually stable. After lock, both strict and recovered beats must stay close to the current cadence before updating BPM/IBI.
 - `0.4.20-peak2peak` adds an enabled peak-to-peak experiment. It scores live peak-to-peak waveform movement, can let high-score peak-to-peak candidate beats help acquisition, and can accept bounded peak-to-peak candidates while locked. The tuned window uses a wider cadence tolerance than strict recovery but rejects short movement-blip intervals below 70% of the current IBI.
 - Expanded serial telemetry now includes live range, clipping score, qualified streak, unqualified streak, `p2p` score, beat accept reason, and lock-drop reason.
+- `0.4.23-clip-guard` fixes the bad-waveform/false-progress regression found after `0.4.22`: clipped rail noise no longer fills acquisition quality bars, no longer raises peak-to-peak score, no longer re-arms the detector, and shows `ADJUST SENSOR` while preserving BPM/IBI rejection. Post-flash release serial with the sensor still railed showed `quality=0`, `p2p=0`, `locked=0`, `BPM=0`, `IBI=0`, `rawDiag=0`, and no re-arm messages.
 - `0.4.22-core-polish` keeps the source as a single Arduino `.ino`, makes raw CSV logging an internal `cyd_diag` build mode, removes dead top-bar volume/rotate code, shares app header/Settings row helpers, groups beat acceptance in `BeatDecision` without changing thresholds, and releases the Origin Story sprite on app exit/rotation. Hardware sanity showed the release build is quiet by default (`0` rawDiag CSV rows in an 8 s serial check) and saturated signal did not create accepted beats in the longer clipped diagnostic capture.
 - Latest `0.4.22-core-polish-log` diagnostic captures were not a clean stable-contact proof. The 59.3 s capture had 8 accepted beat events, 104 rejected events, 0 row-level accepted noisy beats, and 1 accepted 646 ms short IBI near the transition into clipped/noisy behavior. The longer capture was stopped at the user's request after 122.1 s and was almost entirely saturated: 6008 clip rows out of 6010, 369 rejected beat events, and 0 accepted beats.
 - `0.4.21-signal-log` adds 50 Hz `rawDiag` CSV serial diagnostics, local capture/analyzer tools, time-based clipping-score decay, a motion-artifact rolling-range guard, and pre-lock cadence consistency so acquisition rejects short/double detections. Final same-earlobe diagnostic capture found 47 firmware accepted beats and 47 independent raw peaks over 44.2 s, with median IBI 918 ms vs 920 ms and zero accepted IBIs below 700 ms.
@@ -130,7 +132,7 @@ Visual/UI status:
 Pre-main blocker:
 
 - Do not merge to `main` yet.
-- Signal-performance code checks and earlobe serial sanity passes have been done, including the clean `0.4.21-signal-log` capture and `0.4.22` release/diagnostic builds. The latest `0.4.22` hardware signal was heavily clipped, so the user should still do one stable-contact visual/signal sanity pass before any main merge/public release.
+- Signal-performance code checks and earlobe serial sanity passes have been done, including the clean `0.4.21-signal-log` capture and `0.4.23` clipping-guard release/diagnostic builds. The latest hardware signal was still heavily clipped, so the user should still do one stable-contact visual/signal sanity pass before any main merge/public release.
 - Next chat should start with hardware sanity on the real CYD and record sensor body position: finger if usable, earlobe if finger remains unreliable. Check raw trace responsiveness, BPM, IBI, qualified-beat lock, app switching, Settings, Pin Scanner idle/active behavior, and Origin Story exit behavior.
 - Keep PulseSensor performance first-class. Drawing, display modes, App 4, and Origin Story are secondary to fast raw `SIG GPIO35`, BPM, IBI, and qualified-beat math.
 

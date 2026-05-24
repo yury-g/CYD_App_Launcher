@@ -125,7 +125,7 @@
 // ===== APP SHELL =====
 
 #ifndef APP_VERSION
-#define APP_VERSION "0.4.22-core-polish"
+#define APP_VERSION "0.4.23-clip-guard"
 #endif
 #define APP_FIRMWARE_DATE "2026-05-24"
 #define APP_BUILD_RAM_USAGE "RAM 7.3%"
@@ -194,6 +194,7 @@
 
 enum SignalCoachState {
   COACH_SIGNAL_SEARCH,
+  COACH_CLIPPED,
   COACH_TOO_FLAT,
   COACH_HOLD_STEADY,
   COACH_GOOD_WAVE,
@@ -604,6 +605,9 @@ bool isAcquisitionCadenceMatch(int ibi);
 bool isLockedCadenceMatch(int ibi);
 bool isPeakToPeakCadenceMatch(int ibi);
 bool isPeakCadenceRecoveryBeat(int bpm, int ibi, int amplitude);
+bool signalIsRecentlyClipped();
+bool signalRangeIsMotionArtifact();
+bool signalLooksCleanForAcquisition();
 int peakToPeakScoreForCurrentSignal();
 bool isPeakToPeakCandidateBeat(int bpm, int ibi, int amplitude, bool wasLocked);
 BeatDecision decideBeat(int bpm, int ibi, int amplitude, bool wasLocked);
@@ -1738,8 +1742,7 @@ bool isQualifiedBeat(int bpm, int ibi, int amplitude) {
   if (!isPlausibleBeatTiming(bpm, ibi)) return false;
   if (amplitude < MIN_QUALIFIED_AMPLITUDE) return false;
   if (maxSignal - minSignal < SIGNAL_COACH_FLAT_RANGE) return false;
-  if (maxSignal - minSignal > SIGNAL_MOTION_ARTIFACT_RANGE) return false;
-  if (clippedSampleScore > 18) return false;
+  if (!signalLooksCleanForAcquisition()) return false;
   return true;
 }
 
@@ -1784,11 +1787,25 @@ bool isPeakCadenceRecoveryBeat(int bpm, int ibi, int amplitude) {
                            amplitude >= PEAK_RECOVERY_MIN_AMPLITUDE;
   if (!signalStillMoving) return false;
 
-  if (clippedSampleScore > 18) return false;
+  if (!signalLooksCleanForAcquisition()) return false;
   return true;
 }
 
+bool signalIsRecentlyClipped() {
+  return clippedSampleScore > 18;
+}
+
+bool signalRangeIsMotionArtifact() {
+  return maxSignal - minSignal > SIGNAL_MOTION_ARTIFACT_RANGE;
+}
+
+bool signalLooksCleanForAcquisition() {
+  return !signalIsRecentlyClipped() && !signalRangeIsMotionArtifact();
+}
+
 int peakToPeakScoreForCurrentSignal() {
+  if (!signalLooksCleanForAcquisition()) return 0;
+
   int liveRange = maxSignal - minSignal;
   int rangeScore = map(constrain(liveRange,
                                  PEAK_TO_PEAK_MIN_RANGE,
@@ -1817,8 +1834,7 @@ int peakToPeakScoreForCurrentSignal() {
 
 bool isPeakToPeakCandidateBeat(int bpm, int ibi, int amplitude, bool wasLocked) {
   if (!isPlausibleBeatTiming(bpm, ibi)) return false;
-  if (maxSignal - minSignal > SIGNAL_MOTION_ARTIFACT_RANGE) return false;
-  if (clippedSampleScore > 18) return false;
+  if (!signalLooksCleanForAcquisition()) return false;
 
   int requiredScore = wasLocked ? PEAK_TO_PEAK_LOCKED_MIN_SCORE : PEAK_TO_PEAK_ACQUIRE_MIN_SCORE;
   if (peakToPeakScore < requiredScore) return false;
@@ -1872,6 +1888,7 @@ void updateClippingScore() {
 
 int acquisitionScoreForCurrentSignal() {
   if (lockedSignal) return SIGNAL_QUALITY_STEPS;
+  if (!signalLooksCleanForAcquisition()) return 0;
 
   int liveRange = maxSignal - minSignal;
   int rangeScore = map(constrain(liveRange,
@@ -1940,6 +1957,7 @@ int signalCoachState() {
   int liveRange = maxSignal - minSignal;
 
   if (lockedSignal) return COACH_QUALIFIED;
+  if (!signalLooksCleanForAcquisition()) return COACH_CLIPPED;
   if (liveRange < SIGNAL_COACH_FLAT_RANGE || pulseAmplitude < SIGNAL_COACH_FLAT_AMPLITUDE) {
     return COACH_TOO_FLAT;
   }
@@ -1953,6 +1971,8 @@ const char* signalCoachText() {
   switch (signalCoachState()) {
     case COACH_QUALIFIED:
       return "QUALIFIED BEAT";
+    case COACH_CLIPPED:
+      return "ADJUST SENSOR";
     case COACH_TOO_FLAT:
       return "TOO FLAT";
     case COACH_HOLD_STEADY:
@@ -1974,7 +1994,7 @@ int amplitudeMeterSegments(int amplitude) {
 void maybeRearmDetector() {
   unsigned long now = millis();
   int liveRange = maxSignal - minSignal;
-  bool signalLooksAlive = liveRange >= REARM_SIGNAL_RANGE;
+  bool signalLooksAlive = liveRange >= REARM_SIGNAL_RANGE && signalLooksCleanForAcquisition();
   bool detectorIsQuiet = (now - lastBeatTime) >= REARM_NO_BEAT_MS;
   bool rearmCooledDown = (now - lastDetectorRearmTime) >= REARM_COOLDOWN_MS;
 

@@ -37,6 +37,10 @@ read_touch_end = source.index("void mapTouchPoint", read_touch_start)
 read_touch_body = source[read_touch_start:read_touch_end]
 if "handleVolumeTouch" in read_touch_body:
     raise SystemExit("Pulse touch handling still uses top-bar volume controls")
+if "handleRotateTouch(x, y)" not in read_touch_body:
+    raise SystemExit("Rotate touch is not persistent across apps")
+if "currentApp == APP_PULSE && handleRotateTouch" in read_touch_body:
+    raise SystemExit("Rotate touch is still limited to the pulse app")
 
 configure_start = source.index("void configureLayout() {")
 configure_end = source.index("void resetDashboardState()", configure_start)
@@ -49,5 +53,16 @@ required_nav_layout = [
 missing_nav_layout = [line for line in required_nav_layout if line not in configure_body]
 if missing_nav_layout:
     raise SystemExit("App nav is not attached to rotate button")
+
+for fn_name in [
+    "void drawHeader() {",
+    "void drawSettingsScreen() {",
+    "void drawPlaceholderApp(const char* title, const char* message) {",
+]:
+    fn_start = source.index(fn_name)
+    fn_end = source.index("\n}", fn_start)
+    fn_body = source[fn_start:fn_end]
+    if "drawAppNavControls();" not in fn_body or "drawRotateControl();" not in fn_body:
+        raise SystemExit(f"{fn_name} does not draw persistent nav plus rotate controls")
 
 print("App shell checks passed")

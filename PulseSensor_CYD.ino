@@ -519,7 +519,7 @@ void readTouchControls() {
   mapTouchPoint(point, &x, &y);
 
   if (handleAppNavTouch(x, y) ||
-      (currentApp == APP_PULSE && handleRotateTouch(x, y)) ||
+      handleRotateTouch(x, y) ||
       (currentApp == APP_SETTINGS && handleSettingsTouch(x, y))) {
     lastControlTouchTime = millis();
   }
@@ -1184,6 +1184,7 @@ void drawSettingsScreen() {
   tft.setCursor(10, portraitLayout ? 7 : 8);
   tft.print("Settings");
   drawAppNavControls();
+  drawRotateControl();
 
   char volumeText[12];
   snprintf(volumeText, sizeof(volumeText), "%u/10", speakerVolume);
@@ -1243,6 +1244,7 @@ void drawPlaceholderApp(const char* title, const char* message) {
     tft.setCursor(10, portraitLayout ? 7 : 8);
     tft.print(title);
     drawAppNavControls();
+    drawRotateControl();
     resetPlaceholderState();
   }
 

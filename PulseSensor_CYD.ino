@@ -1696,7 +1696,7 @@ void drawApp3OriginCrawl() {
   tft.print("PulseSensor.com");
   tft.setTextColor(gold, bg);
   tft.setCursor(portraitLayout ? 10 : 10, portraitLayout ? 58 : 25);
-  tft.print("APP 3  ORIGIN CRAWL");
+  tft.print("Origin Story");
   drawAppNavControls();
 
   int crawlTop = headerHeight + 6;

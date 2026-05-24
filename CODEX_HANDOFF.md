@@ -49,6 +49,8 @@ The current branch wraps the one-screen Pulse dashboard in a small app shell:
 
 2026-05-24 09:15:15 EDT App 3 firmware pass: replaced the on-device App 3 bouncing placeholder with the firmware-rendered PulseSensor origin crawl over a black starfield. The crawl includes the feature-request / firmware-update ask and thanks supporters since 2012. The App 3 fanfare was expanded from a short loop to a tracked 15-second programmatic loop. Guard script now asserts the real App 3 crawl renderer and 15-second loop tracking.
 
+2026-05-24 09:17:17 EDT naming pass: App 3 is now visibly titled `Origin Story` on-device and in the mockup renderer, preserving the science-fiction crawl direction while making the app identity clearer.
+
 2026-05-24 continuation: the compact toolbar hit testing was tuned for real CYD touch ergonomics. App nav and rotate still look grouped, but their padded tap regions are now split at the midpoint between adjacent button centers, preventing the previous overlap where taps near rotate could be claimed by Settings or taps near nav boundaries could choose the earlier button. The same midpoint approach is used for the Settings color swatches.
 
 Follow-up hardware pass: the visible app-nav and rotate controls were enlarged from 22x22 to 44x28 for easier large-finger touch. Landscape moves the heart left to avoid the wider toolbar; portrait uses a taller header so the toolbar, title, coach text, and heart do not collide.

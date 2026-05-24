@@ -110,7 +110,7 @@ def draw_header(draw, width, title):
     draw.rectangle((0, 0, width, 42), fill=BLACK)
     draw.line((0, 41, width, 41), fill=GRID)
     draw.text((10, 8), title, font=FONT_1, fill=WHITE)
-    draw.text((10, 25), "APP 3  ORIGIN CRAWL", font=FONT_1, fill=GOLD)
+    draw.text((10, 25), "Origin Story", font=FONT_1, fill=GOLD)
     draw_nav(draw, width, 7)
 
 
@@ -134,7 +134,7 @@ def draw_title_card(draw, width, height):
     draw_centered(draw, "ORIGIN STORY", 0, 112, width, FONT_2, GOLD)
     draw_centered(draw, "open hardware", 0, 152, width, FONT_1, WHITE)
     draw_centered(draw, "heart-rate sensing for makers", 0, 168, width, FONT_1, WHITE)
-    draw_centered(draw, "mock App 3 crawl", 0, 206, width, FONT_1, GOLD_DIM)
+    draw_centered(draw, "mock Origin Story crawl", 0, 206, width, FONT_1, GOLD_DIM)
 
 
 def draw_crawl(draw, width, height, offset, frame):

@@ -107,6 +107,7 @@ required_large_controls = {
     "APP3_CRAWL_FANFARE_LOOP_MS 15000": "App 3 fanfare loop is not tracked as a 15-second loop",
     "drawApp3OriginCrawl": "App 3 origin crawl renderer is missing",
     "APP3_ORIGIN_CRAWL_LINE_COUNT": "App 3 origin crawl copy is missing",
+    "Origin Story": "App 3 is not labeled Origin Story",
     "Send us your feature requests,": "App 3 origin crawl is missing the feature-request ask",
 }
 for token, message in required_large_controls.items():

@@ -1,6 +1,7 @@
 # CYD App Launcher — Student Version — Changelog
 
 ## Unreleased
+- 2026-05-24 09:17:17 EDT App 3 naming pass: changed the on-device and mockup title from `APP 3 ORIGIN CRAWL` to `Origin Story` to fit the science-fiction app theme.
 - 2026-05-24 09:15:15 EDT App 3 origin-crawl firmware pass: replaced App 3's bouncing placeholder on-device with a black starfield and scrolling PulseSensor origin crawl, extended the original CYD speaker fanfare to a tracked 15-second loop, and bumped firmware version to `0.4.3-app3-crawl`.
 - 2026-05-24 09:08:58 EDT App 3 origin-crawl mockup: added a closing ask for feature requests, firmware update ideas, and classroom wishes, plus a thank-you for supporting PulseSensor since 2012.
 - 2026-05-24 09:06:39 EDT App 3 origin-crawl branch: added an original programmatic CYD speaker fanfare for App 3, with a short heroic title sting and looping digital arpeggio scaled by Settings volume, and bumped firmware version to `0.4.2-app3-fanfare` for hardware listening.

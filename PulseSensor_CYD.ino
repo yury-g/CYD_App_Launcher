@@ -660,6 +660,7 @@ void drawApp3Starfield();
 void drawRotateIcon(int x, int y, int w, int h, uint16_t color, uint16_t bg);
 void drawDottedHLine(int x, int y, int w, uint16_t color, int step, int thickness);
 void drawGraphFrame();
+void refreshWaveformFrameForLockTransition();
 void drawGraphLabels();
 void drawSignalCoachStatus();
 void drawGraphColumnBackground(int localX);
@@ -2088,6 +2089,8 @@ void drawActiveApp() {
 void drawStaticScreen() {
   tft.fillScreen(screenBgColor());
   drawHeader();
+  graphX = 0;
+  lastGraphY = signalToGraphY(currentSignal);
   drawGraphFrame();
   drawDashboardIfChanged();
 }
@@ -2106,6 +2109,12 @@ void drawDashboardIfChanged() {
   if (statusChanged) {
     drawHeader();
     drawSignalCoachStatus();
+  }
+
+  if (needsFullPanelRedraw && dashboardDrawn) {
+    refreshWaveformFrameForLockTransition();
+    lastGraphY = signalToGraphY(currentSignal);
+    graphX = 0;
   }
 
   if (needsFullPanelRedraw) {
@@ -2646,6 +2655,31 @@ void drawApp3Starfield() {
 }
 
 void drawGraphFrame() {
+  tft.fillRoundRect(graphLeft - 2, graphTop - 2, graphWidth + 4, graphHeight + 4, 6, panelDarkColor());
+  tft.drawRoundRect(graphLeft - 2, graphTop - 2, graphWidth + 4, graphHeight + 4, 6, gridColor());
+  tft.fillRect(graphLeft, graphTop, graphWidth, graphHeight, screenBgColor());
+
+  int verticalGridStep = portraitLayout ? 28 : 38;
+  int horizontalGridStep = portraitLayout ? 33 : 28;
+
+  for (int x = 0; x <= graphWidth; x += verticalGridStep) {
+    drawDottedHLine(graphLeft + x, graphTop, 1, gridSoftColor(), 7, 1);
+    for (int y = graphTop; y <= graphTop + graphHeight; y += 7) {
+      tft.drawPixel(graphLeft + x, y, gridSoftColor());
+    }
+  }
+  for (int y = 0; y <= graphHeight; y += horizontalGridStep) {
+    drawDottedHLine(graphLeft, graphTop + y, graphWidth, gridSoftColor(), 7, 1);
+  }
+  for (int x = 0; x < graphWidth; x += 6) {
+    drawThresholdMarker(x);
+  }
+
+  drawGraphLabels();
+  drawSignalCoachStatus();
+}
+
+void refreshWaveformFrameForLockTransition() {
   tft.fillRoundRect(graphLeft - 2, graphTop - 2, graphWidth + 4, graphHeight + 4, 6, panelDarkColor());
   tft.drawRoundRect(graphLeft - 2, graphTop - 2, graphWidth + 4, graphHeight + 4, 6, gridColor());
   tft.fillRect(graphLeft, graphTop, graphWidth, graphHeight, screenBgColor());

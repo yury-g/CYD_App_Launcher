@@ -3,6 +3,7 @@
 ## Unreleased
 - 2026-05-24 monochrome UI branch: added firmware display modes `M DARK`, `M LIGHT`, `C DARK`, and `C LIGHT` under Settings `Display`, moved rotation to Settings-only, removed the top-bar rotate button, and bumped firmware version to `0.4.0-display-modes` for local hardware color-scheme testing.
 - 2026-05-24 monochrome UI branch: updated the persistent app nav bar to the three-button previous/next/Settings layout, with mode-aware monochrome/color outlines and no top-bar rotate control, leaving more header room for the centered fat heart.
+- 2026-05-24 monochrome UI branch: expanded the README with an internal visual design-memory section showing the display-mode contact sheet, Settings picker variants, Pulse searching/locked variants, and true black/white exploration images.
 - 2026-05-24 monochrome UI branch: added render-only review tools for black/white and display-mode layouts, including cache-busted full-panel PNGs for Settings/searching/locked mode comparison.
 - 2026-05-24 app-shell branch: widened Settings bottom scroll buttons so up/down split the full bottom bar width for easier finger navigation.
 - 2026-05-24 app-shell branch: visually rendered and redesigned App 1 Pulse dashboard metric tiles to use the same yellow/green high-contrast language with black text.

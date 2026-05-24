@@ -34,7 +34,7 @@ Current horizontal dashboard:
 
 ## Current App Shell Development Preview
 
-This branch is continuing the app shell work on `codex/settings-app-shell-20260523`. It keeps the Pulse dashboard as App 1, adds placeholder App 2 / App 3 pages, and moves settings into a dedicated scrollable Settings screen with larger finger-friendly controls.
+This branch is continuing the app shell work on `codex/monochrome-ui-treatment-20260524`, branched from `codex/settings-app-shell-20260523`. It keeps the Pulse dashboard as App 1, adds placeholder App 2 / App 3 pages, and moves settings into a dedicated scrollable Settings screen with larger finger-friendly controls.
 
 ### App 1: Pulse Dashboard Render
 
@@ -57,6 +57,43 @@ This branch is continuing the app shell work on `codex/settings-app-shell-202605
 | ![Settings portrait top render](docs/screenshots/settings-render/settings-portrait-top.png) | ![Settings portrait middle render](docs/screenshots/settings-render/settings-portrait-middle.png) | ![Settings portrait bottom render](docs/screenshots/settings-render/settings-portrait-bottom.png) |
 
 The render helpers are in `tools/render_pulse_app_mock.py` and `tools/render_settings_mock.py`. They are intentionally lightweight PNG mockups used for quick UI iteration before flashing the CYD.
+
+### Internal Design Memory: 2026-05-24 Display Modes
+
+This section is an internal firmware-development memory trail. It is intentionally image-heavy so future contributors can see the UI evolution visually before reading code. It does not need to be copied to the public customer tutorial.
+
+The 2026-05-24 pass explored a maximum-readability display treatment for no-glasses use: larger controls, more black space, true black/white monochrome modes, high-contrast color modes, dotted outlines for inactive or no-data states, a compact three-button app nav bar, Settings-only rotation, and a fatter centered heart in the freed header space.
+
+![Full display-mode review panel](docs/screenshots/display-mode-render/review-20260524-display-modes-v2/full-panel-all-modes.png)
+
+#### Settings Display Picker
+
+| Monochrome Dark | Monochrome Light |
+| --- | --- |
+| ![Settings display picker monochrome dark](docs/screenshots/display-mode-render/review-20260524-display-modes-v2/separate/settings-display-mono_dark.png) | ![Settings display picker monochrome light](docs/screenshots/display-mode-render/review-20260524-display-modes-v2/separate/settings-display-mono_light.png) |
+
+| Color Dark | Color Light |
+| --- | --- |
+| ![Settings display picker color dark](docs/screenshots/display-mode-render/review-20260524-display-modes-v2/separate/settings-display-color_dark.png) | ![Settings display picker color light](docs/screenshots/display-mode-render/review-20260524-display-modes-v2/separate/settings-display-color_light.png) |
+
+#### Pulse Dashboard Display Modes
+
+| Mode | Searching | Locked |
+| --- | --- | --- |
+| Monochrome Dark | ![Monochrome dark searching pulse dashboard](docs/screenshots/display-mode-render/review-20260524-display-modes-v2/screen-preview/mono_dark/pulse-landscape-searching.png) | ![Monochrome dark locked pulse dashboard](docs/screenshots/display-mode-render/review-20260524-display-modes-v2/screen-preview/mono_dark/pulse-landscape-locked.png) |
+| Monochrome Light | ![Monochrome light searching pulse dashboard](docs/screenshots/display-mode-render/review-20260524-display-modes-v2/screen-preview/mono_light/pulse-landscape-searching.png) | ![Monochrome light locked pulse dashboard](docs/screenshots/display-mode-render/review-20260524-display-modes-v2/screen-preview/mono_light/pulse-landscape-locked.png) |
+| Color Dark | ![Color dark searching pulse dashboard](docs/screenshots/display-mode-render/review-20260524-display-modes-v2/screen-preview/color_dark/pulse-landscape-searching.png) | ![Color dark locked pulse dashboard](docs/screenshots/display-mode-render/review-20260524-display-modes-v2/screen-preview/color_dark/pulse-landscape-locked.png) |
+| Color Light | ![Color light searching pulse dashboard](docs/screenshots/display-mode-render/review-20260524-display-modes-v2/screen-preview/color_light/pulse-landscape-searching.png) | ![Color light locked pulse dashboard](docs/screenshots/display-mode-render/review-20260524-display-modes-v2/screen-preview/color_light/pulse-landscape-locked.png) |
+
+#### True Black/White Exploration
+
+| Dark monochrome searching | Dark monochrome locked |
+| --- | --- |
+| ![True black and white searching mock](docs/screenshots/monochrome-render/review-20260524-pulse-landscape-searching.png) | ![True black and white locked mock](docs/screenshots/monochrome-render/review-20260524-pulse-landscape-locked.png) |
+
+| Light inverse searching | Light inverse locked |
+| --- | --- |
+| ![Inverse black and white searching mock](docs/screenshots/monochrome-render/inverse/pulse-landscape-searching.png) | ![Inverse black and white locked mock](docs/screenshots/monochrome-render/inverse/pulse-landscape-locked.png) |
 
 ---
 
@@ -250,16 +287,27 @@ The app shell branch also includes PNG render previews in:
 ```text
 docs/screenshots/pulse-render/
 docs/screenshots/settings-render/
+docs/screenshots/monochrome-render/
+docs/screenshots/display-mode-render/
 ```
 
 Older screenshot sets are kept under `docs/screenshots/history/` as design-version history.
+
+Current UI render helpers:
+
+```bash
+python3 tools/render_pulse_app_mock.py
+python3 tools/render_settings_mock.py
+python3 tools/render_monochrome_mock.py
+python3 tools/render_display_mode_mock.py
+```
 
 ## Development Checkpoints
 
 The current hardware-tested branch is:
 
 ```text
-codex/settings-app-shell-20260523
+codex/monochrome-ui-treatment-20260524
 ```
 
 Timestamped local tags record the iteration path:

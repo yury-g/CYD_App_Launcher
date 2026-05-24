@@ -99,7 +99,7 @@
 
 // ===== APP SHELL =====
 
-#define APP_VERSION "0.4.12-settings-row-alignment"
+#define APP_VERSION "0.4.13-signal-perf-safe"
 #define APP_FIRMWARE_DATE "2026-05-24"
 #define APP_BUILD_RAM_USAGE "RAM 7.3%"
 #define APP_BUILD_FLASH_USAGE "Flash 28.7%"
@@ -115,6 +115,8 @@
 #define SETTINGS_SCROLL_BUTTON_H TOOLBAR_BUTTON_HEIGHT
 #define PLACEHOLDER_STEP_MS 35
 #define CONTROL_TOUCH_PAD 8
+#define PERF_DIAGNOSTICS 0
+#define PERF_DIAGNOSTICS_MS 2000
 
 // ===== TOUCH CALIBRATION =====
 
@@ -470,6 +472,21 @@ int scannerActiveIndex = -1;
 unsigned long lastPinScannerRead = 0;
 unsigned long lastPinScannerDraw = 0;
 
+#if PERF_DIAGNOSTICS
+unsigned long perfWindowStartMs = 0;
+uint32_t perfLoopCount = 0;
+uint32_t perfReadCount = 0;
+uint32_t perfSignalChangeCount = 0;
+uint32_t perfBeatEventCount = 0;
+uint32_t perfLastReadStartUs = 0;
+uint32_t perfMaxReadGapUs = 0;
+uint32_t perfMaxReadUs = 0;
+uint32_t perfMaxDrawUs = 0;
+uint32_t perfMaxTotalAfterReadUs = 0;
+const char* perfMaxDrawLabel = "none";
+int perfPreviousSignal = -1;
+#endif
+
 // ===== FORWARD DECLARATIONS =====
 
 void setup();
@@ -532,6 +549,14 @@ bool isPinScannerRailed(int value);
 bool isPinScannerAdcCapable(uint8_t pin);
 const char* pinScannerStatusText(int index);
 void readPulseSensor();
+#if PERF_DIAGNOSTICS
+void notePerfReadStart(uint32_t readStartUs);
+void notePerfReadEnd(uint32_t readStartUs, bool signalChanged);
+void notePerfBeatEvent();
+void notePerfDraw(const char* label, uint32_t drawStartUs);
+void maybePrintPerfDiagnostics();
+const char* currentAppName();
+#endif
 bool isQualifiedBeat(int bpm, int ibi, int amplitude);
 void updateClippingScore();
 int signalCoachState();
@@ -577,6 +602,7 @@ void drawRotateIcon(int x, int y, int w, int h, uint16_t color, uint16_t bg);
 void drawVolumeControl();
 void drawDottedHLine(int x, int y, int w, uint16_t color, int step, int thickness);
 void drawGraphFrame();
+void drawGraphLabels();
 void drawSignalCoachStatus();
 void drawGraphColumnBackground(int localX);
 void drawThresholdMarker(int localX);
@@ -637,6 +663,9 @@ void setup() {
 
 void loop() {
   readPulseSensor();
+#if PERF_DIAGNOSTICS
+  uint32_t perfAfterReadStartUs = micros();
+#endif
   readTouchControls();
   updateLED();
   updateBeatChime();
@@ -644,19 +673,63 @@ void loop() {
   updateApp3CrawlFanfare();
 
   if (currentApp == APP_PULSE) {
+#if PERF_DIAGNOSTICS
+    uint32_t drawStartUs = micros();
+#endif
     drawBeatHeart();
+#if PERF_DIAGNOSTICS
+    notePerfDraw("heart", drawStartUs);
+    drawStartUs = micros();
+#endif
     drawWaveform();
+#if PERF_DIAGNOSTICS
+    notePerfDraw("wave", drawStartUs);
+    drawStartUs = micros();
+#endif
     drawDashboardIfChanged();
+#if PERF_DIAGNOSTICS
+    notePerfDraw("dashboard", drawStartUs);
+#endif
   } else if (currentApp == APP_PIN_SCANNER) {
+#if PERF_DIAGNOSTICS
+    uint32_t drawStartUs = micros();
+#endif
     updateActivePinScannerReading();
     drawApp4PinScanner();
+#if PERF_DIAGNOSTICS
+    notePerfDraw("scanner", drawStartUs);
+#endif
   } else if (currentApp == APP_PLACEHOLDER_1) {
+#if PERF_DIAGNOSTICS
+    uint32_t drawStartUs = micros();
+#endif
     drawPlaceholderApp("Your App Here", "your app here");
+#if PERF_DIAGNOSTICS
+    notePerfDraw("placeholder", drawStartUs);
+#endif
   } else if (currentApp == APP_PLACEHOLDER_2) {
+#if PERF_DIAGNOSTICS
+    uint32_t drawStartUs = micros();
+#endif
     drawApp3OriginCrawl();
+#if PERF_DIAGNOSTICS
+    notePerfDraw("origin", drawStartUs);
+#endif
   } else if (appNeedsRedraw) {
+#if PERF_DIAGNOSTICS
+    uint32_t drawStartUs = micros();
+#endif
     drawSettingsScreen();
+#if PERF_DIAGNOSTICS
+    notePerfDraw("settings", drawStartUs);
+#endif
   }
+
+#if PERF_DIAGNOSTICS
+  uint32_t totalAfterReadUs = micros() - perfAfterReadStartUs;
+  if (totalAfterReadUs > perfMaxTotalAfterReadUs) perfMaxTotalAfterReadUs = totalAfterReadUs;
+  maybePrintPerfDiagnostics();
+#endif
 
   if (millis() - lastSerialPrint >= 500) {
     lastSerialPrint = millis();
@@ -1426,7 +1499,14 @@ const char* pinScannerStatusText(int index) {
 // ===== SENSOR AND BEAT LOGIC =====
 
 void readPulseSensor() {
+#if PERF_DIAGNOSTICS
+  uint32_t readStartUs = micros();
+#endif
   currentSignal = pulseSensor.getLatestSample();
+#if PERF_DIAGNOSTICS
+  bool signalChanged = currentSignal != perfPreviousSignal;
+  perfPreviousSignal = currentSignal;
+#endif
   pulseAmplitude = pulseSensor.getPulseAmplitude();
   insideBeatWindow = pulseSensor.isInsideBeat();
   updateClippingScore();
@@ -1434,6 +1514,9 @@ void readPulseSensor() {
   maybeRearmDetector();
 
   if (pulseSensor.sawStartOfBeat()) {
+#if PERF_DIAGNOSTICS
+    notePerfBeatEvent();
+#endif
     int bpm = pulseSensor.getBeatsPerMinute();
     int ibi = pulseSensor.getInterBeatIntervalMs();
     bool qualified = isQualifiedBeat(bpm, ibi, pulseAmplitude);
@@ -1475,7 +1558,96 @@ void readPulseSensor() {
     displayBPM = 0;
     displayIBI = 0;
   }
+
+#if PERF_DIAGNOSTICS
+  notePerfReadEnd(readStartUs, signalChanged);
+#endif
 }
+
+#if PERF_DIAGNOSTICS
+void notePerfReadStart(uint32_t readStartUs) {
+  if (perfLastReadStartUs > 0) {
+    uint32_t gapUs = readStartUs - perfLastReadStartUs;
+    if (gapUs > perfMaxReadGapUs) perfMaxReadGapUs = gapUs;
+  }
+  perfLastReadStartUs = readStartUs;
+}
+
+void notePerfReadEnd(uint32_t readStartUs, bool signalChanged) {
+  notePerfReadStart(readStartUs);
+  uint32_t readUs = micros() - readStartUs;
+  if (readUs > perfMaxReadUs) perfMaxReadUs = readUs;
+  perfReadCount++;
+  perfLoopCount++;
+  if (signalChanged) perfSignalChangeCount++;
+}
+
+void notePerfBeatEvent() {
+  perfBeatEventCount++;
+}
+
+void notePerfDraw(const char* label, uint32_t drawStartUs) {
+  uint32_t drawUs = micros() - drawStartUs;
+  if (drawUs > perfMaxDrawUs) {
+    perfMaxDrawUs = drawUs;
+    perfMaxDrawLabel = label;
+  }
+}
+
+void maybePrintPerfDiagnostics() {
+  unsigned long now = millis();
+  if (perfWindowStartMs == 0) {
+    perfWindowStartMs = now;
+    return;
+  }
+  if (now - perfWindowStartMs < PERF_DIAGNOSTICS_MS) return;
+
+  unsigned long elapsedMs = now - perfWindowStartMs;
+  uint32_t loopsPerSecond = (perfLoopCount * 1000UL) / elapsedMs;
+  uint32_t readsPerSecond = (perfReadCount * 1000UL) / elapsedMs;
+  uint32_t changesPerSecond = (perfSignalChangeCount * 1000UL) / elapsedMs;
+
+  Serial.printf("perf app=%s loops/s=%lu reads/s=%lu changed/s=%lu maxReadGapUs=%lu maxReadUs=%lu maxAfterReadUs=%lu maxDraw=%s:%lu beats=%lu\n",
+                currentAppName(),
+                (unsigned long)loopsPerSecond,
+                (unsigned long)readsPerSecond,
+                (unsigned long)changesPerSecond,
+                (unsigned long)perfMaxReadGapUs,
+                (unsigned long)perfMaxReadUs,
+                (unsigned long)perfMaxTotalAfterReadUs,
+                perfMaxDrawLabel,
+                (unsigned long)perfMaxDrawUs,
+                (unsigned long)perfBeatEventCount);
+
+  perfWindowStartMs = now;
+  perfLoopCount = 0;
+  perfReadCount = 0;
+  perfSignalChangeCount = 0;
+  perfBeatEventCount = 0;
+  perfMaxReadGapUs = 0;
+  perfMaxReadUs = 0;
+  perfMaxDrawUs = 0;
+  perfMaxTotalAfterReadUs = 0;
+  perfMaxDrawLabel = "none";
+}
+
+const char* currentAppName() {
+  switch (currentApp) {
+    case APP_PULSE:
+      return "Pulse";
+    case APP_SETTINGS:
+      return "Settings";
+    case APP_PIN_SCANNER:
+      return "PinScanner";
+    case APP_PLACEHOLDER_1:
+      return "YourApp";
+    case APP_PLACEHOLDER_2:
+      return "Origin";
+    default:
+      return "Unknown";
+  }
+}
+#endif
 
 bool isQualifiedBeat(int bpm, int ibi, int amplitude) {
   if (bpm < MIN_QUALIFIED_BPM || bpm > MAX_QUALIFIED_BPM) return false;
@@ -1616,21 +1788,32 @@ void drawDashboardIfChanged() {
   bool statusChanged = !dashboardDrawn ||
                        lockedSignal != previousDashboardLockedSignal ||
                        coach != previousSignalCoachState;
-  bool panelsChanged = statusChanged ||
-                       displayBPM != previousDisplayBPM ||
-                       displayIBI != previousDisplayIBI ||
-                       signalQuality != previousSignalQuality;
+  bool needsFullPanelRedraw = !dashboardDrawn ||
+                              lockedSignal != previousDashboardLockedSignal;
+  bool bpmChanged = displayBPM != previousDisplayBPM;
+  bool ibiChanged = displayIBI != previousDisplayIBI;
+  bool signalPanelChanged = signalQuality != previousSignalQuality;
 
   if (statusChanged) {
     drawHeader();
     drawSignalCoachStatus();
   }
 
-  if (panelsChanged) {
+  if (needsFullPanelRedraw) {
     drawPanels();
+  } else {
+    if (bpmChanged) {
+      drawMetricPanel(bpmPanelX, bpmPanelY, bpmPanelW, bpmPanelH, "BPM", displayBPM, "", lockedSignal);
+    }
+    if (ibiChanged) {
+      drawMetricPanel(ibiPanelX, ibiPanelY, ibiPanelW, ibiPanelH, "IBI", displayIBI, "ms", lockedSignal);
+    }
+    if (signalPanelChanged) {
+      drawSignalPanel();
+    }
   }
 
-  if (statusChanged || panelsChanged) {
+  if (statusChanged || needsFullPanelRedraw || bpmChanged || ibiChanged || signalPanelChanged) {
     dashboardDrawn = true;
     previousDashboardLockedSignal = lockedSignal;
     previousLockedSignal = lockedSignal;
@@ -2220,6 +2403,11 @@ void drawGraphFrame() {
     drawThresholdMarker(x);
   }
 
+  drawGraphLabels();
+  drawSignalCoachStatus();
+}
+
+void drawGraphLabels() {
   tft.setTextSize(1);
   tft.setTextColor(textColor(), screenBgColor());
   tft.setCursor(graphLeft + 6, graphTop + 5);
@@ -2228,8 +2416,6 @@ void drawGraphFrame() {
   tft.setCursor(graphLeft + graphWidth - 48, graphTop + 5);
   tft.print("THR ");
   tft.print(PULSE_THRESHOLD);
-
-  drawSignalCoachStatus();
 }
 
 void drawSignalCoachStatus() {
@@ -2313,7 +2499,8 @@ void drawWaveform() {
   if (graphX >= graphWidth) {
     graphX = 0;
     lastGraphY = y;
-    drawGraphFrame();
+    drawGraphLabels();
+    drawSignalCoachStatus();
   }
 }
 

@@ -1,6 +1,7 @@
 # CYD App Launcher — Student Version — Changelog
 
 ## Unreleased
+- 2026-05-24 signal-performance safety pass: confirmed `readPulseSensor()` remains first in `loop()`, added opt-in serial perf diagnostics for loop/read/draw timing, removed the periodic full graph-frame redraw from the live waveform wrap path, split BPM/IBI/SIG panel redraws so qualified beats no longer redraw all panels unnecessarily, and bumped firmware version to `0.4.13-signal-perf-safe`.
 - 2026-05-24 app-shell handoff before main publish: documented the current UI-ready branch state, added a next-chat signal-performance investigation blocker before any `main` merge, and called out that raw `SIG GPIO35`, BPM, IBI, and qualified-beat analysis stay higher priority than app switching, display modes, Pin Scanner, and Origin Story.
 - 2026-05-24 Settings row-alignment pass: bumped Settings row text back up one size, restored 40px rows, changed plain data rows to left-label/right-value alignment with automatic smaller right-aligned values for long strings, kept two-line text only for rows with right-side controls, and bumped firmware version to `0.4.12-settings-row-alignment`.
 - 2026-05-24 Settings build-memory layout pass: added a Build row showing PlatformIO RAM and Flash usage, changed plain Settings rows to single-line `Label: value` text that uses the full row, kept two-line text only on rows with right-side controls, and bumped firmware version to `0.4.11-settings-build-memory`.

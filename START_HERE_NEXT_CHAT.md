@@ -4,7 +4,7 @@ Last updated: 2026-05-24 EDT
 
 This file is the first breadcrumb for continuing internal PulseSensor CYD dashboard development in a new Codex chat with no previous chat history.
 
-## Fresh Handoff: 2026-05-24 13:05 EDT
+## Fresh Handoff: 2026-05-24 13:16 EDT
 
 This top section supersedes older branch/path references below. Older notes are preserved as history.
 
@@ -23,13 +23,13 @@ codex/app4-pin-scanner-perf-safe-20260524
 Current firmware/UI code commit:
 
 ```text
-a5ec516 Align Settings row values 20260524-125120-EDT
+1f701dd Improve Pulse signal redraw performance 20260524-131641-EDT
 ```
 
 Current firmware version on the attached CYD:
 
 ```text
-0.4.12-settings-row-alignment
+0.4.13-signal-perf-safe
 ```
 
 Connected CYD used for the latest flash:
@@ -57,7 +57,7 @@ Build memory from PlatformIO:
 
 ```text
 RAM:   7.3% (23772 / 327680 bytes)
-Flash: 28.7% (376633 / 1310720 bytes)
+Flash: 28.8% (376849 / 1310720 bytes)
 ```
 
 Current app order:
@@ -74,14 +74,14 @@ Visual/UI status:
 - Settings font was bumped back to size 2 with 40px rows.
 - Four display modes are present: `M DARK`, `M LIGHT`, `C DARK`, and `C LIGHT`.
 - App 4 Pin Scanner is manual, starts idle, and only scans the tapped row for GPIO35, GPIO22, GPIO21, or GPIO27.
+- Signal-performance pass found and fixed avoidable foreground stalls: the live graph no longer redraws the full frame on waveform wrap, BPM/IBI/SIG panels redraw independently, and opt-in `PERF_DIAGNOSTICS` serial timing remains available in firmware but is off by default.
 
 Pre-main blocker:
 
 - Do not merge to `main` yet.
-- User suspects the app-shell/UI additions may have degraded signal speed, raw signal responsiveness, BPM, IBI, or qualified-beat analysis compared with earlier one-screen/dashboard builds.
-- Next chat should investigate this first by comparing history around `1679ed3`, `4691ef1`, `f664c94`, `4b40549`, `6ab9693`, and `a5ec516`.
+- Signal-performance code checks and one hardware serial timing pass have been done, but the user should still do a real finger-on-sensor visual sanity pass before any main merge/public release.
+- Next chat should start with a finger-on-sensor hardware sanity pass on the real CYD: raw trace responsiveness, BPM, IBI, qualified-beat lock, app switching, Settings, Pin Scanner idle/active behavior, and Origin Story exit behavior.
 - Keep PulseSensor performance first-class. Drawing, display modes, App 4, and Origin Story are secondary to fast raw `SIG GPIO35`, BPM, IBI, and qualified-beat math.
-- Suggested starting checks: confirm `readPulseSensor()` is still first in `loop()`, profile loop/draw timing, compare serial sample cadence between commits, and check whether screen redraw/app switching/settings/pin scanner work can block the PulseSensor Playground update path.
 
 ## Current App Shell Branch
 

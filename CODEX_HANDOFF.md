@@ -6,7 +6,7 @@ This repository branch is the working memory for internal PulseSensor CYD experi
 
 Quick start for future chats: read `START_HERE_NEXT_CHAT.md` first, then this file.
 
-## Fresh Handoff: 2026-05-24 13:05 EDT
+## Fresh Handoff: 2026-05-24 13:16 EDT
 
 This section supersedes older branch/path references below. Older notes remain as useful history.
 
@@ -25,13 +25,13 @@ codex/app4-pin-scanner-perf-safe-20260524
 Current firmware/UI code commit:
 
 ```text
-a5ec516 Align Settings row values 20260524-125120-EDT
+1f701dd Improve Pulse signal redraw performance 20260524-131641-EDT
 ```
 
 Current firmware version:
 
 ```text
-0.4.12-settings-row-alignment
+0.4.13-signal-perf-safe
 ```
 
 Latest hardware status:
@@ -39,17 +39,17 @@ Latest hardware status:
 - Built with PlatformIO and flashed to `/dev/cu.usbserial-3120`.
 - Upload detected ESP32-D0WD-V3 MAC `f4:2d:c9:9d:af:cc`.
 - Serial sanity check after flash showed live raw `signal=...` lines.
-- PlatformIO memory was `RAM 7.3%` and `Flash 28.7%`.
+- PlatformIO memory was `RAM 7.3%` and `Flash 28.8%`.
 - User confirmed the current UI looks great and is visually ready to publish back to `main`.
 
-Do not merge to `main` yet. The user feels there may be a signal degradation compared with earlier best-working builds: raw signal speed/responsiveness, BPM, IBI, and qualified beat analysis may have stepped down while the app shell/UI/screens were added. Treat this as the next chat's first investigation.
+Do not merge to `main` yet. Signal-performance code checks and one hardware serial timing pass have been done, but the user should still do a real finger-on-sensor visual sanity pass before any main merge or public release.
 
 Performance priority:
 
 - PulseSensor `SIG GPIO35`, BPM, IBI, and qualified-beat math are first-class.
 - Display modes, app switching, App 4 Pin Scanner, Origin Story, and visual polish are second-class if they interfere with sensing.
 - Preserve `readPulseSensor()` as the first meaningful work in `loop()`.
-- Measure before changing: compare serial sample cadence, loop timing, draw timing, and hardware behavior across key commits.
+- If signal behavior still feels off on hardware, re-enable `PERF_DIAGNOSTICS`, compare serial loop/read/draw timing, and keep reducing display work before touching beat math.
 
 Commits to compare:
 
@@ -78,6 +78,7 @@ Current UI specifics:
 - App 4 Pin Scanner starts idle, scans only one tapped row, and is limited to GPIO35, GPIO22, GPIO21, and GPIO27.
 - `Your App Here` stays second-to-last.
 - `Origin Story` stays last.
+- Signal-performance pass: `readPulseSensor()` still starts `loop()`, PulseSensor Playground remains on its ESP32 500 Hz timer interrupt, the live graph wrap no longer redraws the whole graph frame, BPM/IBI/SIG panels redraw independently, and `PERF_DIAGNOSTICS` is available but disabled by default.
 
 ## Current App Shell Status
 

@@ -61,6 +61,8 @@ Firmware: 0.4.12-settings-row-alignment
 - Added high-contrast mode-aware screens, larger touch targets, render-preview tools, and the current screenshot sets for the new colors and Settings screen.
 - Added the `Origin Story` starfield crawl and programmatic fanfare. The current crawl words are placeholder copy for a later writing pass.
 
+Pre-main publish note: the current UI looked great on the attached CYD, but before merging this app-shell branch back to `main`, re-check signal performance against earlier best-working builds. Raw `SIG GPIO35`, BPM, IBI, and qualified-beat analysis are the first-class product behavior; app switching, display modes, Pin Scanner, and Origin Story should be changed or gated if they slow or destabilize PulseSensor readings.
+
 ### v1.2.0 — 2026-05-15
 
 - Added Signal Coach teaching feedback: `TOO FLAT`, `HOLD STEADY`, `GOOD WAVE`, `LOCKING`, and `QUALIFIED BEAT`.
@@ -194,14 +196,14 @@ python3 -m pip install --user platformio
 ```bash
 git clone https://github.com/yury-g/CYD_App_Launcher.git
 cd CYD_App_Launcher
-git checkout codex/monochrome-ui-treatment-20260524
+git checkout codex/app4-pin-scanner-perf-safe-20260524
 git log -1 --oneline
 ```
 
-The expected pause-point head is:
+The current firmware/UI code commit is:
 
 ```text
-af2a5c2 Add screenshot contact sheet
+a5ec516 Align Settings row values 20260524-125120-EDT
 ```
 
 3. Plug in one CYD and detect the serial port:

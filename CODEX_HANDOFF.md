@@ -6,6 +6,79 @@ This repository branch is the working memory for internal PulseSensor CYD experi
 
 Quick start for future chats: read `START_HERE_NEXT_CHAT.md` first, then this file.
 
+## Fresh Handoff: 2026-05-24 13:05 EDT
+
+This section supersedes older branch/path references below. Older notes remain as useful history.
+
+Current local path:
+
+```text
+/Users/mininarwhal/Documents/Codex/2026-05-23/i-have-a-cyd-connected-can/CYD_App_Launcher_restore-main-app-shell
+```
+
+Current branch:
+
+```text
+codex/app4-pin-scanner-perf-safe-20260524
+```
+
+Current firmware/UI code commit:
+
+```text
+a5ec516 Align Settings row values 20260524-125120-EDT
+```
+
+Current firmware version:
+
+```text
+0.4.12-settings-row-alignment
+```
+
+Latest hardware status:
+
+- Built with PlatformIO and flashed to `/dev/cu.usbserial-3120`.
+- Upload detected ESP32-D0WD-V3 MAC `f4:2d:c9:9d:af:cc`.
+- Serial sanity check after flash showed live raw `signal=...` lines.
+- PlatformIO memory was `RAM 7.3%` and `Flash 28.7%`.
+- User confirmed the current UI looks great and is visually ready to publish back to `main`.
+
+Do not merge to `main` yet. The user feels there may be a signal degradation compared with earlier best-working builds: raw signal speed/responsiveness, BPM, IBI, and qualified beat analysis may have stepped down while the app shell/UI/screens were added. Treat this as the next chat's first investigation.
+
+Performance priority:
+
+- PulseSensor `SIG GPIO35`, BPM, IBI, and qualified-beat math are first-class.
+- Display modes, app switching, App 4 Pin Scanner, Origin Story, and visual polish are second-class if they interfere with sensing.
+- Preserve `readPulseSensor()` as the first meaningful work in `loop()`.
+- Measure before changing: compare serial sample cadence, loop timing, draw timing, and hardware behavior across key commits.
+
+Commits to compare:
+
+```text
+1679ed3 Tune dashboard feedback and portrait layout 20260522-132601-EDT
+4691ef1 Merge app shell preview into main
+f664c94 Tune mono SIG bars 20260524-121410-EDT
+4b40549 Add perf-safe App 4 scanner 20260524-122839-EDT
+6ab9693 Add Settings build memory row 20260524-123742-EDT
+a5ec516 Align Settings row values 20260524-125120-EDT
+```
+
+Current app order:
+
+```text
+Pulse dashboard -> Settings -> App 4 Pin Scanner -> Your App Here -> Origin Story
+```
+
+Current UI specifics:
+
+- Four display modes: `M DARK`, `M LIGHT`, `C DARK`, `C LIGHT`.
+- Settings-only icon rotation.
+- Settings plain rows use left-label/right-value alignment.
+- Settings control rows keep a second value line to avoid control overlap.
+- Settings includes runtime memory and build memory rows.
+- App 4 Pin Scanner starts idle, scans only one tapped row, and is limited to GPIO35, GPIO22, GPIO21, and GPIO27.
+- `Your App Here` stays second-to-last.
+- `Origin Story` stays last.
+
 ## Current App Shell Status
 
 Active app-shell branch:
@@ -299,17 +372,37 @@ git remote add public git@github.com:WorldFamousElectronics/PulseSensor_CYD.git
 Use this in a new chat:
 
 ```text
-We are continuing internal development of the PulseSensor CYD dashboard from GitHub.
+Continue internal development of yury-g/CYD_App_Launcher in branch codex/app4-pin-scanner-perf-safe-20260524.
 
-Use repo:
-yury-g/CYD_App_Launcher
+Use local path if available:
+/Users/mininarwhal/Documents/Codex/2026-05-23/i-have-a-cyd-connected-can/CYD_App_Launcher_restore-main-app-shell
 
-Use branch:
-codex/settings-app-shell-20260523
+Start by reading START_HERE_NEXT_CHAT.md, CODEX_HANDOFF.md, README.md, and CHANGELOG.md. Treat yury-g/CYD_App_Launcher as the internal development home. Do not push to WorldFamousElectronics/PulseSensor_CYD unless I explicitly approve a public release.
 
-Read START_HERE_NEXT_CHAT.md and CODEX_HANDOFF.md first. Treat yury-g/CYD_App_Launcher as the memory brain and active internal dev home. Do not push experiments to WorldFamousElectronics/PulseSensor_CYD unless I explicitly approve a public release.
+Current firmware/UI code commit is a5ec516, firmware version 0.4.12-settings-row-alignment. The current UI looked great on the attached CYD and is visually ready to publish back to main, but do not merge yet. I suspect signal speed / raw SIG GPIO35 responsiveness / BPM / IBI / qualified-beat analysis may have degraded as the app shell, display modes, Settings, and App 4 were added.
 
-The current app-shell code state started from 7654183 and was continued on 2026-05-24. It was flashed successfully to /dev/cu.usbserial-3120, MAC f4:65:0b:a9:f2:e8. Preserve default volume 1, GPIO35 PulseSensor input, the persistent rotate icon button, four-orientation cycle, Settings-only volume, app navigation attached to rotate, app placeholder pages, Settings firmware date 2026-05-24, midpoint-split touch targets for the compact toolbar, enlarged 44x28 app-nav/rotate controls, the scrollable large-text Settings list, full-width split Settings scroll buttons, yellow/green staggered Settings row backgrounds, and yellow/green App 1 metric tiles with black text.
+First task: investigate signal-performance regression before any main merge. Compare history around 1679ed3, 4691ef1, f664c94, 4b40549, 6ab9693, and a5ec516. Keep PulseSensor performance first-class: fast raw signal, BPM, IBI, and qualified beat math matter more than drawings, app switching, Pin Scanner, display modes, or Origin Story.
 
-Make small changes, run python3 tools/check_app_shell.py, build with PlatformIO, flash to the CYD when asked, and preserve hardware-tested states with timestamped commits/tags on the internal repo.
+Useful checks: confirm readPulseSensor() is still first in loop(), measure loop/draw timing and serial sample cadence, check whether full-screen redraws/app switching/settings/pin scanner code can block PulseSensor Playground updates, and consider reverting or gating any display work that compromises sensing.
+
+Connected CYD for hardware tests:
+Port /dev/cu.usbserial-3120
+Latest detected upload MAC f4:2d:c9:9d:af:cc
+
+Before UI changes, run visual/check tools:
+python3 tools/render_pulse_app_mock.py
+python3 tools/render_settings_mock.py
+python3 tools/render_monochrome_mock.py
+python3 tools/render_display_mode_mock.py
+python3 tools/render_app4_pin_scanner_mock.py
+python3 tools/render_app3_origin_crawl_mock.py
+python3 tools/check_app_shell.py
+
+Build:
+PATH=/Users/mininarwhal/Documents/Codex/2026-05-23/i-have-a-cyd-connected-can/.venv-pio/bin:$PATH PLATFORMIO_CORE_DIR=/Users/mininarwhal/Documents/Codex/2026-05-23/i-have-a-cyd-connected-can/.platformio pio run -e cyd
+
+Flash:
+PATH=/Users/mininarwhal/Documents/Codex/2026-05-23/i-have-a-cyd-connected-can/.venv-pio/bin:$PATH PLATFORMIO_CORE_DIR=/Users/mininarwhal/Documents/Codex/2026-05-23/i-have-a-cyd-connected-can/.platformio pio run -e cyd -t upload --upload-port /dev/cu.usbserial-3120
+
+When the signal path is verified or fixed, make a backup tag/branch for current main, then merge/publish this branch to main only after hardware sanity checks pass.
 ```

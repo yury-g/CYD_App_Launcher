@@ -14,6 +14,12 @@ Active app-shell branch:
 codex/monochrome-ui-treatment-20260524
 ```
 
+GitHub draft PR for this continuation:
+
+```text
+https://github.com/yury-g/CYD_App_Launcher/pull/1
+```
+
 This branch was created from `codex/settings-app-shell-20260523` at `fa4a5a0` for display-mode UI treatment experiments. Do not merge to main yet.
 
 Current app-shell branch head before the 2026-05-24 touch ergonomics continuation:

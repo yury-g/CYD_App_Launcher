@@ -48,7 +48,13 @@ yury-g/CYD_App_Launcher
 Active branch:
 
 ```text
-codex/settings-app-shell-20260523
+codex/monochrome-ui-treatment-20260524
+```
+
+GitHub draft PR for this continuation:
+
+```text
+https://github.com/yury-g/CYD_App_Launcher/pull/1
 ```
 
 Local working path used on the Mac:

@@ -6,7 +6,7 @@ This repository branch is the working memory for internal PulseSensor CYD experi
 
 Quick start for future chats: read `START_HERE_NEXT_CHAT.md` first, then this file.
 
-## Fresh Handoff: 2026-05-24 13:16 EDT
+## Fresh Handoff: 2026-05-24 13:42 EDT
 
 This section supersedes older branch/path references below. Older notes remain as useful history.
 
@@ -25,13 +25,13 @@ codex/app4-pin-scanner-perf-safe-20260524
 Current firmware/UI code commit:
 
 ```text
-82c9393 Add granular signal acquisition ladder 20260524-134500-EDT
+fb6279c Match waveform and SIG colors 20260524-140100-EDT
 ```
 
 Current firmware version:
 
 ```text
-0.4.15-acquisition-ladder
+0.4.16-matched-sig-wave
 ```
 
 Latest hardware status:
@@ -81,6 +81,7 @@ Current UI specifics:
 - Signal-performance pass: `readPulseSensor()` still starts `loop()`, PulseSensor Playground remains on its ESP32 500 Hz timer interrupt, the live graph wrap no longer redraws the whole graph frame, BPM/IBI/SIG panels redraw independently, and `PERF_DIAGNOSTICS` is available but disabled by default.
 - Tap-to-reacquire is available on the Pulse dashboard below the navigation/header for the case where a learner sees a good waveform but BPM/IBI/qualified-beat detection is stuck in false negatives.
 - `SIG GPIO35` bars now show a 12-step acquisition ladder before lock, and the acquisition harmony uses an 8-note rising palette.
+- The live waveform and `SIG GPIO35` panel now share the same state colors: yellow while acquiring, then the locked signal color after signal lock.
 - Signal-first development guidance now lives in `docs/signal-first-architecture.md`.
 
 ## Current App Shell Status

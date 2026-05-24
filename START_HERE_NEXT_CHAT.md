@@ -4,7 +4,7 @@ Last updated: 2026-05-24 EDT
 
 This file is the first breadcrumb for continuing internal PulseSensor CYD dashboard development in a new Codex chat with no previous chat history.
 
-## Fresh Handoff: 2026-05-24 13:16 EDT
+## Fresh Handoff: 2026-05-24 13:42 EDT
 
 This top section supersedes older branch/path references below. Older notes are preserved as history.
 
@@ -23,13 +23,13 @@ codex/app4-pin-scanner-perf-safe-20260524
 Current firmware/UI code commit:
 
 ```text
-82c9393 Add granular signal acquisition ladder 20260524-134500-EDT
+fb6279c Match waveform and SIG colors 20260524-140100-EDT
 ```
 
 Current firmware version on the attached CYD:
 
 ```text
-0.4.15-acquisition-ladder
+0.4.16-matched-sig-wave
 ```
 
 Connected CYD used for the latest flash:
@@ -57,7 +57,7 @@ Build memory from PlatformIO:
 
 ```text
 RAM:   7.3% (23780 / 327680 bytes)
-Flash: 28.8% (377349 / 1310720 bytes)
+Flash: 28.8% (377329 / 1310720 bytes)
 ```
 
 Current app order:
@@ -77,6 +77,7 @@ Visual/UI status:
 - Signal-performance pass found and fixed avoidable foreground stalls: the live graph no longer redraws the full frame on waveform wrap, BPM/IBI/SIG panels redraw independently, and opt-in `PERF_DIAGNOSTICS` serial timing remains available in firmware but is off by default.
 - Tap-to-reacquire is available on the Pulse dashboard below the navigation/header for the case where a learner sees a good waveform but BPM/IBI/qualified-beat detection is stuck in false negatives.
 - `SIG GPIO35` bars now show a 12-step acquisition ladder before lock, and the acquisition harmony uses an 8-note rising palette.
+- The live waveform and `SIG GPIO35` panel now share the same state colors: yellow while acquiring, then the locked signal color after signal lock.
 - Signal-first development guidance now lives in `docs/signal-first-architecture.md`.
 
 Pre-main blocker:

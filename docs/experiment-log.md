@@ -18,6 +18,20 @@ timing/architecture rules in `docs/signal-first-architecture.md`.
 - Reversible lessons matter: keep rejected ideas with the reason they were
   rejected, because some of the useful parts may be reused later.
 
+## 2026-05-25 - Origin Story Design-Only Notes
+
+Session rule: design and notes only; no firmware code changes.
+
+Accepted direction:
+
+- Make Origin Story copy easy to isolate and replace from a plain prompt.
+- Preserve the current crawl text in `docs/origin-story-design-notes.md` before
+  replacing it.
+- Move the Origin Story scrolling text/fade horizon about 20 percent higher in a
+  later code pass, keeping the app header fixed.
+- Add a local HTML soundtrack helper in a later code pass so the App 3 fanfare
+  can be composed, previewed, imported, and exported before flashing the CYD.
+
 ## 2026-05-24 — App Shell, Display Modes, Settings, And Signal Regression Pass
 
 Branch: `codex/app4-pin-scanner-perf-safe-20260524`

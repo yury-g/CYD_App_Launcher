@@ -114,6 +114,7 @@
 #define APP3_CRAWL_TEXT_SIZE 2
 #define APP3_CRAWL_MIN_TEXT_SIZE 1
 #define APP3_CRAWL_HORIZON_Y 8
+#define APP3_CRAWL_VERTICAL_SHIFT_PERCENT 20
 #define PIN_SCANNER_PIN_COUNT 4
 #define PIN_SCANNER_ADC_MAX_VALUE 1023
 #define HOT_MOVEMENT_MIN 20
@@ -2772,7 +2773,8 @@ void drawApp3OriginCrawl() {
   unsigned long elapsed = now - app3CrawlStartTime;
   int travel = APP3_ORIGIN_CRAWL_LINE_COUNT * lineHeight + (crawlBottom - crawlTop) + 40;
   int offset = (elapsed / APP3_CRAWL_SPEED_MS) % travel;
-  int baseY = crawlBottom - lineHeight - offset;
+  int crawlShift = (contentH * APP3_CRAWL_VERTICAL_SHIFT_PERCENT) / 100;
+  int baseY = crawlBottom - lineHeight - offset - crawlShift;
 
   if (!ensureApp3CrawlSprite(screenWidth, contentH)) {
     drawApp3OriginCrawlDirectFallback(bg, gold, dimGold, crawlTop, crawlBottom, lineHeight, baseY);

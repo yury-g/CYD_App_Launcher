@@ -15,6 +15,7 @@ GRID = (58, 60, 58)
 TOOLBAR_BUTTON_WIDTH = 44
 TOOLBAR_BUTTON_HEIGHT = 28
 APP_BUTTON_GAP = 2
+CRAWL_VERTICAL_SHIFT_PERCENT = 20
 
 try:
     FONT_1 = ImageFont.truetype("/System/Library/Fonts/Menlo.ttc", 10)
@@ -167,7 +168,7 @@ def draw_title_card(draw, width, height):
 
 def draw_crawl(draw, width, height, offset, frame):
     horizon_y = 50
-    base_y = 230 - offset
+    base_y = 230 - offset - ((height * CRAWL_VERTICAL_SHIFT_PERCENT) // 100)
     line_gap = 24
     center_x = width // 2
     draw.polygon([(44, height), (276, height), (173, horizon_y), (147, horizon_y)], fill=(3, 3, 0))

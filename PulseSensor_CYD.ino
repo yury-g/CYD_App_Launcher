@@ -108,7 +108,7 @@
 #define APP3_CRAWL_FANFARE_STEP_COUNT 42
 #define APP3_CRAWL_FANFARE_LOOP_START_STEP 0
 #define APP3_CRAWL_FANFARE_LOOP_MS 15000
-#define APP3_ORIGIN_CRAWL_LINE_COUNT 68
+#define APP3_ORIGIN_CRAWL_LINE_COUNT 67
 #define APP3_CRAWL_FRAME_MS 72
 #define APP3_CRAWL_SPEED_MS 52
 #define APP3_CRAWL_TEXT_SIZE 2
@@ -296,8 +296,7 @@ const char* const APP3_ORIGIN_CRAWL_LINES[APP3_ORIGIN_CRAWL_LINE_COUNT] = {
   "",
   "GitHub repo:",
   "github.com/",
-  "WorldFamousElectronics/",
-  "PulseSensor_Amped_Arduino",
+  "WorldFamousElectronics/PulseSensorPlayground",
   "",
   "Repo likes (stars):",
   "249 stars, 207 forks",

@@ -39,8 +39,7 @@ August 30, 2017
 
 GitHub repo:
 github.com/
-WorldFamousElectronics/
-PulseSensor_Amped_Arduino
+WorldFamousElectronics/PulseSensorPlayground
 
 Repo likes (stars):
 249 stars, 207 forks
@@ -130,4 +129,3 @@ music arrays. It should be friendly to both non-coders and coders:
 
 After the tool sounds right in-browser, copy its exported arrays into the
 firmware and test on the CYD speaker.
-

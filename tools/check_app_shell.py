@@ -32,6 +32,11 @@ missing = [token for token in required_tokens if token not in source]
 if missing:
     raise SystemExit("Missing app shell tokens: " + ", ".join(missing))
 
+if '"WorldFamousElectronics/PulseSensorPlayground"' not in source:
+    raise SystemExit("Origin Story crawl should point at WorldFamousElectronics/PulseSensorPlayground")
+if '"PulseSensor_Amped_Arduino"' in source or '"WorldFamousElectronics/"' in source:
+    raise SystemExit("Origin Story crawl should not point at the old split Amped Arduino repo path")
+
 version_marker = '#define APP_VERSION "'
 version_start = source.index(version_marker) + len(version_marker)
 version_end = source.index('"', version_start)
@@ -249,7 +254,7 @@ required_large_controls = {
     "Send feature requests,": "App 3 origin crawl is missing the feature-request ask",
     "UID US000075": "Origin Story crawl is missing the OSHWA registration number",
     "August 30, 2017": "Origin Story crawl is missing the OSHWA certification date",
-    "PulseSensor_Amped_Arduino": "Origin Story crawl is missing the GitHub repo",
+    "WorldFamousElectronics/PulseSensorPlayground": "Origin Story crawl is missing the GitHub repo",
     "249 stars, 207 forks": "Origin Story crawl is missing the GitHub stats note",
     "#define APP3_CRAWL_TEXT_SIZE 2": "Origin Story crawl text is not enlarged",
     "TFT_eSprite app3CrawlSprite": "Origin Story crawl is missing an offscreen sprite",

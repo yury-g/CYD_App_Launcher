@@ -18,6 +18,31 @@ timing/architecture rules in `docs/signal-first-architecture.md`.
 - Reversible lessons matter: keep rejected ideas with the reason they were
   rejected, because some of the useful parts may be reused later.
 
+## 2026-05-25 - CyberDeck Audit-Fix Hardware Flash
+
+Purpose:
+
+- Verify the current `main` source after the CyberDeck naming cleanup, audit
+  notes, non-blocking detector re-arm change, and PulseSensor init-failure
+  screen still builds and boots on the connected CYD.
+
+Build and device:
+
+- Commit flashed: `aebb23a` (`Align CyberDeck story and address audit fixes`).
+- Firmware: `0.4.41-snappy-lock`.
+- Port: `/dev/cu.usbserial-10`.
+- Detected chip: `ESP32-D0WD-V3`, MAC `b0:cb:d8:db:36:28`.
+- Build env: `python3 -m platformio run -e cyd -t upload --upload-port /dev/cu.usbserial-10`.
+
+Result:
+
+- PlatformIO upload completed successfully.
+- esptool verified all written hashes and hard-reset the CYD via RTS.
+- Short pyserial read after reset captured release telemetry such as
+  `signal=93 amp=100 bpm=0 ibi=0 locked=0 quality=0 p2p=0 range=112 clip=100`.
+- This confirms the flashed firmware is alive and streaming signal state after
+  the audit-fix pass. It was not a finger/earlobe pulse-lock validation.
+
 ## 2026-05-25 - Origin Story Design-Only Notes
 
 Session rule: design and notes only; no firmware code changes.

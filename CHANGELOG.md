@@ -16,6 +16,9 @@ This file is the short public history. Detailed signal notes live in
   logging the failure to serial.
 - Added small source comments for the PulseSensor interrupt setup, the
   signal-first loop rule, and signal-range decay behavior.
+- Flashed commit `aebb23a` to the connected CYD on `/dev/cu.usbserial-10` to
+  confirm the audit-fix pass still uploads, hard-resets, and streams release
+  telemetry on hardware.
 
 ## 0.4.41-snappy-lock - 2026-05-24
 

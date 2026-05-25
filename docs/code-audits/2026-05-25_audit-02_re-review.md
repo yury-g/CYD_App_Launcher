@@ -31,9 +31,9 @@ entries advertised features that the reviewed source did not contain.
 | ID | Original Concern | Current Disposition |
 | --- | --- | --- |
 | N1 | Aspirational release entries in changelog | Addressed by shortening current changelog and linking detailed logs. |
-| N2 | Repo description/README divergence | Partly addressed; current product story is now PulseSensor CyberDeck with the CYD. |
+| N2 | Repo description/README divergence | Partly addressed; current product story is now PulseSensor CyberDeck with CYD ESP-322432S028. |
 | N3 | `.pio/` ignored but no `platformio.ini` | Stale; `platformio.ini` is now committed. |
-| N4 | Versioning scheme contradiction | Partly addressed by making `0.4.41-snappy-lock` the current source firmware entry. |
+| N4 | Versioning scheme contradiction | Addressed by moving the current source firmware label to `CyberDesk 0.5.0`. |
 | N5 | App 4 crash-control history | Mostly addressed by guarded manual Pin Scanner behavior. |
 | N6 | No explicit read cadence gate | Defer; PulseSensorPlayground owns the 500 Hz sampler. |
 | N7 | Signal-range decay is subtle | Addressed with source comment. |

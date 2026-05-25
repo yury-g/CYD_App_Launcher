@@ -1,4 +1,4 @@
-# PulseSensor CyberDeck with the CYD
+# PulseSensor CyberDeck with CYD ESP-322432S028
 
 A compact PulseSensor cyberdeck for the ESP32 **Cheap Yellow Display** (CYD): live heartbeat dashboard, Settings, Pin Scanner, and Origin Story screens in one beginner-friendly Arduino sketch.
 
@@ -50,7 +50,7 @@ This is the current source state on `main`:
 
 ```text
 Branch:   main
-Firmware: 0.4.41-snappy-lock
+Firmware: CyberDesk 0.5.0
 ```
 
 - Latest continuation handoff:
@@ -151,7 +151,7 @@ This branch includes a `platformio.ini` for repeatable local builds and uploads.
 For a fresh internal development machine or a new AI session, use the helper
 below to flash the current favorite hardware state from a clean clone. It guards
 against accidentally flashing an experiment branch when the intended comparison
-state is `0.4.41-snappy-lock`.
+state is `CyberDesk 0.5.0`.
 
 ```bash
 python3 tools/flash_current_favorite.py --port <detected-port>
@@ -159,7 +159,7 @@ python3 tools/flash_current_favorite.py --port <detected-port>
 
 If the connected CYD uses a different port, pass that port instead. The helper
 expects the internal repo `yury-g/CYD_App_Launcher`, favorite ref
-`main`, and firmware `0.4.41-snappy-lock`.
+`main`, and firmware `CyberDesk 0.5.0`.
 
 ### Option B — Public one-click web installer
 
@@ -340,7 +340,7 @@ See `docs/experiment-log.md` for the rejected Signal Dashboard / Finger Coach si
 
 ## Release
 
-Current source firmware: `0.4.41-snappy-lock`. Public web-installer binaries are updated only during an intentional browser-installer release. See [CHANGELOG.md](CHANGELOG.md).
+Current source firmware: `CyberDesk 0.5.0`. Public web-installer binaries are updated only during an intentional browser-installer release. See [CHANGELOG.md](CHANGELOG.md).
 
 ---
 

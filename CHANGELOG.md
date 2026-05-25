@@ -1,4 +1,4 @@
-# PulseSensor CyberDeck with the CYD Changelog
+# PulseSensor CyberDeck with CYD ESP-322432S028 Changelog
 
 This file is the short public history. Detailed signal notes live in
 `docs/signal-behavior-log.md`; broader UI and hardware development notes live in
@@ -6,8 +6,12 @@ This file is the short public history. Detailed signal notes live in
 
 ## Unreleased
 
-- Renamed the current product story to **PulseSensor CyberDeck with the CYD** so
-  the README matches the app-shell firmware on `main`.
+- Changed the source firmware version label to `CyberDesk 0.5.0` and the
+  diagnostic build label to `CyberDesk 0.5.0-log`, starting the CyberDesk-style
+  semantic version scheme.
+- Renamed the current product story to
+  **PulseSensor CyberDeck with CYD ESP-322432S028** so the README matches the
+  app-shell firmware on `main`.
 - Added external code-audit notes plus the current response/recommendation under
   `docs/code-audits/`.
 - Replaced the blocking detector re-arm `delay(8)` with a non-blocking

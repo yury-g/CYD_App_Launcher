@@ -8,7 +8,7 @@ whether it made real CYD pulse sensing better or worse.
 
 Acquire quickly, hold gently, recover aggressively when the detector goes quiet.
 
-- `0.4.41-snappy-lock` intentionally restores the older simple accepted-beat
+- `CyberDesk 0.5.0` keeps the older simple accepted-beat
   path: a Playground beat with plausible BPM/IBI, enough amplitude/range, and no
   blocking signal problem is accepted as `strict`.
 - Gentle post-lock hold prevents false negatives: once locked, tolerate up to
@@ -28,7 +28,8 @@ Acquire quickly, hold gently, recover aggressively when the detector goes quiet.
   not compare finger, earlobe, wrist, or loose bench readings as if they are the
   same test condition.
 
-See `docs/handoff-2026-05-24-0.4.41-snappy-lock.md` for the current handoff.
+See `docs/handoff-2026-05-24-0.4.41-snappy-lock.md` for the historical signal
+handoff that this version label inherits.
 
 ## 2026-05-24 - Stopping Point And Placement Clarification
 

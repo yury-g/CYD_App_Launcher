@@ -18,6 +18,15 @@ timing/architecture rules in `docs/signal-first-architecture.md`.
 - Reversible lessons matter: keep rejected ideas with the reason they were
   rejected, because some of the useful parts may be reused later.
 
+## 2026-05-25 - CyberDesk Version Label
+
+- Started the current source firmware label at `CyberDesk 0.5.0`.
+- Started the diagnostic build label at `CyberDesk 0.5.0-log`.
+- Kept the product/story wording as PulseSensor CyberDeck with CYD ESP-322432S028; this
+  entry only changes the firmware version string shown on-device and in tools.
+- Historical `0.4.41-snappy-lock` notes remain in place where they describe the
+  exact firmware flashed before this label change.
+
 ## 2026-05-25 - CyberDeck Audit-Fix Hardware Flash
 
 Purpose:

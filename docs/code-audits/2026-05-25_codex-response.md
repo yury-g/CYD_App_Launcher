@@ -1,8 +1,9 @@
 # Codex Response To 2026-05-25 Audits
 
 Date: 2026-05-25  
-Current source firmware: `0.4.41-snappy-lock`  
-Product name to use now: **PulseSensor CyberDeck with the CYD**
+Current source firmware: `CyberDesk 0.5.0`
+
+Product name to use now: **PulseSensor CyberDeck with CYD ESP-322432S028**
 
 ## Short Recommendation
 
@@ -14,7 +15,7 @@ metadata checks, and shipped peak-to-peak recovery naming are now present on
 
 ## Do Now
 
-- Keep the public story aligned around **PulseSensor CyberDeck with the CYD**:
+- Keep the public story aligned around **PulseSensor CyberDeck with CYD ESP-322432S028**:
   Pulse dashboard, Settings, Pin Scanner, `Your App Here`, and Origin Story.
 - Keep the README/changelog short enough for humans; move long branch history to
   docs.

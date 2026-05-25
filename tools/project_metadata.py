@@ -30,10 +30,10 @@ def _read_define(source: str, name: str) -> str:
 
 
 def _read_diag_version(platformio: str) -> str:
-    match = re.search(r'-D\s+APP_VERSION=\\"([^"]+)\\"', platformio)
+    match = re.search(r'-D\s+APP_VERSION=(?:\\"([^"]+)\\"|\'"([^"]+)"\')', platformio)
     if not match:
         raise SystemExit("Could not find diagnostic APP_VERSION override in platformio.ini")
-    return match.group(1)
+    return next(value for value in match.groups() if value is not None)
 
 
 def read_firmware_metadata() -> FirmwareMetadata:

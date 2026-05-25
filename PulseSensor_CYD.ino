@@ -10,7 +10,7 @@
  *
  * This sketch intentionally stays in one file for Arduino IDE beginners.
  * Cross-machine resume helper: tools/flash_current_favorite.py protects the
- * known favorite 0.4.41-snappy-lock flash path for future internal sessions.
+ * known favorite CyberDesk 0.5.0 flash path for future internal sessions.
  *
  * PulseSensorPlayground functions used, following the library resources:
  *   analogReadResolution(10)  -> match PulseSensorPlayground's 0..1023 math
@@ -135,9 +135,9 @@
 // ===== APP SHELL =====
 
 #ifndef APP_VERSION
-#define APP_VERSION "0.4.41-snappy-lock"
+#define APP_VERSION "CyberDesk 0.5.0"
 #endif
-#define APP_FIRMWARE_DATE "2026-05-24"
+#define APP_FIRMWARE_DATE "2026-05-25"
 #define APP_BUILD_RAM_USAGE "RAM 7.4%"
 #define APP_BUILD_FLASH_USAGE "Flash 28.8%"
 #define TOOLBAR_BUTTON_WIDTH 44
@@ -914,7 +914,7 @@ uint16_t pinScannerRailColor();
 void setup() {
   Serial.begin(115200);
   delay(100);
-  Serial.println("PulseSensor CyberDeck with the CYD");
+  Serial.println("PulseSensor CyberDeck with CYD ESP-322432S028");
 
   setupLED();
 

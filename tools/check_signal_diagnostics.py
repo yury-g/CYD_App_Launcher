@@ -1,16 +1,19 @@
 from pathlib import Path
 
+from project_metadata import read_firmware_metadata
+
 source = Path("PulseSensor_CYD.ino").read_text()
 platformio = Path("platformio.ini").read_text()
 capture = Path("tools/capture_signal_log.py").read_text() if Path("tools/capture_signal_log.py").exists() else ""
 analyzer = Path("tools/analyze_signal_log.py").read_text() if Path("tools/analyze_signal_log.py").exists() else ""
+metadata = read_firmware_metadata()
 
 required_source = {
     "#ifndef RAW_SIGNAL_DIAGNOSTICS": "raw diagnostics must be a build-mode switch",
     "#define RAW_SIGNAL_DIAGNOSTICS 0": "release build must keep raw diagnostics off by default",
     "#define RAW_SIGNAL_DIAGNOSTICS_MS 20": "raw diagnostics should stream at 50 Hz",
     "#ifndef APP_VERSION": "release firmware version must be overrideable by diagnostic build flags",
-    '#define APP_VERSION "0.4.41-snappy-lock"': "release firmware version must identify the snappy-lock build",
+    f'#define APP_VERSION "{metadata.version}"': "release firmware version must identify the current build",
     "void printRawSignalDiagnostics": "firmware must have a raw diagnostic printer",
     "rawDiag,ms,signal,amp,bpm,ibi,locked,quality,p2p,range,clip,inside,beat,accept,drop,qStreak,badStreak": "CSV header is missing required fields",
     "rawDiagnosticsBeatPending": "diagnostics must mark firmware beat events",
@@ -26,7 +29,7 @@ required_source = {
 
 required_platformio = {
     "[env:cyd_diag]": "diagnostic PlatformIO environment is missing",
-    '-D APP_VERSION=\\"0.4.41-snappy-lock-log\\"': "diagnostic build must set the logging firmware version",
+    f'-D APP_VERSION=\\"{metadata.diagnostic_version}\\"': "diagnostic build must set the logging firmware version",
     "-D RAW_SIGNAL_DIAGNOSTICS=1": "diagnostic build must enable raw CSV streaming",
 }
 

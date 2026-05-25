@@ -22,7 +22,7 @@ close to the code when changing the firmware.
 - Acquire strictly, hold gently: first lock still requires four consecutive
   qualified beats, but an already-locked signal may survive two rejected beat
   events within a 2200 ms window.
-- After lock, stable peak cadence can rescue true positives when slight movement
+- After lock, stable peak cadence and shipped peak-to-peak recovery can rescue true positives when slight movement
   distorts the valley/trough. This recovery path must stay narrow: plausible
   BPM/IBI, close cadence to the last trusted IBI, a fresh beat event with live
   signal movement, and low clipping.

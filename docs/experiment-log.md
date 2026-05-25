@@ -122,7 +122,7 @@ What changed:
 Verification:
 
 - Guard scripts passed: app shell, clipping quality, signal diagnostics,
-  peak-to-peak experiment, and core polish.
+  peak-to-peak recovery, and core polish.
 - `python3 -m platformio run -e cyd` passed.
 - Upload to the currently connected detected serial port passed.
 - Serial confirmed the new auto re-arm path fired. The short bench/contact read

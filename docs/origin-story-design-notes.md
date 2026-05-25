@@ -2,98 +2,27 @@
 
 Date: 2026-05-25
 
-Purpose: keep Origin Story text, animation, and soundtrack tweaks easy to review
-before the next firmware/code pass. This session is notes-only; no firmware code
-changes were made.
+Purpose: keep Origin Story animation and soundtrack tweaks easy to review before
+future firmware passes. The canonical crawl copy now lives in
+`docs/origin-story-crawl.txt`.
 
 ## Current Crawl Text
 
-The current firmware and render mock both use this crawl text:
-
-```text
-EPISODE PPG
-A TINY SENSOR
-FINDS THE BEAT
-
-From Brooklyn shops
-and Parsons classes,
-Joel Murphy
-and Yury Gitman
-built open hardware
-heart-rate sensing
-for makers.
-
-World Famous
-Electronics began
-as a Kickstarter
-project in 2012,
-then kept making
-PulseSensor
-and teaching it
-in public.
-
-OSHWA certified:
-Pulse Sensor Amped
-UID US000075
-August 30, 2017
-
-GitHub repo:
-github.com/
-WorldFamousElectronics/PulseSensorPlayground
-
-Repo likes (stars):
-249 stars, 207 forks
-as of May 24, 2026
-
-The sensor shines
-green light into
-capillary tissue
-and watches the
-returning brightness.
-Each pulse wave
-nudges the signal.
-
-Its origin is
-delightfully practical:
-breadboards,
-op-amps, filters,
-a phone-style
-light sensor,
-and a reverse-mount
-green LED
-made finger placement
-better.
-
-Now the signal
-lands here,
-on a Cheap Yellow
-Display:
-open, tiny, alive
-with code.
-
-Send feature requests,
-firmware update ideas,
-and wild classroom
-wishes.
-
-Thanks for supporting
-PulseSensor since 2012.
-```
+The current firmware and render mock both sync from
+`docs/origin-story-crawl.txt`.
 
 ## Copy Swap Goal
 
-Future code should make the crawl copy obvious and beginner-friendly:
+Current code keeps the crawl copy obvious and beginner-friendly:
 
-- Put the crawl text in one isolated, clearly named place, instead of requiring
-  people to hunt through animation code.
+- The crawl text lives in one isolated, clearly named place:
+  `docs/origin-story-crawl.txt`.
 - Keep blank lines as intentional paragraph breaks.
 - Let a user prompt Codex with plain copy, such as "replace the Origin Story
-  crawl with this text", and have Codex update the isolated text block plus the
-  line count safely.
-- Keep the same source text available to both firmware and preview tooling so
-  the mock render and flashed CYD cannot drift apart.
-- Add a short comment near the text block explaining that each quoted line is
-  one rendered crawl line.
+  crawl with this text", and have Codex update the text file and run
+  `python3 tools/sync_origin_story_crawl.py --write`.
+- The sync tool keeps firmware and preview tooling aligned so the mock render
+  and flashed CYD cannot drift apart.
 
 ## Animation Placement Goal
 

@@ -1,0 +1,67 @@
+EPISODE PPG
+A TINY SENSOR
+FINDS THE BEAT
+
+From Brooklyn shops
+and Parsons classes,
+Joel Murphy
+and Yury Gitman
+built open hardware
+heart-rate sensing
+for makers.
+
+World Famous
+Electronics began
+as a Kickstarter
+project in 2012,
+then kept making
+PulseSensor
+and teaching it
+in public.
+
+OSHWA certified:
+Pulse Sensor Amped
+UID US000075
+August 30, 2017
+
+GitHub repo:
+github.com/
+WorldFamousElectronics/PulseSensorPlayground
+
+Repo likes (stars):
+249 stars, 207 forks
+as of May 24, 2026
+
+The sensor shines
+green light into
+capillary tissue
+and watches the
+returning brightness.
+Each pulse wave
+nudges the signal.
+
+Its origin is
+delightfully practical:
+breadboards,
+op-amps, filters,
+a phone-style
+light sensor,
+and a reverse-mount
+green LED
+made finger placement
+better.
+
+Now the signal
+lands here,
+on a Cheap Yellow
+Display:
+open, tiny, alive
+with code.
+
+Send feature requests,
+firmware update ideas,
+and wild classroom
+wishes.
+
+Thanks for supporting
+PulseSensor since 2012.

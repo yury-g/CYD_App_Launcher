@@ -1,6 +1,9 @@
 from pathlib import Path
 
+from project_metadata import read_firmware_metadata
+
 source = Path("PulseSensor_CYD.ino").read_text()
+metadata = read_firmware_metadata()
 
 required = {
     "bool signalIsRecentlyClipped()": "firmware should name recent rail clipping as an explicit signal state",
@@ -9,13 +12,13 @@ required = {
     "liveRange >= REARM_SIGNAL_RANGE && !signalIsRecentlyClipped()": "detector re-arm should not run on clipped rail noise",
     "COACH_CLIPPED": "dashboard coach should have a clipped/adjust-sensor state",
     'return "ADJUST SENSOR";': "dashboard should tell the user to adjust the sensor when the ADC is railed",
-    '#define APP_VERSION "0.4.41-snappy-lock"': "firmware version should identify the snappy-lock build",
+    f'#define APP_VERSION "{metadata.version}"': "firmware version should identify the current build",
 }
 
 missing = [message for token, message in required.items() if token not in source]
 
 platformio = Path("platformio.ini").read_text()
-if '-D APP_VERSION=\\"0.4.41-snappy-lock-log\\"' not in platformio:
+if f'-D APP_VERSION=\\"{metadata.diagnostic_version}\\"' not in platformio:
     missing.append("diagnostic PlatformIO env should report the beat-thinking marker logger version")
 
 def function_body(name):

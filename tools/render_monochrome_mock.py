@@ -1,8 +1,11 @@
 from pathlib import Path
 from PIL import Image, ImageDraw, ImageFont, ImageOps
 
+from project_metadata import read_firmware_metadata
+
 OUT_DIR = Path("docs/screenshots/monochrome-render")
 OUT_DIR.mkdir(parents=True, exist_ok=True)
+METADATA = read_firmware_metadata()
 
 BLACK = (0, 0, 0)
 WHITE = (255, 255, 255)
@@ -279,7 +282,7 @@ def render_settings(width, height, scroll_y, filename, mode_variant):
 
     image = Image.new("RGB", (width, height), BLACK)
     draw = ImageDraw.Draw(image)
-    draw_header(draw, width, height, "Settings 2026-05-24", active_settings=True)
+    draw_header(draw, width, height, f"Settings {METADATA.firmware_date}", active_settings=True)
 
     settings_vol_minus_x = width - (TOOLBAR_BUTTON_WIDTH * 2) - APP_BUTTON_GAP - 4
     settings_vol_plus_x = settings_vol_minus_x + TOOLBAR_BUTTON_WIDTH + APP_BUTTON_GAP
@@ -298,10 +301,10 @@ def render_settings(width, height, scroll_y, filename, mode_variant):
         ("LED Control", "beat pulse"),
         ("Color", "tap"),
         ("About", "PulseSensor CYD"),
-        ("Version", "0.4.18-settings-text"),
-        ("Firmware", "2026-05-24"),
+        ("Version", METADATA.version),
+        ("Firmware", METADATA.firmware_date),
         ("Memory", "used 90K free 238K 72%"),
-        ("Build", "RAM 7.3% Flash 28.8%"),
+        ("Build", f"{METADATA.build_ram_usage} {METADATA.build_flash_usage}"),
     ]
 
     for index, (label, value) in enumerate(rows):

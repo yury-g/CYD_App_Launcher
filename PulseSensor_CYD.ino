@@ -10,7 +10,7 @@
  *
  * This sketch intentionally stays in one file for Arduino IDE beginners.
  * Cross-machine resume helper: tools/flash_current_favorite.py protects the
- * known favorite 0.4.24-front-id flash path for future internal sessions.
+ * known favorite 0.4.41-snappy-lock flash path for future internal sessions.
  *
  * PulseSensorPlayground functions used, following the library resources:
  *   analogReadResolution(10)  -> match PulseSensorPlayground's 0..1023 math
@@ -71,7 +71,7 @@
 #define LOCK_HOLD_GRACE_MS 4200
 #define ACQUISITION_CADENCE_TOLERANCE_PERCENT 35
 #define ACQUISITION_CADENCE_MIN_IBI_PERCENT 70
-#define PEAK_TO_PEAK_EXPERIMENT 1
+#define PEAK_TO_PEAK_RECOVERY_ENABLED 1
 #define PEAK_TO_PEAK_MIN_RANGE 70
 #define PEAK_TO_PEAK_STRONG_RANGE 135
 #define PEAK_TO_PEAK_MIN_AMPLITUDE 10
@@ -136,8 +136,8 @@
 #define APP_VERSION "0.4.41-snappy-lock"
 #endif
 #define APP_FIRMWARE_DATE "2026-05-24"
-#define APP_BUILD_RAM_USAGE "RAM 7.3%"
-#define APP_BUILD_FLASH_USAGE "Flash 28.9%"
+#define APP_BUILD_RAM_USAGE "RAM 7.4%"
+#define APP_BUILD_FLASH_USAGE "Flash 28.8%"
 #define TOOLBAR_BUTTON_WIDTH 44
 #define TOOLBAR_BUTTON_HEIGHT 28
 #define APP_BUTTON_WIDTH TOOLBAR_BUTTON_WIDTH
@@ -365,109 +365,201 @@ ScannerPin scannerPins[] = {
 
 // ===== LIVE SENSOR STATE =====
 
-int currentSignal = 512;
-int displayBPM = 0;
-int displayIBI = 0;
-int pulseAmplitude = 0;
-int minSignal = 512;
-int maxSignal = 512;
-int activePulseThreshold = PULSE_THRESHOLD;
+struct PulseSignalState {
+  int currentSignal = 512;
+  int displayBPM = 0;
+  int displayIBI = 0;
+  int pulseAmplitude = 0;
+  int minSignal = 512;
+  int maxSignal = 512;
+  int activePulseThreshold = PULSE_THRESHOLD;
+  unsigned long lastBeatTime = 0;
+  unsigned long lastQualifiedBeatTime = 0;
+  unsigned long lastSerialPrint = 0;
+  unsigned long lastRawDiagnosticPrint = 0;
+  unsigned long lastDetectorRearmTime = 0;
+  bool lockedSignal = false;
+  bool previousLockedSignal = false;
+  bool pulseSensorReady = false;
+  bool pinScannerPulsePaused = false;
+  bool insideBeatWindow = false;
+  int signalQuality = 0;
+  int qualifiedBeatStreak = 0;
+  int unqualifiedBeatStreak = 0;
+  int peakToPeakScore = 0;
+  int clippedSampleScore = 0;
+  int rearmCount = 0;
+  bool clippingSinceRangeReset = false;
+  const char* lastLockDropReason = "none";
+  const char* lastBeatAcceptReason = "none";
+  bool rawDiagnosticsHeaderPrinted = false;
+  bool rawDiagnosticsBeatPending = false;
+  const char* rawDiagnosticsBeatAcceptReason = "none";
+};
 
-unsigned long lastBeatTime = 0;
-unsigned long lastQualifiedBeatTime = 0;
-unsigned long lastGraphDraw = 0;
-unsigned long lastSerialPrint = 0;
-unsigned long lastRawDiagnosticPrint = 0;
-unsigned long lastDetectorRearmTime = 0;
-unsigned long lastControlTouchTime = 0;
-unsigned long lastSignalHarmonyTime = 0;
-
-bool lockedSignal = false;
-bool previousLockedSignal = false;
-bool pulseSensorReady = false;
-bool pinScannerPulsePaused = false;
-bool insideBeatWindow = false;
-int signalQuality = 0;
-int qualifiedBeatStreak = 0;
-int unqualifiedBeatStreak = 0;
-int peakToPeakScore = 0;
-int clippedSampleScore = 0;
-int rearmCount = 0;
-bool clippingSinceRangeReset = false;
-const char* lastLockDropReason = "none";
-const char* lastBeatAcceptReason = "none";
-bool rawDiagnosticsHeaderPrinted = false;
-bool rawDiagnosticsBeatPending = false;
-const char* rawDiagnosticsBeatAcceptReason = "none";
-
-bool dashboardDrawn = false;
-int previousDisplayBPM = -1;
-int previousDisplayIBI = -1;
-int previousPulseAmplitude = -1;
-int previousSignalQuality = -1;
-int previousRearmCount = -1;
-int previousSignalCoachState = -1;
-bool previousDashboardLockedSignal = false;
+PulseSignalState pulseState;
+int& currentSignal = pulseState.currentSignal;
+int& displayBPM = pulseState.displayBPM;
+int& displayIBI = pulseState.displayIBI;
+int& pulseAmplitude = pulseState.pulseAmplitude;
+int& minSignal = pulseState.minSignal;
+int& maxSignal = pulseState.maxSignal;
+int& activePulseThreshold = pulseState.activePulseThreshold;
+unsigned long& lastBeatTime = pulseState.lastBeatTime;
+unsigned long& lastQualifiedBeatTime = pulseState.lastQualifiedBeatTime;
+unsigned long& lastSerialPrint = pulseState.lastSerialPrint;
+unsigned long& lastRawDiagnosticPrint = pulseState.lastRawDiagnosticPrint;
+unsigned long& lastDetectorRearmTime = pulseState.lastDetectorRearmTime;
+bool& lockedSignal = pulseState.lockedSignal;
+bool& previousLockedSignal = pulseState.previousLockedSignal;
+bool& pulseSensorReady = pulseState.pulseSensorReady;
+bool& pinScannerPulsePaused = pulseState.pinScannerPulsePaused;
+bool& insideBeatWindow = pulseState.insideBeatWindow;
+int& signalQuality = pulseState.signalQuality;
+int& qualifiedBeatStreak = pulseState.qualifiedBeatStreak;
+int& unqualifiedBeatStreak = pulseState.unqualifiedBeatStreak;
+int& peakToPeakScore = pulseState.peakToPeakScore;
+int& clippedSampleScore = pulseState.clippedSampleScore;
+int& rearmCount = pulseState.rearmCount;
+bool& clippingSinceRangeReset = pulseState.clippingSinceRangeReset;
+const char*& lastLockDropReason = pulseState.lastLockDropReason;
+const char*& lastBeatAcceptReason = pulseState.lastBeatAcceptReason;
+bool& rawDiagnosticsHeaderPrinted = pulseState.rawDiagnosticsHeaderPrinted;
+bool& rawDiagnosticsBeatPending = pulseState.rawDiagnosticsBeatPending;
+const char*& rawDiagnosticsBeatAcceptReason = pulseState.rawDiagnosticsBeatAcceptReason;
 
 // ===== BEAT TONE STATE =====
 
-bool beatTonePlaying = false;
-uint8_t beatChimeStep = 0;
-unsigned long beatChimeNextStepTime = 0;
-bool beatHeartNeedsRedraw = true;
-uint8_t speakerVolume = VOLUME_START;
-uint8_t screenRotation = SCREEN_ROTATION_DEFAULT;
-uint8_t screenRotationIndex = 0;
+struct SoundState {
+  bool beatTonePlaying = false;
+  uint8_t beatChimeStep = 0;
+  unsigned long beatChimeNextStepTime = 0;
+  uint8_t speakerVolume = VOLUME_START;
+  bool signalHarmonyPlaying = false;
+  uint8_t signalHarmonyStep = 0;
+  uint8_t signalHarmonyBaseNote = 0;
+  unsigned long signalHarmonyNextStepTime = 0;
+  unsigned long lastSignalHarmonyTime = 0;
+  int lastSignalHarmonyQuality = 0;
+  bool app3CrawlFanfarePlaying = false;
+  uint8_t app3CrawlFanfareStep = 0;
+  unsigned long app3CrawlFanfareNextStepTime = 0;
+};
 
-bool signalHarmonyPlaying = false;
-uint8_t signalHarmonyStep = 0;
-uint8_t signalHarmonyBaseNote = 0;
-unsigned long signalHarmonyNextStepTime = 0;
-int lastSignalHarmonyQuality = 0;
-
-bool app3CrawlFanfarePlaying = false;
-uint8_t app3CrawlFanfareStep = 0;
-unsigned long app3CrawlFanfareNextStepTime = 0;
+SoundState soundState;
+bool& beatTonePlaying = soundState.beatTonePlaying;
+uint8_t& beatChimeStep = soundState.beatChimeStep;
+unsigned long& beatChimeNextStepTime = soundState.beatChimeNextStepTime;
+uint8_t& speakerVolume = soundState.speakerVolume;
+bool& signalHarmonyPlaying = soundState.signalHarmonyPlaying;
+uint8_t& signalHarmonyStep = soundState.signalHarmonyStep;
+uint8_t& signalHarmonyBaseNote = soundState.signalHarmonyBaseNote;
+unsigned long& signalHarmonyNextStepTime = soundState.signalHarmonyNextStepTime;
+unsigned long& lastSignalHarmonyTime = soundState.lastSignalHarmonyTime;
+int& lastSignalHarmonyQuality = soundState.lastSignalHarmonyQuality;
+bool& app3CrawlFanfarePlaying = soundState.app3CrawlFanfarePlaying;
+uint8_t& app3CrawlFanfareStep = soundState.app3CrawlFanfareStep;
+unsigned long& app3CrawlFanfareNextStepTime = soundState.app3CrawlFanfareNextStepTime;
 
 // ===== GRAPH STATE =====
 
-int graphX = 0;
-int lastGraphY = 104;
-int waveformBeatMarkerX[WAVEFORM_BEAT_MARKER_COUNT];
-int waveformBeatMarkerY[WAVEFORM_BEAT_MARKER_COUNT];
-int waveformBeatMarkerRadius[WAVEFORM_BEAT_MARKER_COUNT];
-bool waveformBeatMarkerFilled[WAVEFORM_BEAT_MARKER_COUNT];
-bool waveformBeatMarkerActive[WAVEFORM_BEAT_MARKER_COUNT];
-int waveformBeatMarkerWrite = 0;
-bool waveformBeatMarkerPending = false;
-bool waveformBeatMarkerPendingAccepted = false;
+struct DashboardState {
+  bool dashboardDrawn = false;
+  int previousDisplayBPM = -1;
+  int previousDisplayIBI = -1;
+  int previousPulseAmplitude = -1;
+  int previousSignalQuality = -1;
+  int previousRearmCount = -1;
+  int previousSignalCoachState = -1;
+  bool previousDashboardLockedSignal = false;
+  bool beatHeartNeedsRedraw = true;
+  bool heartSpriteReady = false;
+  int graphX = 0;
+  int lastGraphY = 104;
+  unsigned long lastGraphDraw = 0;
+  int waveformBeatMarkerX[WAVEFORM_BEAT_MARKER_COUNT];
+  int waveformBeatMarkerY[WAVEFORM_BEAT_MARKER_COUNT];
+  int waveformBeatMarkerRadius[WAVEFORM_BEAT_MARKER_COUNT];
+  bool waveformBeatMarkerFilled[WAVEFORM_BEAT_MARKER_COUNT];
+  bool waveformBeatMarkerActive[WAVEFORM_BEAT_MARKER_COUNT];
+  int waveformBeatMarkerWrite = 0;
+  bool waveformBeatMarkerPending = false;
+  bool waveformBeatMarkerPendingAccepted = false;
+};
+
+DashboardState dashboardState;
+bool& dashboardDrawn = dashboardState.dashboardDrawn;
+int& previousDisplayBPM = dashboardState.previousDisplayBPM;
+int& previousDisplayIBI = dashboardState.previousDisplayIBI;
+int& previousPulseAmplitude = dashboardState.previousPulseAmplitude;
+int& previousSignalQuality = dashboardState.previousSignalQuality;
+int& previousRearmCount = dashboardState.previousRearmCount;
+int& previousSignalCoachState = dashboardState.previousSignalCoachState;
+bool& previousDashboardLockedSignal = dashboardState.previousDashboardLockedSignal;
+bool& beatHeartNeedsRedraw = dashboardState.beatHeartNeedsRedraw;
+bool& heartSpriteReady = dashboardState.heartSpriteReady;
+int& graphX = dashboardState.graphX;
+int& lastGraphY = dashboardState.lastGraphY;
+unsigned long& lastGraphDraw = dashboardState.lastGraphDraw;
+int (&waveformBeatMarkerX)[WAVEFORM_BEAT_MARKER_COUNT] = dashboardState.waveformBeatMarkerX;
+int (&waveformBeatMarkerY)[WAVEFORM_BEAT_MARKER_COUNT] = dashboardState.waveformBeatMarkerY;
+int (&waveformBeatMarkerRadius)[WAVEFORM_BEAT_MARKER_COUNT] = dashboardState.waveformBeatMarkerRadius;
+bool (&waveformBeatMarkerFilled)[WAVEFORM_BEAT_MARKER_COUNT] = dashboardState.waveformBeatMarkerFilled;
+bool (&waveformBeatMarkerActive)[WAVEFORM_BEAT_MARKER_COUNT] = dashboardState.waveformBeatMarkerActive;
+int& waveformBeatMarkerWrite = dashboardState.waveformBeatMarkerWrite;
+bool& waveformBeatMarkerPending = dashboardState.waveformBeatMarkerPending;
+bool& waveformBeatMarkerPendingAccepted = dashboardState.waveformBeatMarkerPendingAccepted;
 
 // ===== LAYOUT STATE =====
 
-bool portraitLayout = false;
-int screenWidth = LANDSCAPE_WIDTH;
-int screenHeight = LANDSCAPE_HEIGHT;
-int headerHeight = 42;
-int heartCenterX = 160;
-int heartCenterY = 22;
+struct ScreenLayoutState {
+  bool portraitLayout = false;
+  int screenWidth = LANDSCAPE_WIDTH;
+  int screenHeight = LANDSCAPE_HEIGHT;
+  int headerHeight = 42;
+  int heartCenterX = 160;
+  int heartCenterY = 22;
+  int graphLeft = 8;
+  int graphTop = 48;
+  int graphWidth = 304;
+  int graphHeight = 112;
+  int bpmPanelX = 8;
+  int bpmPanelY = 170;
+  int bpmPanelW = 102;
+  int bpmPanelH = 62;
+  int ibiPanelX = 118;
+  int ibiPanelY = 170;
+  int ibiPanelW = 102;
+  int ibiPanelH = 62;
+  int signalPanelX = 228;
+  int signalPanelY = 170;
+  int signalPanelW = 84;
+  int signalPanelH = 62;
+};
 
-int graphLeft = 8;
-int graphTop = 48;
-int graphWidth = 304;
-int graphHeight = 112;
-
-int bpmPanelX = 8;
-int bpmPanelY = 170;
-int bpmPanelW = 102;
-int bpmPanelH = 62;
-int ibiPanelX = 118;
-int ibiPanelY = 170;
-int ibiPanelW = 102;
-int ibiPanelH = 62;
-int signalPanelX = 228;
-int signalPanelY = 170;
-int signalPanelW = 84;
-int signalPanelH = 62;
+ScreenLayoutState layoutState;
+bool& portraitLayout = layoutState.portraitLayout;
+int& screenWidth = layoutState.screenWidth;
+int& screenHeight = layoutState.screenHeight;
+int& headerHeight = layoutState.headerHeight;
+int& heartCenterX = layoutState.heartCenterX;
+int& heartCenterY = layoutState.heartCenterY;
+int& graphLeft = layoutState.graphLeft;
+int& graphTop = layoutState.graphTop;
+int& graphWidth = layoutState.graphWidth;
+int& graphHeight = layoutState.graphHeight;
+int& bpmPanelX = layoutState.bpmPanelX;
+int& bpmPanelY = layoutState.bpmPanelY;
+int& bpmPanelW = layoutState.bpmPanelW;
+int& bpmPanelH = layoutState.bpmPanelH;
+int& ibiPanelX = layoutState.ibiPanelX;
+int& ibiPanelY = layoutState.ibiPanelY;
+int& ibiPanelW = layoutState.ibiPanelW;
+int& ibiPanelH = layoutState.ibiPanelH;
+int& signalPanelX = layoutState.signalPanelX;
+int& signalPanelY = layoutState.signalPanelY;
+int& signalPanelW = layoutState.signalPanelW;
+int& signalPanelH = layoutState.signalPanelH;
 
 // ===== REAR LED FADE STATE =====
 
@@ -481,73 +573,144 @@ const RearLedColor REAR_LED_OFF = {0, 0, 0};
 const RearLedColor REAR_LED_HEARTBEAT = {255, 0, 0};
 const RearLedColor REAR_LED_LOCKING = {255, 255, 0};
 
-int ledBrightness = 0;
-bool ledPulseActive = false;
-unsigned long ledPulseStartTime = 0;
-int rearLedBrightness = 0;
-RearLedColor rearLedPulseColor = REAR_LED_HEARTBEAT;
-RearLedColor heartbeatLedColor = REAR_LED_HEARTBEAT;
-bool rearLedPulseActive = false;
-unsigned long rearLedPulseStartTime = 0;
-bool beatLedEnabled = true;
+struct RearLedState {
+  int ledBrightness = 0;
+  bool ledPulseActive = false;
+  unsigned long ledPulseStartTime = 0;
+  int rearLedBrightness = 0;
+  RearLedColor rearLedPulseColor = REAR_LED_HEARTBEAT;
+  RearLedColor heartbeatLedColor = REAR_LED_HEARTBEAT;
+  bool rearLedPulseActive = false;
+  unsigned long rearLedPulseStartTime = 0;
+  bool beatLedEnabled = true;
+};
+
+RearLedState rearLedState;
+int& ledBrightness = rearLedState.ledBrightness;
+bool& ledPulseActive = rearLedState.ledPulseActive;
+unsigned long& ledPulseStartTime = rearLedState.ledPulseStartTime;
+int& rearLedBrightness = rearLedState.rearLedBrightness;
+RearLedColor& rearLedPulseColor = rearLedState.rearLedPulseColor;
+RearLedColor& heartbeatLedColor = rearLedState.heartbeatLedColor;
+bool& rearLedPulseActive = rearLedState.rearLedPulseActive;
+unsigned long& rearLedPulseStartTime = rearLedState.rearLedPulseStartTime;
+bool& beatLedEnabled = rearLedState.beatLedEnabled;
 #define LED_UPDATE_MS 10
 #define LED_PEAK_HOLD_MS 90
 #define LED_FADE_MS 620
 
 // ===== APP SHELL STATE =====
 
-AppId currentApp = APP_PULSE;
-DisplayMode displayMode = DISPLAY_COLOR_DARK;
-bool appNeedsRedraw = true;
-int appPrevButtonX = 122;
-int appNextButtonX = 146;
-int appSettingsButtonX = 170;
-int appButtonY = 9;
+struct AppRuntimeState {
+  AppId currentApp = APP_PULSE;
+  DisplayMode displayMode = DISPLAY_COLOR_DARK;
+  bool appNeedsRedraw = true;
+  uint8_t screenRotation = SCREEN_ROTATION_DEFAULT;
+  uint8_t screenRotationIndex = 0;
+  unsigned long lastControlTouchTime = 0;
+  int appPrevButtonX = 122;
+  int appNextButtonX = 146;
+  int appSettingsButtonX = 170;
+  int appButtonY = 9;
+  int settingsVolMinusX = 150;
+  int settingsVolPlusX = 202;
+  int settingsRotateX = 150;
+  int settingsDisplayModeX = 150;
+  int settingsLedX = 150;
+  int settingsColorRedX = 150;
+  int settingsColorYellowX = 178;
+  int settingsColorGreenX = 206;
+  int settingsScrollUpX = 226;
+  int settingsScrollDownX = 272;
+  int settingsScrollButtonW = SETTINGS_SCROLL_BUTTON_W;
+  int settingsScrollButtonY = 208;
+  int settingsScrollY = 0;
+  int placeholderX = 24;
+  int placeholderY = 90;
+  int placeholderLastX = -1;
+  int placeholderLastY = -1;
+  int placeholderDx = 2;
+  int placeholderDy = 2;
+  unsigned long lastPlaceholderMove = 0;
+  unsigned long app3CrawlStartTime = 0;
+  unsigned long lastApp3CrawlFrame = 0;
+  bool app3CrawlSpriteReady = false;
+  int app3CrawlSpriteW = 0;
+  int app3CrawlSpriteH = 0;
+  int scannerActiveIndex = -1;
+  unsigned long lastPinScannerRead = 0;
+  unsigned long lastPinScannerDraw = 0;
+};
 
-int settingsVolMinusX = 150;
-int settingsVolPlusX = 202;
-int settingsRotateX = 150;
-int settingsDisplayModeX = 150;
-int settingsLedX = 150;
-int settingsColorRedX = 150;
-int settingsColorYellowX = 178;
-int settingsColorGreenX = 206;
-int settingsScrollUpX = 226;
-int settingsScrollDownX = 272;
-int settingsScrollButtonW = SETTINGS_SCROLL_BUTTON_W;
-int settingsScrollButtonY = 208;
-int settingsScrollY = 0;
-
-int placeholderX = 24;
-int placeholderY = 90;
-int placeholderLastX = -1;
-int placeholderLastY = -1;
-int placeholderDx = 2;
-int placeholderDy = 2;
-unsigned long lastPlaceholderMove = 0;
-unsigned long app3CrawlStartTime = 0;
-unsigned long lastApp3CrawlFrame = 0;
-bool app3CrawlSpriteReady = false;
-int app3CrawlSpriteW = 0;
-int app3CrawlSpriteH = 0;
-bool heartSpriteReady = false;
-int scannerActiveIndex = -1;
-unsigned long lastPinScannerRead = 0;
-unsigned long lastPinScannerDraw = 0;
+AppRuntimeState appState;
+AppId& currentApp = appState.currentApp;
+DisplayMode& displayMode = appState.displayMode;
+bool& appNeedsRedraw = appState.appNeedsRedraw;
+uint8_t& screenRotation = appState.screenRotation;
+uint8_t& screenRotationIndex = appState.screenRotationIndex;
+unsigned long& lastControlTouchTime = appState.lastControlTouchTime;
+int& appPrevButtonX = appState.appPrevButtonX;
+int& appNextButtonX = appState.appNextButtonX;
+int& appSettingsButtonX = appState.appSettingsButtonX;
+int& appButtonY = appState.appButtonY;
+int& settingsVolMinusX = appState.settingsVolMinusX;
+int& settingsVolPlusX = appState.settingsVolPlusX;
+int& settingsRotateX = appState.settingsRotateX;
+int& settingsDisplayModeX = appState.settingsDisplayModeX;
+int& settingsLedX = appState.settingsLedX;
+int& settingsColorRedX = appState.settingsColorRedX;
+int& settingsColorYellowX = appState.settingsColorYellowX;
+int& settingsColorGreenX = appState.settingsColorGreenX;
+int& settingsScrollUpX = appState.settingsScrollUpX;
+int& settingsScrollDownX = appState.settingsScrollDownX;
+int& settingsScrollButtonW = appState.settingsScrollButtonW;
+int& settingsScrollButtonY = appState.settingsScrollButtonY;
+int& settingsScrollY = appState.settingsScrollY;
+int& placeholderX = appState.placeholderX;
+int& placeholderY = appState.placeholderY;
+int& placeholderLastX = appState.placeholderLastX;
+int& placeholderLastY = appState.placeholderLastY;
+int& placeholderDx = appState.placeholderDx;
+int& placeholderDy = appState.placeholderDy;
+unsigned long& lastPlaceholderMove = appState.lastPlaceholderMove;
+unsigned long& app3CrawlStartTime = appState.app3CrawlStartTime;
+unsigned long& lastApp3CrawlFrame = appState.lastApp3CrawlFrame;
+bool& app3CrawlSpriteReady = appState.app3CrawlSpriteReady;
+int& app3CrawlSpriteW = appState.app3CrawlSpriteW;
+int& app3CrawlSpriteH = appState.app3CrawlSpriteH;
+int& scannerActiveIndex = appState.scannerActiveIndex;
+unsigned long& lastPinScannerRead = appState.lastPinScannerRead;
+unsigned long& lastPinScannerDraw = appState.lastPinScannerDraw;
 
 #if PERF_DIAGNOSTICS
-unsigned long perfWindowStartMs = 0;
-uint32_t perfLoopCount = 0;
-uint32_t perfReadCount = 0;
-uint32_t perfSignalChangeCount = 0;
-uint32_t perfBeatEventCount = 0;
-uint32_t perfLastReadStartUs = 0;
-uint32_t perfMaxReadGapUs = 0;
-uint32_t perfMaxReadUs = 0;
-uint32_t perfMaxDrawUs = 0;
-uint32_t perfMaxTotalAfterReadUs = 0;
-const char* perfMaxDrawLabel = "none";
-int perfPreviousSignal = -1;
+struct PerfDiagnosticsState {
+  unsigned long windowStartMs = 0;
+  uint32_t loopCount = 0;
+  uint32_t readCount = 0;
+  uint32_t signalChangeCount = 0;
+  uint32_t beatEventCount = 0;
+  uint32_t lastReadStartUs = 0;
+  uint32_t maxReadGapUs = 0;
+  uint32_t maxReadUs = 0;
+  uint32_t maxDrawUs = 0;
+  uint32_t maxTotalAfterReadUs = 0;
+  const char* maxDrawLabel = "none";
+  int previousSignal = -1;
+};
+
+PerfDiagnosticsState perfState;
+unsigned long& perfWindowStartMs = perfState.windowStartMs;
+uint32_t& perfLoopCount = perfState.loopCount;
+uint32_t& perfReadCount = perfState.readCount;
+uint32_t& perfSignalChangeCount = perfState.signalChangeCount;
+uint32_t& perfBeatEventCount = perfState.beatEventCount;
+uint32_t& perfLastReadStartUs = perfState.lastReadStartUs;
+uint32_t& perfMaxReadGapUs = perfState.maxReadGapUs;
+uint32_t& perfMaxReadUs = perfState.maxReadUs;
+uint32_t& perfMaxDrawUs = perfState.maxDrawUs;
+uint32_t& perfMaxTotalAfterReadUs = perfState.maxTotalAfterReadUs;
+const char*& perfMaxDrawLabel = perfState.maxDrawLabel;
+int& perfPreviousSignal = perfState.previousSignal;
 #endif
 
 // ===== FORWARD DECLARATIONS =====
@@ -1978,7 +2141,7 @@ BeatDecision decideBeat(int bpm, int ibi, int amplitude, bool wasLocked) {
   BeatDecision decision;
   decision.qualified = isQualifiedBeat(bpm, ibi, amplitude, wasLocked);
   decision.strictAccepted = decision.qualified;
-  decision.peakToPeakAccepted = PEAK_TO_PEAK_EXPERIMENT &&
+  decision.peakToPeakAccepted = PEAK_TO_PEAK_RECOVERY_ENABLED &&
                                 !decision.strictAccepted &&
                                 isPeakToPeakCandidateBeat(bpm, ibi, amplitude, wasLocked);
   decision.recovered = !decision.strictAccepted &&
@@ -2037,7 +2200,7 @@ int acquisitionScoreForCurrentSignal() {
   int cleanScore = clippedSampleScore <= 4 ? 2 : (clippedSampleScore <= 18 ? 1 : 0);
   int beatWindowScore = insideBeatWindow ? 1 : 0;
   int streakScore = qualifiedBeatStreak * 2;
-  int peakScore = PEAK_TO_PEAK_EXPERIMENT ? min(2, peakToPeakScore / 3) : 0;
+  int peakScore = PEAK_TO_PEAK_RECOVERY_ENABLED ? min(2, peakToPeakScore / 3) : 0;
   int score = rangeScore + amplitudeScore + cleanScore + beatWindowScore + streakScore + peakScore;
 
   if (liveRange < SIGNAL_ACQUISITION_MIN_RANGE && pulseAmplitude < SIGNAL_COACH_FLAT_AMPLITUDE) {

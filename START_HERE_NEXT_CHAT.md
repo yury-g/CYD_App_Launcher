@@ -34,6 +34,7 @@ python3 tools/check_core_polish.py
 python3 tools/check_clipping_quality_guard.py
 python3 tools/check_signal_diagnostics.py
 python3 tools/check_resume_flash_entrypoint.py
+python3 tools/check_project.py
 ```
 
 Run render/mock tools only when deliberately changing visual design or updating

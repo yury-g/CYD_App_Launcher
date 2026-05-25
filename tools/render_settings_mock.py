@@ -1,8 +1,11 @@
 from pathlib import Path
 from PIL import Image, ImageDraw, ImageFont
 
+from project_metadata import read_firmware_metadata
+
 OUT_DIR = Path("docs/screenshots/settings-render")
 OUT_DIR.mkdir(parents=True, exist_ok=True)
+METADATA = read_firmware_metadata()
 
 COLOR_BG = (0, 0, 0)
 COLOR_PANEL = (8, 8, 8)
@@ -107,7 +110,7 @@ def render(width, height, scroll_y, filename):
 
     draw.rectangle((0, 0, width, header_h), fill=COLOR_BG)
     draw.line((0, header_h - 1, width, header_h - 1), fill=COLOR_GRID)
-    draw.text((10, 38 if portrait else 8), "Settings 2026-05-24", font=FONT_1, fill=COLOR_TEXT)
+    draw.text((10, 38 if portrait else 8), f"Settings {METADATA.firmware_date}", font=FONT_1, fill=COLOR_TEXT)
     draw_nav(draw, width, nav_y)
 
     settings_vol_minus_x = width - (TOOLBAR_BUTTON_WIDTH * 2) - APP_BUTTON_GAP - 4
@@ -127,10 +130,10 @@ def render(width, height, scroll_y, filename):
         ("LED Control", "beat pulse"),
         ("Color", "tap"),
         ("About", "PulseSensor CYD"),
-        ("Version", "0.4.18-settings-text"),
-        ("Firmware", "2026-05-24"),
+        ("Version", METADATA.version),
+        ("Firmware", METADATA.firmware_date),
         ("Memory", "used 90K free 238K 72%"),
-        ("Build", "RAM 7.3% Flash 28.8%"),
+        ("Build", f"{METADATA.build_ram_usage} {METADATA.build_flash_usage}"),
     ]
 
     for index, (label, value) in enumerate(rows):

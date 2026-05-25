@@ -32,7 +32,7 @@ See `docs/handoff-2026-05-24-0.4.41-snappy-lock.md` for the current handoff.
 
 ## 2026-05-24 - Stopping Point And Placement Clarification
 
-Firmware on device: `0.4.24-front-id`
+Firmware on device at this historical checkpoint: `0.4.24-front-id`
 
 Firmware commit/ref: `d04c21a` / `good-working-0.4.24-front-id-20260524`
 
@@ -67,7 +67,7 @@ Research findings from the audit:
 
 Next diagnostic if the symptom returns:
 
-- First flash/check internal `main` at `0.4.24-front-id`.
+- First flash/check current internal `main`.
 - Record body position and contact method before judging behavior.
 - Capture serial or `rawDiag` and compare `range`, `clip`, `p2p`, `qStreak`,
   `badStreak`, `accept`, and `drop`.
@@ -86,7 +86,7 @@ Verdict:
   analyzer, time-based clipping decay, motion/artifact guards, pre-lock cadence
   consistency, a quieter release/diagnostic build split, and the
   `0.4.23-clip-guard` false-progress fix.
-- The broader peak-to-peak/acquisition experiment did not restore a trustworthy
+- The broader signal-core/acquisition changes did not restore a trustworthy
   live hardware experience. The connected CYD showed weird rail-to-rail waveform
   behavior with `signal` hitting `0`/`1023`, `range=1023`, `clip=100`, and no
   usable BPM/IBI.
@@ -104,7 +104,7 @@ Next baseline:
 
 ## 2026-05-24 - First-Screen Version Identity
 
-Firmware: `0.4.24-front-id` release, `0.4.24-front-id-log` diagnostic
+Firmware at this checkpoint: `0.4.24-front-id` release, `0.4.24-front-id-log` diagnostic
 
 Design:
 
@@ -323,16 +323,16 @@ Verdict:
   checks the CYD and decides whether to keep raw CSV diagnostics enabled or gate
   them off for a normal release build.
 
-## 2026-05-24 - Peak-To-Peak Experiment
+## 2026-05-24 - Peak-To-Peak Recovery
 
 Firmware: `0.4.20-peak2peak`
 
 Design:
 
 - The PulseSensor was kept in the same earlobe position during the recent
-  signal work, so this experiment targets small earlobe movement/pressure
+  signal work, so this recovery path targets small earlobe movement/pressure
   changes rather than mixed body-position behavior.
-- Added `PEAK_TO_PEAK_EXPERIMENT`, enabled on this branch, to make the broader
+- Added `PEAK_TO_PEAK_RECOVERY_ENABLED`, enabled on this branch, to make the broader
   path easy to disable if false positives appear.
 - Kept strict beats as the highest-confidence path.
 - Added `peakToPeakScore` from live range, detector amplitude, clipping
@@ -349,14 +349,14 @@ Hardware notes:
 ```text
 Date/time: 2026-05-24 EDT
 Firmware: 0.4.20-peak2peak
-Commit: 02a5001 Add peak to peak signal experiment 20260524
+Commit: 02a5001 Add peak to peak signal recovery 20260524
 Sensor body position: earlobe, same position as prior 0.4.19 tests
 Mount/contact method: same user earlobe placement as prior run; exact pressure
   not recorded
 Condition: serial sanity from Codex side; user visual verdict still needed
 Duration: three short windows while tuning peak-to-peak gates
 Serial summary:
-  - Initial experiment showed `p2p` scoring live, often 7-10, but no
+  - Initial recovery pass showed `p2p` scoring live, often 7-10, but no
     `accept=peak2peak`; the old cadence gate was still too timid.
   - Wider 45% locked cadence gate produced `accept=peak2peak`, but could accept
     short movement-blip intervals and pull IBI down too far.
@@ -369,7 +369,7 @@ Serial summary:
   - Lock still dropped on some later weak/short-interval sections; several of
     those were strict-detector events rather than peak-to-peak events.
 User-visible behavior: not recorded by user yet
-Verdict: experiment candidate, not publish verdict. The p2p path is now active
+Verdict at the time: recovery candidate, not publish verdict. The p2p path is now active
   and bounded, but real visual judgment on the CYD is still needed before main
   merge.
 ```

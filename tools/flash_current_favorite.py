@@ -11,15 +11,15 @@ from __future__ import annotations
 import argparse
 import glob
 import os
-import re
 import shutil
 import subprocess
 import sys
 from pathlib import Path
 
+from project_metadata import read_firmware_metadata
+
 
 INTERNAL_REPO_URL = "https://github.com/yury-g/CYD_App_Launcher"
-FAVORITE_VERSION = "0.4.41-snappy-lock"
 FAVORITE_REF = "main"
 FAVORITE_BRANCH = "main"
 DEFAULT_ENV = "cyd"
@@ -36,16 +36,8 @@ def repo_root() -> Path:
     return Path(__file__).resolve().parents[1]
 
 
-def firmware_source() -> Path:
-    return repo_root() / "PulseSensor_CYD.ino"
-
-
 def read_app_version() -> str:
-    source = firmware_source().read_text()
-    match = re.search(r'#define\s+APP_VERSION\s+"([^"]+)"', source)
-    if not match:
-        raise SystemExit("Could not find APP_VERSION in PulseSensor_CYD.ino")
-    return match.group(1)
+    return read_firmware_metadata().version
 
 
 def detect_port() -> str | None:
@@ -81,10 +73,11 @@ def build_env(platformio_core_dir: str | None) -> dict[str, str]:
 
 
 def parse_args() -> argparse.Namespace:
+    favorite_version = read_firmware_metadata().version
     parser = argparse.ArgumentParser(
         description=(
             "Build and flash the current favorite CYD firmware. "
-            f"Favorite: {FAVORITE_VERSION} on {FAVORITE_BRANCH} / {FAVORITE_REF}."
+            f"Favorite: {favorite_version} on {FAVORITE_BRANCH} / {FAVORITE_REF}."
         )
     )
     parser.add_argument("--port", help="Serial port, for example /dev/cu.usbserial-* or COM4")
@@ -106,16 +99,17 @@ def parse_args() -> argparse.Namespace:
 def main() -> int:
     args = parse_args()
     app_version = read_app_version()
+    favorite_version = read_firmware_metadata().version
 
     print(f"Internal repo: {INTERNAL_REPO_URL}")
-    print(f"Favorite firmware: {FAVORITE_VERSION}")
+    print(f"Favorite firmware: {favorite_version}")
     print(f"Current checkout firmware: {app_version}")
 
-    if app_version != FAVORITE_VERSION and not args.allow_version_mismatch:
+    if app_version != favorite_version and not args.allow_version_mismatch:
         print(
             "\nThis checkout is not the current favorite firmware. "
             f"Check out {FAVORITE_BRANCH} or {FAVORITE_REF}, then run this helper again.\n"
-            "Use --allow-version-mismatch only for deliberate experiments.",
+            "Use --allow-version-mismatch only for deliberate branch tests.",
             file=sys.stderr,
         )
         return 2

@@ -64,7 +64,7 @@ Firmware: 0.4.41-snappy-lock
 - Changed the compact `SIG GPIO35` bars into a 12-step acquisition ladder, so users get more gradual feedback while finding a usable signal before BPM/IBI are trusted. The acquisition harmony now has an 8-note rising palette.
 - Matched the live waveform line color to the `SIG GPIO35` panel state color, so the graph and SIG box both show yellow while acquiring and change together after lock.
 - Added balanced lock-retention grace: acquisition still needs four consecutive qualified beats, but once locked the dashboard tolerates brief movement/noise blips before clearing BPM/IBI.
-- Added locked-only peak/cadence beat recovery, then an enabled peak-to-peak experiment for the earlobe movement case: once lock is earned, beat events can survive valley distortion when cadence remains close to the last trusted IBI, while short movement-blip intervals are rejected.
+- Added locked-only peak/cadence beat recovery, then an enabled peak-to-peak recovery for the earlobe movement case: once lock is earned, beat events can survive valley distortion when cadence remains close to the last trusted IBI, while short movement-blip intervals are rejected.
 - Added raw signal logging diagnostics and an offline analyzer for the same-earlobe investigation. The latest 44.2 s capture accepted 47 firmware beats, found 47 independent raw peaks, and had matching median IBI/BPM (`918 ms` firmware vs `920 ms` independent), with zero short accepted IBIs below 700 ms.
 - Made raw CSV logging an internal diagnostic build mode: `pio run -e cyd` is the quieter release build, while `pio run -e cyd_diag` enables 50 Hz `rawDiag` rows and reports version `0.4.41-snappy-lock-log`.
 - Polished the single-file firmware without changing beat thresholds: dead top-bar volume/rotate code was removed, repeated app headers and Settings row visibility are shared, beat acceptance is grouped in a `BeatDecision` helper, and the Origin Story sprite is released on app exit/rotation to protect long-run heap behavior.
@@ -76,6 +76,7 @@ Firmware: 0.4.41-snappy-lock
 - Bumped Settings row text back up one size. Plain data rows keep the label left-justified and the value right-justified, while rows with right-side controls keep a second value line only to avoid overlap. The Memory row shows used heap plus free heap by size and percentage, and the Build row shows PlatformIO RAM/Flash usage.
 - Added high-contrast mode-aware screens, larger touch targets, and screenshot sets for the new colors and Settings screen.
 - Added the `Origin Story` starfield crawl and programmatic fanfare. The current crawl words are placeholder copy for a later writing pass.
+- Graduated peak-to-peak recovery into shipped signal behavior and consolidated project checks around source metadata.
 
 Pre-main publish note: the current UI looked great on the attached CYD, but before merging this app-shell branch back to `main`, keep validating signal behavior by body position. Raw `SIG GPIO35`, BPM, IBI, and qualified-beat analysis are the first-class product behavior; app switching, display modes, Pin Scanner, and Origin Story should be changed or gated if they slow or destabilize PulseSensor readings.
 
@@ -185,7 +186,7 @@ Go to **[pulsesensor.com/pages/cyd](https://pulsesensor.com/pages/cyd)** in Chro
 The same installer is also hosted from this repo:
 **[worldfamouselectronics.github.io/PulseSensor_CYD/](https://worldfamouselectronics.github.io/PulseSensor_CYD/)**
 
-Important: the public one-click installer is for the published tutorial firmware unless the checked-in `firmware/` binaries have been regenerated from the current app-shell branch. To test the new screens and display modes right now, use Option A.
+Important: the public one-click installer is for the published tutorial firmware unless the checked-in `firmware/` binaries have been regenerated from the current app-shell branch. The checked-in `firmware/` files are web-installer artifacts, not proof that the current source build has been published. To test the new screens and display modes right now, use Option A.
 
 ### Option C — Build in Arduino IDE
 
@@ -317,7 +318,7 @@ Good Playground branches that should stay out of this default firmware until the
 
 ## Web Installer Firmware
 
-The web installer's binary parts live in `firmware/`, and the root `manifest.json` lists their ESP Web Tools offsets:
+The web installer's binary parts live in `firmware/`, and the root `manifest.json` lists their ESP Web Tools offsets. Treat these as web-installer artifacts and regenerate them only during an intentional browser-installer release:
 
 - `firmware/bootloader.bin` (offset `0x1000`)
 - `firmware/partitions.bin` (offset `0x8000`)

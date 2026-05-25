@@ -1,6 +1,9 @@
 from pathlib import Path
 
+from project_metadata import read_firmware_metadata
+
 source = Path("PulseSensor_CYD.ino").read_text()
+metadata = read_firmware_metadata()
 
 required_tokens = [
     "APP_VERSION",
@@ -157,21 +160,21 @@ required_lock_hold_tokens = {
     "#define LOCK_HOLD_GRACE_MS 4200": "Balanced lock hold should have a 4200 ms grace window",
     "#define PEAK_RECOVERY_IBI_TOLERANCE_PERCENT 28": "Peak/cadence recovery should keep a bounded timing tolerance",
     "#define PEAK_RECOVERY_MIN_RANGE 80": "Peak/cadence recovery should require visible signal movement",
-    "#define PEAK_TO_PEAK_EXPERIMENT 1": "Peak-to-peak experiment should stay switchable and enabled on this branch",
-    "#define PEAK_TO_PEAK_FIRST_BEAT_SCORE 8": "Peak-to-peak experiment should allow high-score first acquisition beats",
-    "#define PEAK_TO_PEAK_LOCKED_IBI_TOLERANCE_PERCENT 35": "Peak-to-peak experiment should be more liberal while locked",
-    "#define PEAK_TO_PEAK_LOCKED_MIN_IBI_PERCENT 70": "Peak-to-peak experiment should reject short movement-blip intervals",
-    "bool isPeakToPeakCandidateBeat": "Peak-to-peak experiment helper is missing",
-    "bool isPeakToPeakCadenceMatch": "Peak-to-peak experiment should use a broader locked cadence match",
-    "int peakToPeakScoreForCurrentSignal": "Peak-to-peak experiment should score live waveform movement",
+    "#define PEAK_TO_PEAK_RECOVERY_ENABLED 1": "Peak-to-peak recovery should stay switchable and enabled on this branch",
+    "#define PEAK_TO_PEAK_FIRST_BEAT_SCORE 8": "Peak-to-peak recovery should allow high-score first acquisition beats",
+    "#define PEAK_TO_PEAK_LOCKED_IBI_TOLERANCE_PERCENT 35": "Peak-to-peak recovery should be more liberal while locked",
+    "#define PEAK_TO_PEAK_LOCKED_MIN_IBI_PERCENT 70": "Peak-to-peak recovery should reject short movement-blip intervals",
+    "bool isPeakToPeakCandidateBeat": "Peak-to-peak recovery helper is missing",
+    "bool isPeakToPeakCadenceMatch": "Peak-to-peak recovery should use a broader locked cadence match",
+    "int peakToPeakScoreForCurrentSignal": "Peak-to-peak recovery should score live waveform movement",
     "int unqualifiedBeatStreak = 0;": "Lock hold should track unqualified beats after lock",
-    "int peakToPeakScore = 0;": "Peak-to-peak experiment should track a serial-visible score",
+    "int peakToPeakScore = 0;": "Peak-to-peak recovery should track a serial-visible score",
     'const char* lastLockDropReason = "none";': "Lock drops should record a lightweight serial reason",
     'const char* lastBeatAcceptReason = "none";': "Serial should record how the latest beat was accepted",
     "bool isLockedCadenceMatch": "Locked signal should compare new beats against the current cadence",
     "bool isPeakCadenceRecoveryBeat": "Locked-state peak/cadence recovery helper is missing",
     "decision.strictAccepted = decision.qualified;": "Strict acquisition should use the old simple qualified-beat path",
-    "decision.peakToPeakAccepted = PEAK_TO_PEAK_EXPERIMENT &&": "Peak-to-peak experiment should have an explicit acceptance path",
+    "decision.peakToPeakAccepted = PEAK_TO_PEAK_RECOVERY_ENABLED &&": "Peak-to-peak recovery should have an explicit acceptance path",
     "decision.recovered = !decision.strictAccepted &&": "Peak/cadence fallback must stay locked-state only after peak-to-peak",
     'decision.acceptReason = decision.accepted ?': "Accepted beats should mark strict vs peak-to-peak vs peak/cadence serial reason",
     "wasLocked && unqualifiedBeatStreak <= LOCK_GRACE_BAD_BEATS": "Locked signal should survive brief bad-beat movement",

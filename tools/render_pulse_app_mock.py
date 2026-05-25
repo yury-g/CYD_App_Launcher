@@ -1,6 +1,8 @@
 from pathlib import Path
 from PIL import Image, ImageDraw, ImageFont
 
+from project_metadata import read_firmware_metadata
+
 OUT_DIR = Path("docs/screenshots/pulse-render")
 OUT_DIR.mkdir(parents=True, exist_ok=True)
 
@@ -21,8 +23,9 @@ COLOR_RED_DARK = (96, 0, 0)
 TOOLBAR_BUTTON_WIDTH = 44
 TOOLBAR_BUTTON_HEIGHT = 28
 APP_BUTTON_GAP = 2
-APP_VERSION = "0.4.24-front-id"
-APP_FIRMWARE_DATE = "2026-05-24"
+METADATA = read_firmware_metadata()
+APP_VERSION = METADATA.version
+APP_FIRMWARE_DATE = METADATA.firmware_date
 
 try:
     FONT_1 = ImageFont.truetype("/System/Library/Fonts/Menlo.ttc", 10)

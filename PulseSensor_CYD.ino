@@ -29,6 +29,8 @@
 #else
 #include <XPT2046_Touchscreen.h>
 #endif
+// Must be defined before PulseSensorPlayground is included.
+// The library owns the 500 Hz sampler; this sketch keeps UI work in foreground.
 #include <esp_arduino_version.h>
 #define USE_ARDUINO_INTERRUPTS true
 #include <PulseSensorPlayground.h>
@@ -378,9 +380,11 @@ struct PulseSignalState {
   unsigned long lastSerialPrint = 0;
   unsigned long lastRawDiagnosticPrint = 0;
   unsigned long lastDetectorRearmTime = 0;
+  unsigned long rearmPausedAt = 0;
   bool lockedSignal = false;
   bool previousLockedSignal = false;
   bool pulseSensorReady = false;
+  bool rearmResumePending = false;
   bool pinScannerPulsePaused = false;
   bool insideBeatWindow = false;
   int signalQuality = 0;
@@ -410,9 +414,11 @@ unsigned long& lastQualifiedBeatTime = pulseState.lastQualifiedBeatTime;
 unsigned long& lastSerialPrint = pulseState.lastSerialPrint;
 unsigned long& lastRawDiagnosticPrint = pulseState.lastRawDiagnosticPrint;
 unsigned long& lastDetectorRearmTime = pulseState.lastDetectorRearmTime;
+unsigned long& rearmPausedAt = pulseState.rearmPausedAt;
 bool& lockedSignal = pulseState.lockedSignal;
 bool& previousLockedSignal = pulseState.previousLockedSignal;
 bool& pulseSensorReady = pulseState.pulseSensorReady;
+bool& rearmResumePending = pulseState.rearmResumePending;
 bool& pinScannerPulsePaused = pulseState.pinScannerPulsePaused;
 bool& insideBeatWindow = pulseState.insideBeatWindow;
 int& signalQuality = pulseState.signalQuality;
@@ -769,6 +775,7 @@ void playApp3CrawlFanfareStep();
 void triggerRearLedPulse(RearLedColor color);
 void triggerBeatEffects();
 void setupPulseSensor();
+void drawPulseSensorInitErrorScreen();
 void setupPinScanner();
 void updateActivePinScannerReading();
 void updatePinScannerAdcOwnership();
@@ -813,6 +820,7 @@ int amplitudeMeterSegments(int amplitude);
 void maybeRearmDetector();
 void rearmPulseDetector(const char* reason);
 void resetSignalAcquisitionWindow();
+void updatePendingPulseDetectorRearm();
 void updateSignalRange();
 void drawActiveApp();
 void drawStaticScreen();
@@ -906,7 +914,7 @@ uint16_t pinScannerRailColor();
 void setup() {
   Serial.begin(115200);
   delay(100);
-  Serial.println("CYD one-screen PulseSensor dashboard");
+  Serial.println("PulseSensor CyberDeck with the CYD");
 
   setupLED();
 
@@ -924,7 +932,15 @@ void setup() {
 }
 
 void loop() {
-  if (!pinScannerPulsePaused) {
+  if (!pulseSensorReady) {
+    drawPulseSensorInitErrorScreen();
+    return;
+  }
+
+  updatePendingPulseDetectorRearm();
+
+  // SIGNAL FIRST - DO NOT MOVE BELOW UI, sound, or scanner work.
+  if (!pinScannerPulsePaused && !rearmResumePending) {
     readPulseSensor();
   }
 #if PERF_DIAGNOSTICS
@@ -1701,6 +1717,29 @@ void setupPulseSensor() {
   }
 }
 
+void drawPulseSensorInitErrorScreen() {
+  static bool errorDrawn = false;
+  if (errorDrawn) return;
+  errorDrawn = true;
+
+  tft.fillScreen(screenBgColor());
+  tft.setTextSize(2);
+  tft.setTextColor(signalSearchColor(), screenBgColor());
+  tft.setCursor(12, 34);
+  tft.print("PulseSensor");
+  tft.setCursor(12, 58);
+  tft.print("init failed");
+
+  tft.setTextSize(1);
+  tft.setTextColor(textColor(), screenBgColor());
+  tft.setCursor(12, 96);
+  tft.print("Check GPIO35 signal wire");
+  tft.setCursor(12, 112);
+  tft.print("and 3.3V/GND wiring.");
+  tft.setCursor(12, 144);
+  tft.print(APP_VERSION);
+}
+
 int detectorThresholdForCurrentRange() {
   int low = constrain(minSignal, 0, 1023);
   int high = constrain(maxSignal, 0, 1023);
@@ -2302,8 +2341,8 @@ void rearmPulseDetector(const char* reason) {
 
   retunePulseDetectorThreshold();
   pulseSensor.pause();
-  delay(8);
-  pulseSensor.resume();
+  rearmPausedAt = millis();
+  rearmResumePending = true;
 
   lastDetectorRearmTime = millis();
   lastBeatTime = millis();
@@ -2319,6 +2358,13 @@ void rearmPulseDetector(const char* reason) {
   lastLockDropReason = reason;
   lastBeatAcceptReason = "none";
   rearmCount++;
+}
+
+void updatePendingPulseDetectorRearm() {
+  if (!rearmResumePending) return;
+  if (millis() - rearmPausedAt < 8) return;
+  pulseSensor.resume();
+  rearmResumePending = false;
 }
 
 void resetSignalAcquisitionWindow() {
@@ -2348,6 +2394,7 @@ void updateSignalRange() {
 
   if (millis() - lastDecay >= 100) {
     lastDecay = millis();
+    // Old extremes fade toward the current sample so the graph follows slow drift.
     minSignal = min(minSignal + 4, currentSignal);
     maxSignal = max(maxSignal - 4, currentSignal);
   }

@@ -1,8 +1,8 @@
-# PulseSensor CYD Dashboard
+# PulseSensor CyberDeck with the CYD
 
-A one-screen PulseSensor heartbeat dashboard for the ESP32 **Cheap Yellow Display** (CYD). Flash from your browser, wire three colored wires, and watch your pulse live with sound, light, and touch volume.
+A compact PulseSensor cyberdeck for the ESP32 **Cheap Yellow Display** (CYD): live heartbeat dashboard, Settings, Pin Scanner, and Origin Story screens in one beginner-friendly Arduino sketch.
 
-![CYD Pulse Dashboard banner](docs/readme-banner.svg)
+![PulseSensor CyberDeck banner](docs/readme-banner.svg)
 
 > **Educational biofeedback demo &mdash; not for medical use.**
 
@@ -10,7 +10,7 @@ A one-screen PulseSensor heartbeat dashboard for the ESP32 **Cheap Yellow Displa
 
 ## Public One-Click Install: [pulsesensor.com/pages/cyd](https://pulsesensor.com/pages/cyd)
 
-That page has a one-click web installer, wiring diagram, and the full tutorial for the published public firmware. Use the source-flash instructions below when you want the current app-shell preview with the new screens, colors, Settings page, and `Origin Story` app.
+That page has a one-click web installer, wiring diagram, and the full tutorial for the published public firmware. Use the source-flash instructions below when you want the current CyberDeck source build with the newer app shell, Settings page, Pin Scanner, display modes, and `Origin Story` app.
 
 ---
 
@@ -40,14 +40,13 @@ Beat-dot explainer:
 
 ![Beat-dot explainer showing cyan beat marker dots on the live graph](docs/screenshots/beat-dot-explainer.svg)
 
-## Version History And Major Changes
+## Current Source State
 
-Use this section as the quick human-readable project log. See [CHANGELOG.md](CHANGELOG.md) for the full detailed history.
+Use this section as the quick human-readable project log. See [CHANGELOG.md](CHANGELOG.md) for release notes, [docs/signal-behavior-log.md](docs/signal-behavior-log.md) for signal testing, and [docs/experiment-log.md](docs/experiment-log.md) for longer development archaeology.
 
-### Current app-shell preview — 2026-05-24
+### PulseSensor CyberDeck main — 2026-05-25
 
-This is the current development handoff state for the app shell and snappy beat
-lock branch:
+This is the current source state on `main`:
 
 ```text
 Branch:   main
@@ -56,31 +55,14 @@ Firmware: 0.4.41-snappy-lock
 
 - Latest continuation handoff:
   [docs/handoff-2026-05-24-0.4.41-snappy-lock.md](docs/handoff-2026-05-24-0.4.41-snappy-lock.md).
-- Preserved the known-good `0.4.21-signal-log` state with rollback branch/tag `backup/good-working-0.4.21-signal-log-20260524` and `good-working-0.4.21-signal-log-20260524` before cleanup.
-- Added a compact app shell around the Pulse dashboard: the screen order is Pulse dashboard, Settings, App 4 `Pin Scanner`, `Your App Here`, then `Origin Story` last.
-- Added a manual App 4 `Pin Scanner` for GPIO35, GPIO22, GPIO21, and GPIO27. It starts idle, scans only one tapped row at a time, guards non-ADC pins, and keeps `readPulseSensor()` first in the main loop.
-- Re-checked the Pulse signal foreground path before main publish: `readPulseSensor()` remains first in `loop()`, PulseSensor Playground still samples ESP32 ADC data from its 500 Hz timer interrupt, and the live waveform/panel redraw paths were tightened to avoid avoidable foreground stalls.
-- Added tap-to-reacquire on the Pulse dashboard: when the raw waveform looks strong but BPM/IBI/qualified-beat detection is stuck, tap below the navigation/header to re-arm the detector and clear local acquisition state.
-- Changed the compact `SIG GPIO35` bars into a 12-step acquisition ladder, so users get more gradual feedback while finding a usable signal before BPM/IBI are trusted. The acquisition harmony now has an 8-note rising palette.
-- Matched the live waveform line color to the `SIG GPIO35` panel state color, so the graph and SIG box both show yellow while acquiring and change together after lock.
-- Added balanced lock-retention grace: acquisition still needs four consecutive qualified beats, but once locked the dashboard tolerates brief movement/noise blips before clearing BPM/IBI.
-- Added locked-only peak/cadence beat recovery, then an enabled peak-to-peak recovery for the earlobe movement case: once lock is earned, beat events can survive valley distortion when cadence remains close to the last trusted IBI, while short movement-blip intervals are rejected.
-- Added raw signal logging diagnostics and an offline analyzer for the same-earlobe investigation. The latest 44.2 s capture accepted 47 firmware beats, found 47 independent raw peaks, and had matching median IBI/BPM (`918 ms` firmware vs `920 ms` independent), with zero short accepted IBIs below 700 ms.
-- Made raw CSV logging an internal diagnostic build mode: `pio run -e cyd` is the quieter release build, while `pio run -e cyd_diag` enables 50 Hz `rawDiag` rows and reports version `0.4.41-snappy-lock-log`.
-- Polished the single-file firmware without changing beat thresholds: dead top-bar volume/rotate code was removed, repeated app headers and Settings row visibility are shared, beat acceptance is grouped in a `BeatDecision` helper, and the Origin Story sprite is released on app exit/rotation to protect long-run heap behavior.
-- Added a clipping quality guard after hardware showed the ADC railing while the UI still displayed near-full acquisition bars. Clipped or motion-artifact input now forces acquisition quality and peak-to-peak score to zero, blocks detector re-arm, and shows `ADJUST SENSOR` instead of treating rail noise as progress.
-- Added first-screen version tracking: the Pulse dashboard header now shows `APP_VERSION` and `APP_FIRMWARE_DATE` directly under `PulseSensor.com`, and the guard script keeps that convention in future experiment branches.
-- Made long Settings values easier to read in horizontal display rotation by keeping them at the normal Settings text size on a second line; the tiny fallback remains available only for vertical rotation.
-- Added Settings-only controls for Volume, icon-only Rotation, Display, WiFi/Bluetooth placeholders, LED Control, LED swatches, About, Version, Firmware date, runtime memory used/free, and build memory.
-- Added four display modes under Settings `Display`: `M DARK`, `M LIGHT`, `C DARK`, and `C LIGHT`.
-- Bumped Settings row text back up one size. Plain data rows keep the label left-justified and the value right-justified, while rows with right-side controls keep a second value line only to avoid overlap. The Memory row shows used heap plus free heap by size and percentage, and the Build row shows PlatformIO RAM/Flash usage.
-- Added high-contrast mode-aware screens, larger touch targets, and screenshot sets for the new colors and Settings screen.
-- Added the `Origin Story` starfield crawl and programmatic fanfare. The current crawl words are placeholder copy for a later writing pass.
-- Graduated peak-to-peak recovery into shipped signal behavior and consolidated project checks around source metadata.
+- The screen order is Pulse dashboard, Settings, Pin Scanner, `Your App Here`, and `Origin Story`.
+- The Pulse dashboard remains the priority: `readPulseSensor()` stays first in `loop()`, signal math remains conservative, and peak-to-peak recovery is shipped behavior for earlobe movement cases.
+- Settings controls volume, display mode, rotation, LED behavior, diagnostics, firmware identity, memory, and build labels.
+- Pin Scanner is manual and guarded: it scans only a tapped row and never analog-reads known unsafe/non-ADC rows.
+- `Origin Story` uses canonical crawl text from [docs/origin-story-crawl.txt](docs/origin-story-crawl.txt), synced into firmware and render tools.
+- `tools/check_project.py` is the default local guard before commits.
 
-Pre-main publish note: the current UI looked great on the attached CYD, but before merging this app-shell branch back to `main`, keep validating signal behavior by body position. Raw `SIG GPIO35`, BPM, IBI, and qualified-beat analysis are the first-class product behavior; app switching, display modes, Pin Scanner, and Origin Story should be changed or gated if they slow or destabilize PulseSensor readings.
-
-Signal-acquisition experiments, upgrades, downgrades, and hardware verdicts live in [docs/signal-behavior-log.md](docs/signal-behavior-log.md). Signal-first architecture rules live in [docs/signal-first-architecture.md](docs/signal-first-architecture.md). Broader UI and hardware experiment notes live in [docs/experiment-log.md](docs/experiment-log.md).
+External code audits and the current response live in [docs/code-audits/](docs/code-audits/).
 
 ### v1.2.0 — 2026-05-15
 
@@ -125,9 +107,9 @@ Signal-acquisition experiments, upgrades, downgrades, and hardware verdicts live
 
 ## Flash Your CYD
 
-### Option A — Current app-shell preview from source
+### Option A — Current CyberDeck source build
 
-Use this path on any computer when you want the current app shell, display modes, new Settings screen, and `Origin Story` app from this branch. This does not require a Codex session.
+Use this path on any computer when you want the current CyberDeck app shell, display modes, Settings screen, Pin Scanner, and `Origin Story` app from this branch. This does not require a Codex session.
 
 1. Install Git, Python 3, and PlatformIO:
 
@@ -350,7 +332,7 @@ Timestamped local tags record the iteration path:
 - `signal-box-minimal-20260519-114712-EDT` — compact `SIG GPIO35` quality-bar panel.
 - `rotate-control-20260522-121644-EDT` — hardware-tested top-row screen rotation control.
 
-Current app-shell continuation notes live in `START_HERE_NEXT_CHAT.md` and `CODEX_HANDOFF.md`.
+Current CyberDeck continuation notes live in `START_HERE_NEXT_CHAT.md` and `CODEX_HANDOFF.md`.
 
 See `docs/experiment-log.md` for the rejected Signal Dashboard / Finger Coach side quest. The only UI idea carried forward from that experiment is the dotted threshold line plus `THR 550` label.
 
@@ -358,7 +340,7 @@ See `docs/experiment-log.md` for the rejected Signal Dashboard / Finger Coach si
 
 ## Release
 
-Current release: `v1.2.0`. First known-good single-screen release: `v1.0.0`. See [CHANGELOG.md](CHANGELOG.md).
+Current source firmware: `0.4.41-snappy-lock`. Public web-installer binaries are updated only during an intentional browser-installer release. See [CHANGELOG.md](CHANGELOG.md).
 
 ---
 

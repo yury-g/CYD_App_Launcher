@@ -87,7 +87,7 @@ def parse_args() -> argparse.Namespace:
             f"Favorite: {FAVORITE_VERSION} on {FAVORITE_BRANCH} / {FAVORITE_REF}."
         )
     )
-    parser.add_argument("--port", help="Serial port, for example /dev/cu.usbserial-3120")
+    parser.add_argument("--port", help="Serial port, for example /dev/cu.usbserial-* or COM4")
     parser.add_argument("--env", default=DEFAULT_ENV, help=f"PlatformIO env, default {DEFAULT_ENV}")
     parser.add_argument("--pio", default="pio", help="PlatformIO executable, default: pio")
     parser.add_argument(

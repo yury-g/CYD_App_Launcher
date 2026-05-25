@@ -387,8 +387,8 @@ Commit under test:
 Temporary instrumentation:
 
 - Set `PERF_DIAGNOSTICS` to `1` locally.
-- Flashed to `/dev/cu.usbserial-3120`.
-- Upload detected ESP32-D0WD-V3 MAC `f4:2d:c9:9d:af:cc`.
+- Flashed to the currently connected detected serial port.
+- Upload detected an ESP32-D0WD-V3 on the current port.
 - Restored `PERF_DIAGNOSTICS` to `0` after the timing capture.
 
 Observation:
@@ -458,7 +458,7 @@ Change:
 Verdict:
 
 - Preliminary upgrade candidate from serial sanity after flashing to
-  `/dev/cu.usbserial-3120`; still needs user-visible judgement across body
+  the currently connected detected serial port; still needs user-visible judgement across body
   positions.
 - Sensor body position: earlobe. Mount/contact method: hand-held PulseSensor on
   earlobe.
@@ -515,7 +515,7 @@ Change:
 
 Verdict:
 
-- Flashed to `/dev/cu.usbserial-3120` and serial sanity confirmed the new
+- Flashed to the currently connected detected serial port and serial sanity confirmed the new
   `accept=peak-cadence` path activates after lock while clipping stays at 0.
 - The first sanity window also showed why the locked cadence guard matters:
   strict absolute IBI limits alone can accept short movement-blip intervals.

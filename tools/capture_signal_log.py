@@ -16,7 +16,7 @@ def default_output_path():
 
 def main():
     parser = argparse.ArgumentParser(description="Capture rawDiag CSV lines from the CYD serial stream.")
-    parser.add_argument("--port", default="/dev/cu.usbserial-3120")
+    parser.add_argument("--port", required=True)
     parser.add_argument("--baud", type=int, default=115200)
     parser.add_argument("--seconds", type=float, default=60)
     parser.add_argument("--out", type=Path, default=default_output_path())

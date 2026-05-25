@@ -1,7 +1,6 @@
 from pathlib import Path
 
 source = Path("PulseSensor_CYD.ino").read_text()
-settings_mock = Path("tools/render_settings_mock.py").read_text()
 
 required_tokens = [
     "APP_VERSION",
@@ -85,16 +84,12 @@ if '"rot %u"' in settings_body:
     raise SystemExit("Settings rotation value should not use ROT text")
 if 'drawSettingsButton(settingsRotateX, rowY + 6, 86, "", false);' not in settings_body:
     raise SystemExit("Settings rotation control should be icon-only")
-if '"ROT"' in settings_mock:
-    raise SystemExit("Settings mock still renders ROT text instead of the rotation icon")
 if "bool settingsValueNeedsCompactText" not in source:
     raise SystemExit("Settings value fit check should be shared before choosing tiny text")
 if "if (!portraitLayout && settingsValueNeedsCompactText(label, value))" not in source:
     raise SystemExit("Landscape Settings rows should avoid tiny value text by using two-line text")
 if "return portraitLayout ? 1 : SETTINGS_TEXT_SIZE;" not in source:
     raise SystemExit("The smallest Settings value text should be limited to vertical display rotation")
-if "value_w > width - 28 - label_w and width >= 300" not in settings_mock:
-    raise SystemExit("Settings mock should keep landscape fallback text larger")
 
 read_touch_start = source.index("void readTouchControls() {")
 read_touch_end = source.index("void mapTouchPoint", read_touch_start)

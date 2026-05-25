@@ -74,7 +74,7 @@ Firmware: 0.4.41-snappy-lock
 - Added Settings-only controls for Volume, icon-only Rotation, Display, WiFi/Bluetooth placeholders, LED Control, LED swatches, About, Version, Firmware date, runtime memory used/free, and build memory.
 - Added four display modes under Settings `Display`: `M DARK`, `M LIGHT`, `C DARK`, and `C LIGHT`.
 - Bumped Settings row text back up one size. Plain data rows keep the label left-justified and the value right-justified, while rows with right-side controls keep a second value line only to avoid overlap. The Memory row shows used heap plus free heap by size and percentage, and the Build row shows PlatformIO RAM/Flash usage.
-- Added high-contrast mode-aware screens, larger touch targets, render-preview tools, and the current screenshot sets for the new colors and Settings screen.
+- Added high-contrast mode-aware screens, larger touch targets, and screenshot sets for the new colors and Settings screen.
 - Added the `Origin Story` starfield crawl and programmatic fanfare. The current crawl words are placeholder copy for a later writing pass.
 
 Pre-main publish note: the current UI looked great on the attached CYD, but before merging this app-shell branch back to `main`, keep validating signal behavior by body position. Raw `SIG GPIO35`, BPM, IBI, and qualified-beat analysis are the first-class product behavior; app switching, display modes, Pin Scanner, and Origin Story should be changed or gated if they slow or destabilize PulseSensor readings.
@@ -109,85 +109,6 @@ Signal-acquisition experiments, upgrades, downgrades, and hardware verdicts live
 ### v0.1.0 — 2026-04-08
 
 - Started the repository with a placeholder README and initial Git history.
-
-## Current App Shell Development Preview
-
-The current source of truth is `main` on `yury-g/CYD_App_Launcher`. It keeps the Pulse dashboard as the first-class screen, moves Settings into the app sequence, adds a guarded manual `Pin Scanner`, keeps `Your App Here` second-to-last, and keeps `Origin Story` last.
-
-Use these images to review the new screens, colors, and Settings treatment before flashing another CYD. The current `Origin Story` content is intentionally placeholder text; keep the renderer and layout, then drop in revised crawl copy during a later text-edit pass.
-
-### App 1: Pulse Dashboard Render
-
-| Landscape searching | Landscape locked |
-| --- | --- |
-| ![Pulse app landscape searching render](docs/screenshots/pulse-render/pulse-landscape-searching.png) | ![Pulse app landscape locked render](docs/screenshots/pulse-render/pulse-landscape-locked.png) |
-
-| Portrait searching | Portrait locked |
-| --- | --- |
-| ![Pulse app portrait searching render](docs/screenshots/pulse-render/pulse-portrait-searching.png) | ![Pulse app portrait locked render](docs/screenshots/pulse-render/pulse-portrait-locked.png) |
-
-### Settings Screen Render
-
-| Landscape top | Landscape middle | Landscape bottom |
-| --- | --- | --- |
-| ![Settings landscape top render](docs/screenshots/settings-render/settings-landscape-top.png) | ![Settings landscape middle render](docs/screenshots/settings-render/settings-landscape-middle.png) | ![Settings landscape bottom render](docs/screenshots/settings-render/settings-landscape-bottom.png) |
-
-| Portrait top | Portrait middle | Portrait bottom |
-| --- | --- | --- |
-| ![Settings portrait top render](docs/screenshots/settings-render/settings-portrait-top.png) | ![Settings portrait middle render](docs/screenshots/settings-render/settings-portrait-middle.png) | ![Settings portrait bottom render](docs/screenshots/settings-render/settings-portrait-bottom.png) |
-
-### App 4: Pin Scanner Render
-
-![App 4 Pin Scanner contact sheet](docs/screenshots/app4-pin-scanner-render/app4-pin-scanner-contact-sheet.png)
-
-### App 3: Origin Story Render
-
-![Origin Story crawl contact sheet](docs/screenshots/app3-origin-crawl-render/app3-origin-contact-sheet.png)
-
-The render helpers are in `tools/render_pulse_app_mock.py`, `tools/render_settings_mock.py`, `tools/render_app4_pin_scanner_mock.py`, and `tools/render_app3_origin_crawl_mock.py`. They are intentionally lightweight PNG mockups used for quick UI iteration before flashing the CYD.
-
-The signal diagnostic helpers are `tools/capture_signal_log.py`, `tools/analyze_signal_log.py`, and `tools/check_signal_diagnostics.py`. Raw captures are written under local `logs/` and intentionally ignored by Git. Use `pio run -e cyd_diag -t upload --upload-port <port>` when you want the raw logger build.
-
-Signal-first firmware architecture and future development rules live in [docs/signal-first-architecture.md](docs/signal-first-architecture.md). Read that before changing PulseSensor sampling, beat qualification, graph drawing, app switching, or diagnostic tools.
-
-### Internal Design Memory: 2026-05-24 Display Modes
-
-This section is an internal firmware-development memory trail. It is intentionally image-heavy so future contributors can see the UI evolution visually before reading code. It does not need to be copied to the public customer tutorial.
-
-The 2026-05-24 pass explored a maximum-readability display treatment for no-glasses use: larger controls, more black space, true black/white monochrome modes, high-contrast color modes, dotted outlines for inactive or no-data states, a compact three-button app nav bar, Settings-only rotation, and a fatter centered heart in the freed header space.
-
-![Full display-mode review panel](docs/screenshots/display-mode-render/review-20260524-display-modes-v2/full-panel-all-modes.png)
-
-#### Settings Display Picker
-
-| Monochrome Dark | Monochrome Light |
-| --- | --- |
-| ![Settings display picker monochrome dark](docs/screenshots/display-mode-render/review-20260524-display-modes-v2/separate/settings-display-mono_dark.png) | ![Settings display picker monochrome light](docs/screenshots/display-mode-render/review-20260524-display-modes-v2/separate/settings-display-mono_light.png) |
-
-| Color Dark | Color Light |
-| --- | --- |
-| ![Settings display picker color dark](docs/screenshots/display-mode-render/review-20260524-display-modes-v2/separate/settings-display-color_dark.png) | ![Settings display picker color light](docs/screenshots/display-mode-render/review-20260524-display-modes-v2/separate/settings-display-color_light.png) |
-
-#### Pulse Dashboard Display Modes
-
-| Mode | Searching | Locked |
-| --- | --- | --- |
-| Monochrome Dark | ![Monochrome dark searching pulse dashboard](docs/screenshots/display-mode-render/review-20260524-display-modes-v2/screen-preview/mono_dark/pulse-landscape-searching.png) | ![Monochrome dark locked pulse dashboard](docs/screenshots/display-mode-render/review-20260524-display-modes-v2/screen-preview/mono_dark/pulse-landscape-locked.png) |
-| Monochrome Light | ![Monochrome light searching pulse dashboard](docs/screenshots/display-mode-render/review-20260524-display-modes-v2/screen-preview/mono_light/pulse-landscape-searching.png) | ![Monochrome light locked pulse dashboard](docs/screenshots/display-mode-render/review-20260524-display-modes-v2/screen-preview/mono_light/pulse-landscape-locked.png) |
-| Color Dark | ![Color dark searching pulse dashboard](docs/screenshots/display-mode-render/review-20260524-display-modes-v2/screen-preview/color_dark/pulse-landscape-searching.png) | ![Color dark locked pulse dashboard](docs/screenshots/display-mode-render/review-20260524-display-modes-v2/screen-preview/color_dark/pulse-landscape-locked.png) |
-| Color Light | ![Color light searching pulse dashboard](docs/screenshots/display-mode-render/review-20260524-display-modes-v2/screen-preview/color_light/pulse-landscape-searching.png) | ![Color light locked pulse dashboard](docs/screenshots/display-mode-render/review-20260524-display-modes-v2/screen-preview/color_light/pulse-landscape-locked.png) |
-
-#### True Black/White Exploration
-
-| Dark monochrome searching | Dark monochrome locked |
-| --- | --- |
-| ![True black and white searching mock](docs/screenshots/monochrome-render/review-20260524-pulse-landscape-searching.png) | ![True black and white locked mock](docs/screenshots/monochrome-render/review-20260524-pulse-landscape-locked.png) |
-
-| Light inverse searching | Light inverse locked |
-| --- | --- |
-| ![Inverse black and white searching mock](docs/screenshots/monochrome-render/inverse/pulse-landscape-searching.png) | ![Inverse black and white locked mock](docs/screenshots/monochrome-render/inverse/pulse-landscape-locked.png) |
-
----
 
 ## Wire The PulseSensor
 
@@ -231,13 +152,13 @@ commit. The latest firmware/UI code commit is the current `HEAD` commit on
 pio device list
 ```
 
-On macOS the port usually looks like `/dev/cu.usbserial-3120`, `/dev/cu.usbserial-210`, or similar. On Windows it usually looks like `COM3`, `COM4`, or similar.
+On macOS the port usually looks like `/dev/cu.usbserial-*`, `/dev/cu.SLAB_USBtoUART*`, or similar. On Windows it usually looks like `COM3`, `COM4`, or similar.
 
 4. Build and flash, replacing the port with the one you detected:
 
 ```bash
 pio run -e cyd
-pio run -e cyd -t upload --upload-port /dev/cu.usbserial-3120
+pio run -e cyd -t upload --upload-port <detected-port>
 ```
 
 This branch includes a `platformio.ini` for repeatable local builds and uploads. For internal signal logging, build and upload `cyd_diag` instead of `cyd`.
@@ -250,7 +171,7 @@ against accidentally flashing an experiment branch when the intended comparison
 state is `0.4.41-snappy-lock`.
 
 ```bash
-python3 tools/flash_current_favorite.py --port /dev/cu.usbserial-3120
+python3 tools/flash_current_favorite.py --port <detected-port>
 ```
 
 If the connected CYD uses a different port, pass that port instead. The helper
@@ -405,31 +326,13 @@ The web installer's binary parts live in `firmware/`, and the root `manifest.jso
 
 Use the PlatformIO local flash path above while iterating on source. Regenerate and replace the installer binaries before publishing a web-flasher release.
 
-## Regenerate Screenshots
+## Screenshots And Render Tools
 
-The checked-in screenshots are SVG recreations of the CYD screen in `docs/screenshots/`. Update them whenever the on-device layout changes.
+Checked-in screenshots live in `docs/screenshots/`. They are documentation
+artifacts, not part of the normal build/flash loop.
 
-The app shell branch also includes PNG render previews in:
-
-```text
-docs/screenshots/pulse-render/
-docs/screenshots/settings-render/
-docs/screenshots/monochrome-render/
-docs/screenshots/display-mode-render/
-```
-
-Older screenshot sets are kept under `docs/screenshots/history/` as design-version history.
-
-Current UI render helpers:
-
-```bash
-python3 tools/render_pulse_app_mock.py
-python3 tools/render_settings_mock.py
-python3 tools/render_monochrome_mock.py
-python3 tools/render_display_mode_mock.py
-python3 tools/render_app4_pin_scanner_mock.py
-python3 tools/render_app3_origin_crawl_mock.py
-```
+Render/mock helpers in `tools/` are optional. Run them only when deliberately
+changing visual design or refreshing documentation screenshots.
 
 ## Development Checkpoints
 

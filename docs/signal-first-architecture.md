@@ -119,7 +119,8 @@ moment where the visible waveform is good but beat detection has lost trust.
 - Keep important constants near the top with names a classroom reader can scan.
 - Prefer small helper functions with plain names over clever abstractions.
 - Comment decisions that protect signal quality or explain hardware behavior.
-- Keep render/mock tools separate from firmware timing-critical code.
+- Treat render/mock tools as optional documentation/design helpers for deliberate
+  visual or screenshot work.
 - Add guard checks in `tools/check_app_shell.py` when a signal-safety rule is
   important enough to preserve across future UI work.
 

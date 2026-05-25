@@ -43,8 +43,8 @@ Published commits:
 
 Hardware validation:
 
-- Flashed from a clean detached worktree at `62af34e` to `/dev/cu.usbserial-3120`
-  so the test excluded unrelated local rotation/display-scrub edits.
+- Flashed from a clean detached worktree at `62af34e` to the currently detected
+  serial port so the test excluded unrelated local rotation/display-scrub edits.
 - PlatformIO upload completed successfully and hard-reset the connected CYD.
 - Final visual verdict is reserved for on-device review.
 
@@ -124,7 +124,7 @@ Verification:
 - Guard scripts passed: app shell, clipping quality, signal diagnostics,
   peak-to-peak experiment, and core polish.
 - `python3 -m platformio run -e cyd` passed.
-- Upload to `/dev/cu.usbserial-10` passed.
+- Upload to the currently connected detected serial port passed.
 - Serial confirmed the new auto re-arm path fired. The short bench/contact read
   was not a stable live body-lock validation.
 

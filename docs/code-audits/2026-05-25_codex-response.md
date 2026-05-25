@@ -1,7 +1,12 @@
 # Codex Response To 2026-05-25 Audits
 
 Date: 2026-05-25  
-Current source firmware: `CyberDesk 0.5.0`
+Current source firmware: `CyberDesk 0.5.3-LKG`
+
+Update: after later hardware testing, `main` was intentionally rolled back to
+the last-known-good one-screen signal baseline. Some recommendations below refer
+to the newer app-shell branch work and should be treated as historical context,
+not current firmware truth.
 
 Product name to use now: **PulseSensor CyberDeck with CYD ESP-322432S028**
 

@@ -9,6 +9,12 @@ timing/architecture rules in `docs/signal-first-architecture.md`.
 - Signal quality is the top priority. Treat raw `SIG GPIO35`, BPM, IBI, and
   beat qualification as more important than app shell features, display modes,
   Pin Scanner, sounds, or story screens.
+- Current source-of-truth firmware is `CyberDesk 0.5.3-LKG`, a rollback to the
+  hardware-trusted `last-working-20260522-132601-EDT` signal baseline with a
+  visible version label added.
+- See `docs/signal-quality-theory-and-sig-tile.md` for the current theory of how
+  physical placement, pressure, movement, and settling should translate into the
+  `SIG GPIO35` tile.
 - UI experiments should keep screenshots or render previews under
   `docs/screenshots/` so a future chat can see what changed without this chat
   history.
@@ -18,14 +24,31 @@ timing/architecture rules in `docs/signal-first-architecture.md`.
 - Reversible lessons matter: keep rejected ideas with the reason they were
   rejected, because some of the useful parts may be reused later.
 
-## 2026-05-25 - CyberDesk Version Label
+## 2026-05-25 - CyberDesk Version Labels
 
-- Started the current source firmware label at `CyberDesk 0.5.0`.
-- Started the diagnostic build label at `CyberDesk 0.5.0-log`.
+- Started the CyberDesk source firmware label series at `CyberDesk 0.5.0`.
+- Current source-of-truth rollback label is `CyberDesk 0.5.3-LKG`.
+- Current diagnostic build label is `CyberDesk 0.5.3-LKG-log`.
 - Kept the product/story wording as PulseSensor CyberDeck with CYD ESP-322432S028; this
   entry only changes the firmware version string shown on-device and in tools.
 - Historical `0.4.41-snappy-lock` notes remain in place where they describe the
   exact firmware flashed before this label change.
+
+## 2026-05-25 - No-Contact False Lock Investigation
+
+Observed on hardware:
+
+- The visible waveform could look clean but not produce trusted BPM/IBI.
+- With nothing on the sensor, ambient/no-contact input still produced plausible
+  Playground beat events and could stack multiple `strict` accepts.
+- A release telemetry capture showed accepted no-contact beats such as
+  `accept=strict` with changing IBI values before eventual false lock.
+
+Code response:
+
+- A partial cadence-gated local test did not restore confidence.
+- The current response is a full rollback to `CyberDesk 0.5.3-LKG` as the source
+  baseline before any more signal math is attempted.
 
 ## 2026-05-25 - CyberDeck Audit-Fix Hardware Flash
 

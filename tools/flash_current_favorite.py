@@ -19,8 +19,8 @@ from pathlib import Path
 
 
 INTERNAL_REPO_URL = "https://github.com/yury-g/CYD_App_Launcher"
-FAVORITE_VERSION = "0.4.24-front-id"
-FAVORITE_REF = "good-working-0.4.24-front-id-20260524"
+FAVORITE_VERSION = "0.4.41-snappy-lock"
+FAVORITE_REF = "main"
 FAVORITE_BRANCH = "main"
 DEFAULT_ENV = "cyd"
 COMMON_SERIAL_GLOBS = [

@@ -58,6 +58,51 @@ Latest wrapped firmware at handoff: `0.4.19-peak-cadence`
   intended `accept=peak-cadence` recovery; another still showed a bounded
   `grace expired` drop after rejected events.
 
+## 2026-05-24 — 0.4.41 Snappy Lock Handoff
+
+Branch during work: `codex/recover-green-beat-lock-20260524`
+
+Firmware flashed at handoff: `0.4.41-snappy-lock`
+
+Goal:
+
+- Restore the pre-multi-app feel where beat detection is quick and snappy.
+- Hold lock through minor movement.
+- Recover quickly when the waveform is good but PulseSensor Playground stops
+  producing beat events.
+
+What changed:
+
+- Re-arm now retunes the PulseSensor threshold from the current waveform
+  midpoint and shows that active threshold on the graph.
+- Beat acceptance now trusts the old simple qualified-beat path again instead of
+  requiring extra cadence gates for strict acceptance.
+- Lock grace is more forgiving: four bad beat events and a 4200 ms window.
+- Auto re-arm is faster: 1600 ms quiet detector threshold and 1600 ms cooldown.
+- Large waveform range alone no longer blocks re-arm; recent rail clipping still
+  blocks it.
+- Waveform beat markers now separate accepted beats from raw Playground
+  calculations: large filled white dots are accepted, small hollow white dots
+  are rejected candidate events.
+- The pre-multi-app heart shape was restored while keeping sprite-based
+  flicker-free drawing and a white outline.
+- Pin Scanner ADC ownership and row-local redraws were kept to avoid the IO35
+  crash and scanner flicker.
+
+Verification:
+
+- Guard scripts passed: app shell, clipping quality, signal diagnostics,
+  peak-to-peak experiment, and core polish.
+- `python3 -m platformio run -e cyd` passed.
+- Upload to `/dev/cu.usbserial-10` passed.
+- Serial confirmed the new auto re-arm path fired. The short bench/contact read
+  was not a stable live body-lock validation.
+
+Continuation note:
+
+- Read `docs/handoff-2026-05-24-0.4.41-snappy-lock.md` before continuing this
+  work in a new chat/model.
+
 ## 2026-05-19 11:39 EDT — Signal Dashboard / Finger Coach Side Quest
 
 Branch: `codex/finger-coach-dashboard-20260519-111641-EDT`

@@ -6,13 +6,13 @@ platformio = Path("platformio.ini").read_text()
 missing = []
 
 required_source = {
-    '#define APP_VERSION "0.4.24-front-id"': "release version should identify the front-screen identity build",
+    '#define APP_VERSION "0.4.41-snappy-lock"': "release version should identify the snappy-lock build",
     "#ifndef APP_VERSION": "diagnostic build should override the release version by build flag",
     "#define RAW_SIGNAL_DIAGNOSTICS 0": "release build should default raw diagnostics off",
     "#ifndef PERF_DIAGNOSTICS": "perf diagnostics should remain build-flag overrideable",
     "struct BeatDecision": "beat acceptance should be grouped in a small decision struct",
     "BeatDecision decideBeat": "beat decision helper is missing",
-    "decision.strictAccepted = decision.qualified &&": "strict decision path should be explicit",
+    "decision.strictAccepted = decision.qualified;": "strict decision path should be the old simple qualified-beat path",
     "decision.peakToPeakAccepted = PEAK_TO_PEAK_EXPERIMENT &&": "peak-to-peak decision path should be explicit",
     "drawAppFrameHeader": "shared app header helper is missing",
     "bool settingsRowVisible": "Settings row visibility helper is missing",
@@ -23,7 +23,7 @@ required_source = {
 required_platformio = {
     "[env:cyd]": "release PlatformIO environment is missing",
     "[env:cyd_diag]": "diagnostic PlatformIO environment is missing",
-    '-D APP_VERSION=\\"0.4.24-front-id-log\\"': "diagnostic build must set logging version",
+    '-D APP_VERSION=\\"0.4.41-snappy-lock-log\\"': "diagnostic build must set logging version",
     "-D RAW_SIGNAL_DIAGNOSTICS=1": "diagnostic build must enable raw logging",
 }
 

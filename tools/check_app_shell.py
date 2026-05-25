@@ -153,8 +153,8 @@ for token in [
 
 required_lock_hold_tokens = {
     "#define LOCK_QUALIFIED_BEATS 4": "Strict acquisition should still require four qualified beats",
-    "#define LOCK_GRACE_BAD_BEATS 2": "Balanced lock hold should tolerate two unqualified beats after lock",
-    "#define LOCK_HOLD_GRACE_MS 2200": "Balanced lock hold should have a 2200 ms grace window",
+    "#define LOCK_GRACE_BAD_BEATS 4": "Balanced lock hold should tolerate four unqualified beats after lock",
+    "#define LOCK_HOLD_GRACE_MS 4200": "Balanced lock hold should have a 4200 ms grace window",
     "#define PEAK_RECOVERY_IBI_TOLERANCE_PERCENT 28": "Peak/cadence recovery should keep a bounded timing tolerance",
     "#define PEAK_RECOVERY_MIN_RANGE 80": "Peak/cadence recovery should require visible signal movement",
     "#define PEAK_TO_PEAK_EXPERIMENT 1": "Peak-to-peak experiment should stay switchable and enabled on this branch",
@@ -170,7 +170,7 @@ required_lock_hold_tokens = {
     'const char* lastBeatAcceptReason = "none";': "Serial should record how the latest beat was accepted",
     "bool isLockedCadenceMatch": "Locked signal should compare new beats against the current cadence",
     "bool isPeakCadenceRecoveryBeat": "Locked-state peak/cadence recovery helper is missing",
-    "decision.strictAccepted = decision.qualified &&": "Strict acquisition should require cadence consistency before and after lock",
+    "decision.strictAccepted = decision.qualified;": "Strict acquisition should use the old simple qualified-beat path",
     "decision.peakToPeakAccepted = PEAK_TO_PEAK_EXPERIMENT &&": "Peak-to-peak experiment should have an explicit acceptance path",
     "decision.recovered = !decision.strictAccepted &&": "Peak/cadence fallback must stay locked-state only after peak-to-peak",
     'decision.acceptReason = decision.accepted ?': "Accepted beats should mark strict vs peak-to-peak vs peak/cadence serial reason",
@@ -416,6 +416,16 @@ if "analogReadResolution(12)" in active_update_body or "analogReadResolution(12)
     raise SystemExit("App 4 scanner should not change away from the PulseSensor 10-bit ADC resolution")
 if "delayMicroseconds" in active_update_body or "delay(" in active_update_body:
     raise SystemExit("App 4 scanner reads should not add blocking delays")
+for token in [
+    "updatePinScannerAdcOwnership();",
+    "pausePulseSensorForPinScanner();",
+    "resumePulseSensorAfterPinScanner();",
+    "if (!pinScannerPulsePaused)",
+    "pulseSensor.pause();",
+    "pulseSensor.resume();",
+]:
+    if token not in source:
+        raise SystemExit(f"App 4 scanner is missing ADC ownership guard: {token}")
 
 app4_branch_start = source.index("} else if (currentApp == APP_PIN_SCANNER) {")
 app4_branch_end = source.index("\n  }", app4_branch_start)

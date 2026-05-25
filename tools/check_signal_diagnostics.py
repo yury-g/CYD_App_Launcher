@@ -10,23 +10,23 @@ required_source = {
     "#define RAW_SIGNAL_DIAGNOSTICS 0": "release build must keep raw diagnostics off by default",
     "#define RAW_SIGNAL_DIAGNOSTICS_MS 20": "raw diagnostics should stream at 50 Hz",
     "#ifndef APP_VERSION": "release firmware version must be overrideable by diagnostic build flags",
-    '#define APP_VERSION "0.4.24-front-id"': "release firmware version must identify the front-screen identity build",
+    '#define APP_VERSION "0.4.41-snappy-lock"': "release firmware version must identify the snappy-lock build",
     "void printRawSignalDiagnostics": "firmware must have a raw diagnostic printer",
     "rawDiag,ms,signal,amp,bpm,ibi,locked,quality,p2p,range,clip,inside,beat,accept,drop,qStreak,badStreak": "CSV header is missing required fields",
     "rawDiagnosticsBeatPending": "diagnostics must mark firmware beat events",
     "if (!RAW_SIGNAL_DIAGNOSTICS && millis() - lastSerialPrint >= 500)": "normal slow serial summary must be disabled during raw diagnostics",
     "#define CLIPPING_SCORE_DECAY_MS 20": "clipping score must decay by time, not foreground loop speed",
     "now - lastClipDecayMs >= CLIPPING_SCORE_DECAY_MS": "clipping score decay should be time-based",
-    "#define SIGNAL_MOTION_ARTIFACT_RANGE 420": "motion artifact range guard is missing",
+    "#define SIGNAL_MOTION_ARTIFACT_RANGE 980": "rail-to-rail artifact range guard is missing",
     "maxSignal - minSignal > SIGNAL_MOTION_ARTIFACT_RANGE": "beat acceptance should reject implausibly large motion range",
     "#define ACQUISITION_CADENCE_TOLERANCE_PERCENT 35": "acquisition cadence guard is missing",
     "bool isAcquisitionCadenceMatch": "pre-lock acquisition should require cadence consistency",
-    "wasLocked ? isLockedCadenceMatch(ibi) : isAcquisitionCadenceMatch(ibi)": "strict pre-lock beats should use acquisition cadence matching",
+    "decision.strictAccepted = decision.qualified;": "strict beat acceptance should use the old simple qualified-beat path",
 }
 
 required_platformio = {
     "[env:cyd_diag]": "diagnostic PlatformIO environment is missing",
-    '-D APP_VERSION=\\"0.4.24-front-id-log\\"': "diagnostic build must set the logging firmware version",
+    '-D APP_VERSION=\\"0.4.41-snappy-lock-log\\"': "diagnostic build must set the logging firmware version",
     "-D RAW_SIGNAL_DIAGNOSTICS=1": "diagnostic build must enable raw CSV streaming",
 }
 

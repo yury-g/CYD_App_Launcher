@@ -4,6 +4,58 @@ Last updated: 2026-05-24 EDT
 
 This file is the first breadcrumb for continuing internal PulseSensor CYD dashboard development in a new Codex chat with no previous chat history.
 
+## Fresh Handoff: 2026-05-24 0.4.41 Snappy Lock On Main
+
+This top section supersedes older branch/path references below. Older notes are
+preserved as history and may describe rollback or failed-experiment states.
+
+Start from GitHub:
+
+```text
+https://github.com/yury-g/CYD_App_Launcher
+```
+
+Current source-of-truth branch:
+
+```text
+main
+```
+
+Current firmware:
+
+```text
+0.4.41-snappy-lock
+```
+
+Read this continuation note first:
+
+```text
+docs/handoff-2026-05-24-0.4.41-snappy-lock.md
+```
+
+What changed most recently:
+
+- Beat acceptance intentionally returned to the old simple qualified-beat path.
+- Auto re-arm is faster and retunes the detector threshold from the visible
+  waveform midpoint.
+- Lock hold is more forgiving: four bad beat events and a 4200 ms grace window.
+- Filled white graph dots are accepted beats; hollow white graph dots are raw
+  Playground beat events that the app rejected.
+- The pre-multi-app heart shape is back, using the newer flicker-free sprite
+  draw path and white outline.
+- Pin Scanner ADC ownership and row-local redraws are preserved to avoid the
+  IO35 crash and scanner flicker.
+
+First command on a fresh checkout:
+
+```sh
+python3 tools/flash_current_favorite.py --port /dev/cu.usbserial-10
+```
+
+Then do a real body-position sanity test. The short final serial read proved
+that the `0.4.41` re-arm path fired, but it did not prove stable live lock
+because the bench/contact signal was railed or flat during that check.
+
 ## Fresh Handoff: 2026-05-24 Failed Signal-Core Experiment Closure
 
 This top section supersedes older branch/path references below. Older notes are preserved as history.

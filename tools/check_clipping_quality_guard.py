@@ -6,17 +6,17 @@ required = {
     "bool signalIsRecentlyClipped()": "firmware should name recent rail clipping as an explicit signal state",
     "bool signalRangeIsMotionArtifact()": "firmware should name rail-to-rail motion/artifact range explicitly",
     "bool signalLooksCleanForAcquisition()": "acquisition/re-arm logic should share one clean-signal guard",
-    "liveRange >= REARM_SIGNAL_RANGE && signalLooksCleanForAcquisition()": "detector re-arm should not run on clipped rail noise",
+    "liveRange >= REARM_SIGNAL_RANGE && !signalIsRecentlyClipped()": "detector re-arm should not run on clipped rail noise",
     "COACH_CLIPPED": "dashboard coach should have a clipped/adjust-sensor state",
     'return "ADJUST SENSOR";': "dashboard should tell the user to adjust the sensor when the ADC is railed",
-    '#define APP_VERSION "0.4.24-front-id"': "firmware version should identify the front-screen identity build",
+    '#define APP_VERSION "0.4.41-snappy-lock"': "firmware version should identify the snappy-lock build",
 }
 
 missing = [message for token, message in required.items() if token not in source]
 
 platformio = Path("platformio.ini").read_text()
-if '-D APP_VERSION=\\"0.4.24-front-id-log\\"' not in platformio:
-    missing.append("diagnostic PlatformIO env should report the front-screen identity logger version")
+if '-D APP_VERSION=\\"0.4.41-snappy-lock-log\\"' not in platformio:
+    missing.append("diagnostic PlatformIO env should report the beat-thinking marker logger version")
 
 def function_body(name):
     start = source.index(f"\n{name} {{")

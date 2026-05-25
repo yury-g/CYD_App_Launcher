@@ -6,6 +6,36 @@ This repository branch is the working memory for internal PulseSensor CYD experi
 
 Quick start for future chats: read `START_HERE_NEXT_CHAT.md` first, then this file.
 
+## Fresh Handoff: 2026-05-24 0.4.41 Snappy Lock On Main
+
+This top section supersedes older branch/path references below. Older notes are
+preserved as history and may describe rollback or failed-experiment states.
+
+Current GitHub source of truth:
+
+```text
+https://github.com/yury-g/CYD_App_Launcher
+Branch: main
+Firmware: 0.4.41-snappy-lock
+Diagnostic firmware: 0.4.41-snappy-lock-log
+Continuation note: docs/handoff-2026-05-24-0.4.41-snappy-lock.md
+```
+
+The latest work restored a snappier detection strategy:
+
+- Strict accepted beats now trust the simple qualified-beat path again.
+- Auto re-arm retunes PulseSensor Playground's threshold to the current waveform
+  midpoint and retries faster.
+- Locked state is held through four bad beat events and a 4200 ms gap.
+- The graph marker dots expose the distinction between Playground detection and
+  app acceptance.
+- The heart uses the pre-multi-app shape with the current sprite/no-flicker
+  renderer and white outline.
+
+The latest build was flashed to `/dev/cu.usbserial-10`. Serial confirmed the
+new re-arm path fired, but the final short bench/contact read was not a stable
+live body-lock proof.
+
 ## Fresh Handoff: 2026-05-24 Failed Signal-Core Experiment Closure
 
 This section supersedes older branch/path references below. Older notes remain as useful history.

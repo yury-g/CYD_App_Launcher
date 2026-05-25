@@ -6,26 +6,29 @@ whether it made real CYD pulse sensing better or worse.
 
 ## Current Best Rule
 
-Acquire strictly, hold gently.
+Acquire quickly, hold gently, recover aggressively when the detector goes quiet.
 
-- Strict acquisition prevents false positives: keep four consecutive qualified
-  beats, healthy live range, minimum amplitude, BPM/IBI bounds, and clipping
-  rejection.
+- `0.4.41-snappy-lock` intentionally restores the older simple accepted-beat
+  path: a Playground beat with plausible BPM/IBI, enough amplitude/range, and no
+  blocking signal problem is accepted as `strict`.
 - Gentle post-lock hold prevents false negatives: once locked, tolerate up to
-  two unqualified beat events within 2200 ms before clearing BPM/IBI.
-- BPM and IBI are updated by strict qualified beats. Once locked, they may also
-  update through the narrow `peak-cadence` recovery path when timing remains
-  plausible and the beat-event/range still looks alive. Grace-held rejected
-  beats preserve the last trusted BPM/IBI but do not create new readings.
-- Peak-to-peak scoring is useful, but it must be bounded by clipping, rolling
-  range, and cadence. The 2026-05-24 same-earlobe logs showed that raw peak
-  shape can be excellent while detector acquisition still accepts short double
-  beats unless pre-lock cadence consistency is enforced.
+  four unqualified beat events within 4200 ms before clearing BPM/IBI.
+- Auto re-arm is part of the product behavior. If the waveform is alive but no
+  Playground beat event arrives for about 1600 ms, re-arm the detector and tune
+  the Playground threshold to the current waveform midpoint.
+- Re-arm should not run on recently clipped rail noise. But broad waveform range
+  alone should not block recovery, because minor movement was causing good
+  visible waves to be filtered out.
+- Beat markers are now diagnostic UI:
+  large filled white dots are accepted beats, small hollow white dots are raw
+  Playground beat events that the app rejected.
 - Raw `SIG GPIO35`, BPM, IBI, and qualified-beat behavior outrank display polish,
   app switching, Pin Scanner, sounds, and story screens.
 - Always record body position and mounting method for hardware validation. Do
   not compare finger, earlobe, wrist, or loose bench readings as if they are the
   same test condition.
+
+See `docs/handoff-2026-05-24-0.4.41-snappy-lock.md` for the current handoff.
 
 ## 2026-05-24 - Stopping Point And Placement Clarification
 

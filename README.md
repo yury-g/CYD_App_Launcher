@@ -46,13 +46,16 @@ Use this section as the quick human-readable project log. See [CHANGELOG.md](CHA
 
 ### Current app-shell preview — 2026-05-24
 
-This is the current good development pause point for the app shell branch:
+This is the current development handoff state for the app shell and snappy beat
+lock branch:
 
 ```text
-Branch:   codex/signal-core-polish-publish-prep-20260524
-Firmware: 0.4.24-front-id
+Branch:   main
+Firmware: 0.4.41-snappy-lock
 ```
 
+- Latest continuation handoff:
+  [docs/handoff-2026-05-24-0.4.41-snappy-lock.md](docs/handoff-2026-05-24-0.4.41-snappy-lock.md).
 - Preserved the known-good `0.4.21-signal-log` state with rollback branch/tag `backup/good-working-0.4.21-signal-log-20260524` and `good-working-0.4.21-signal-log-20260524` before cleanup.
 - Added a compact app shell around the Pulse dashboard: the screen order is Pulse dashboard, Settings, App 4 `Pin Scanner`, `Your App Here`, then `Origin Story` last.
 - Added a manual App 4 `Pin Scanner` for GPIO35, GPIO22, GPIO21, and GPIO27. It starts idle, scans only one tapped row at a time, guards non-ADC pins, and keeps `readPulseSensor()` first in the main loop.
@@ -63,7 +66,7 @@ Firmware: 0.4.24-front-id
 - Added balanced lock-retention grace: acquisition still needs four consecutive qualified beats, but once locked the dashboard tolerates brief movement/noise blips before clearing BPM/IBI.
 - Added locked-only peak/cadence beat recovery, then an enabled peak-to-peak experiment for the earlobe movement case: once lock is earned, beat events can survive valley distortion when cadence remains close to the last trusted IBI, while short movement-blip intervals are rejected.
 - Added raw signal logging diagnostics and an offline analyzer for the same-earlobe investigation. The latest 44.2 s capture accepted 47 firmware beats, found 47 independent raw peaks, and had matching median IBI/BPM (`918 ms` firmware vs `920 ms` independent), with zero short accepted IBIs below 700 ms.
-- Made raw CSV logging an internal diagnostic build mode: `pio run -e cyd` is the quieter release build, while `pio run -e cyd_diag` enables 50 Hz `rawDiag` rows and reports version `0.4.24-front-id-log`.
+- Made raw CSV logging an internal diagnostic build mode: `pio run -e cyd` is the quieter release build, while `pio run -e cyd_diag` enables 50 Hz `rawDiag` rows and reports version `0.4.41-snappy-lock-log`.
 - Polished the single-file firmware without changing beat thresholds: dead top-bar volume/rotate code was removed, repeated app headers and Settings row visibility are shared, beat acceptance is grouped in a `BeatDecision` helper, and the Origin Story sprite is released on app exit/rotation to protect long-run heap behavior.
 - Added a clipping quality guard after hardware showed the ADC railing while the UI still displayed near-full acquisition bars. Clipped or motion-artifact input now forces acquisition quality and peak-to-peak score to zero, blocks detector re-arm, and shows `ADJUST SENSOR` instead of treating rail noise as progress.
 - Added first-screen version tracking: the Pulse dashboard header now shows `APP_VERSION` and `APP_FIRMWARE_DATE` directly under `PulseSensor.com`, and the guard script keeps that convention in future experiment branches.
@@ -109,7 +112,7 @@ Signal-acquisition experiments, upgrades, downgrades, and hardware verdicts live
 
 ## Current App Shell Development Preview
 
-This branch is the current app-shell development pause point on `codex/signal-core-polish-publish-prep-20260524`. It keeps the Pulse dashboard as the first-class screen, moves Settings into the app sequence, adds a guarded manual `Pin Scanner`, keeps `Your App Here` second-to-last, and keeps `Origin Story` last.
+The current source of truth is `main` on `yury-g/CYD_App_Launcher`. It keeps the Pulse dashboard as the first-class screen, moves Settings into the app sequence, adds a guarded manual `Pin Scanner`, keeps `Your App Here` second-to-last, and keeps `Origin Story` last.
 
 Use these images to review the new screens, colors, and Settings treatment before flashing another CYD. The current `Origin Story` content is intentionally placeholder text; keep the renderer and layout, then drop in revised crawl copy during a later text-edit pass.
 
@@ -210,18 +213,17 @@ Use this path on any computer when you want the current app shell, display modes
 python3 -m pip install --user platformio
 ```
 
-2. Clone this repo and check out the current app-shell branch:
+2. Clone this repo and use the current `main` branch:
 
 ```bash
 git clone https://github.com/yury-g/CYD_App_Launcher.git
 cd CYD_App_Launcher
-git checkout codex/signal-core-polish-publish-prep-20260524
 git log -1 --oneline
 ```
 
-Run `git log -1 --oneline` after checkout to see the latest pushed handoff
-commit. The latest firmware/UI code commit is
-the current `HEAD` commit for this branch.
+Run `git log -1 --oneline` after clone to see the latest pushed handoff
+commit. The latest firmware/UI code commit is the current `HEAD` commit on
+`main`.
 
 3. Plug in one CYD and detect the serial port:
 
@@ -245,7 +247,7 @@ This branch includes a `platformio.ini` for repeatable local builds and uploads.
 For a fresh internal development machine or a new AI session, use the helper
 below to flash the current favorite hardware state from a clean clone. It guards
 against accidentally flashing an experiment branch when the intended comparison
-state is `0.4.24-front-id`.
+state is `0.4.41-snappy-lock`.
 
 ```bash
 python3 tools/flash_current_favorite.py --port /dev/cu.usbserial-3120
@@ -253,7 +255,7 @@ python3 tools/flash_current_favorite.py --port /dev/cu.usbserial-3120
 
 If the connected CYD uses a different port, pass that port instead. The helper
 expects the internal repo `yury-g/CYD_App_Launcher`, favorite ref
-`good-working-0.4.24-front-id-20260524`, and firmware `0.4.24-front-id`.
+`main`, and firmware `0.4.41-snappy-lock`.
 
 ### Option B — Public one-click web installer
 

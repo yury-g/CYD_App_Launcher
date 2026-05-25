@@ -32,6 +32,22 @@ Accepted direction:
 - Add a local HTML soundtrack helper in a later code pass so the App 3 fanfare
   can be composed, previewed, imported, and exported before flashing the CYD.
 
+## 2026-05-25 - Origin Story Crawl Copy And Height Publish
+
+Published commits:
+
+- `aca31f0` records the Origin Story design notes and current crawl copy.
+- `f3a8e6b` corrects the crawl GitHub repo path to
+  `WorldFamousElectronics/PulseSensorPlayground`.
+- `62af34e` moves the Origin Story scrolling text animation 20 percent higher.
+
+Hardware validation:
+
+- Flashed from a clean detached worktree at `62af34e` to `/dev/cu.usbserial-3120`
+  so the test excluded unrelated local rotation/display-scrub edits.
+- PlatformIO upload completed successfully and hard-reset the connected CYD.
+- Final visual verdict is reserved for on-device review.
+
 ## 2026-05-24 — App Shell, Display Modes, Settings, And Signal Regression Pass
 
 Branch: `codex/app4-pin-scanner-perf-safe-20260524`

@@ -30,6 +30,7 @@ required_source = {
 required_platformio = {
     "[env:cyd]": "release PlatformIO environment is missing",
     "[env:cyd_diag]": "diagnostic PlatformIO environment is missing",
+    f'-D APP_VERSION=\\"{metadata.diagnostic_version}\\"': "diagnostic build must set logging version",
     "-D RAW_SIGNAL_DIAGNOSTICS=1": "diagnostic build must enable raw logging",
 }
 
@@ -40,9 +41,6 @@ for token, message in required_source.items():
 for token, message in required_platformio.items():
     if token not in platformio:
         missing.append(message)
-
-if "APP_VERSION" not in platformio or metadata.diagnostic_version not in platformio:
-    missing.append("diagnostic build must set logging version")
 
 for dead_token in [
     "handleRotateTouch",

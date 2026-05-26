@@ -29,6 +29,7 @@ required_source = {
 
 required_platformio = {
     "[env:cyd_diag]": "diagnostic PlatformIO environment is missing",
+    f'-D APP_VERSION=\\"{metadata.diagnostic_version}\\"': "diagnostic build must set the logging firmware version",
     "-D RAW_SIGNAL_DIAGNOSTICS=1": "diagnostic build must enable raw CSV streaming",
 }
 
@@ -51,8 +52,6 @@ for token, message in required_source.items():
 for token, message in required_platformio.items():
     if token not in platformio:
         missing.append(message)
-if "APP_VERSION" not in platformio or metadata.diagnostic_version not in platformio:
-    missing.append("diagnostic build must set the logging firmware version")
 for token, message in required_capture.items():
     if token not in capture:
         missing.append(message)

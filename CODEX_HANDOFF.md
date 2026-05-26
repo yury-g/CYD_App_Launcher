@@ -10,8 +10,8 @@ AI memory trail for every development cycle.
 ```text
 Repo: https://github.com/yury-g/CYD_App_Launcher
 Branch: main
-Favorite firmware: CyberDesk 0.5.0
-Diagnostic firmware: CyberDesk 0.5.0-log
+Favorite firmware: 0.4.41-snappy-lock
+Diagnostic firmware: 0.4.41-snappy-lock-log
 Detailed historical handoff: docs/handoff-2026-05-24-0.4.41-snappy-lock.md
 ```
 

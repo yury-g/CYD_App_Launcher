@@ -6,45 +6,29 @@ whether it made real CYD pulse sensing better or worse.
 
 ## Current Best Rule
 
-Use the last-known-good one-screen signal baseline until a newer signal stack
-beats it on hardware.
+Acquire quickly, hold gently, recover aggressively when the detector goes quiet.
 
-- `CyberDesk 0.5.3-LKG` is the current source-of-truth rollback. It comes from
-  `last-working-20260522-132601-EDT` with only visible version metadata added.
-- This baseline uses the older simple accepted-beat path: a Playground beat with
-  plausible BPM/IBI, enough amplitude/range, and low recent clipping is trusted.
-- Lock still requires four consecutive qualified beats.
-- Auto re-arm is part of the product behavior when the waveform is alive but no
-  Playground beat event arrives.
+- `0.4.41-snappy-lock` intentionally restores the older simple accepted-beat
+  path: a Playground beat with plausible BPM/IBI, enough amplitude/range, and no
+  blocking signal problem is accepted as `strict`.
+- Gentle post-lock hold prevents false negatives: once locked, tolerate up to
+  four unqualified beat events within 4200 ms before clearing BPM/IBI.
+- Auto re-arm is part of the product behavior. If the waveform is alive but no
+  Playground beat event arrives for about 1600 ms, re-arm the detector and tune
+  the Playground threshold to the current waveform midpoint.
+- Re-arm should not run on recently clipped rail noise. But broad waveform range
+  alone should not block recovery, because minor movement was causing good
+  visible waves to be filtered out.
+- Beat markers are now diagnostic UI:
+  large filled white dots are accepted beats, small hollow white dots are raw
+  Playground beat events that the app rejected.
 - Raw `SIG GPIO35`, BPM, IBI, and qualified-beat behavior outrank display polish,
   app switching, Pin Scanner, sounds, and story screens.
 - Always record body position and mounting method for hardware validation. Do
   not compare finger, earlobe, wrist, or loose bench readings as if they are the
   same test condition.
-- See `docs/signal-quality-theory-and-sig-tile.md` for the current theory of how
-  physical contact should translate into the bottom-right `SIG GPIO35` tile.
 
-See `docs/handoff-2026-05-24-0.4.41-snappy-lock.md` for the historical signal
-handoff that this version label inherits.
-
-## 2026-05-25 - CyberDesk 0.5.3-LKG Source-Of-Truth Rollback
-
-Observed on hardware:
-
-- Recent mainline signal logic became unreliable: a clean-looking waveform could
-  fail to detect beats, no-finger ambient input could produce qualified beats,
-  and steady finger contact could over-report.
-- A partial local rollback labeled `CyberDesk 0.5.2` did not restore confidence.
-- A full rollback to `last-working-20260522-132601-EDT`, labeled
-  `CyberDesk 0.5.3-LKG`, behaved much better after the sensor contact settled.
-
-Decision:
-
-- Make GitHub `main` match the hardware-trusted last-known-good source baseline.
-- Keep newer peak-to-peak recovery, app-shell, Pin Scanner, and Origin Story work
-  in git history/docs, but do not make that stack the current firmware until it
-  beats the baseline in repeated real contact tests.
-- Every future flash must bump the visible on-screen version first.
+See `docs/handoff-2026-05-24-0.4.41-snappy-lock.md` for the current handoff.
 
 ## 2026-05-24 - Stopping Point And Placement Clarification
 

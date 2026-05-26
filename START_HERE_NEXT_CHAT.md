@@ -10,7 +10,7 @@ fetch GitHub, build, flash, and verify on real CYD hardware.
 ```text
 Repo: https://github.com/yury-g/CYD_App_Launcher
 Branch: main
-Current favorite firmware: CyberDesk 0.5.0
+Current favorite firmware: 0.4.41-snappy-lock
 Continuation note: docs/handoff-2026-05-24-0.4.41-snappy-lock.md
 ```
 

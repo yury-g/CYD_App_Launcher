@@ -18,7 +18,7 @@ required = {
 missing = [message for token, message in required.items() if token not in source]
 
 platformio = Path("platformio.ini").read_text()
-if "APP_VERSION" not in platformio or metadata.diagnostic_version not in platformio:
+if f'-D APP_VERSION=\\"{metadata.diagnostic_version}\\"' not in platformio:
     missing.append("diagnostic PlatformIO env should report the beat-thinking marker logger version")
 
 def function_body(name):

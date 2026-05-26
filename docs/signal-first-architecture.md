@@ -1,10 +1,8 @@
 # Signal-First Firmware Architecture
 
-This firmware is a PulseSensor dashboard first. The current source-of-truth
-baseline is `CyberDesk 0.5.3-LKG`, a rollback to the last hardware-trusted
-one-screen signal path. The best possible raw signal, BPM, IBI, and
-qualified-beat behavior outrank drawings, display modes, app switching, Pin
-Scanner, sound, and story screens.
+This firmware is a PulseSensor dashboard first, and an app shell second.
+The best possible raw signal, BPM, IBI, and qualified-beat behavior outrank
+drawings, display modes, app switching, Pin Scanner, sound, and story screens.
 
 This note is for future maintainers who do not know the project history. Keep it
 close to the code when changing the firmware.
@@ -21,10 +19,16 @@ close to the code when changing the firmware.
 - The `SIG GPIO35` bars are a user-facing acquisition ladder, not proof of BPM
   lock. They may rise from raw signal range, amplitude, cleanliness, and detector
   activity before the firmware trusts BPM/IBI.
-- Current lock behavior is intentionally simple: four consecutive qualified
-  PulseSensor Playground beat events are required before BPM/IBI are trusted.
-- Peak-to-peak recovery, dynamic thresholding, cadence gates, and app-shell
-  experiments are historical work until they beat this baseline on hardware.
+- Acquire strictly, hold gently: first lock still requires four consecutive
+  qualified beats, but an already-locked signal may survive two rejected beat
+  events within a 2200 ms window.
+- After lock, stable peak cadence and shipped peak-to-peak recovery can rescue true positives when slight movement
+  distorts the valley/trough. This recovery path must stay narrow: plausible
+  BPM/IBI, close cadence to the last trusted IBI, a fresh beat event with live
+  signal movement, and low clipping.
+- After lock, strict beat events also respect the same cadence guard so a short
+  movement blip cannot overwrite a stable BPM/IBI run just because it falls
+  inside the broad absolute IBI range.
 - The live waveform and `SIG GPIO35` panel must share the same state color path:
   yellow while acquiring, then the locked signal color after lock. This keeps
   the visible graph and the acquisition/lock cue from teaching different states.
@@ -57,9 +61,9 @@ flowchart TD
     M --> N["Update acquisition ladder\n12-step SIG bars + harmony"]
     N --> O{"Active app"}
     O -->|Pulse| P["Draw small live updates\nheart, waveform column, changed panels only"]
-    O -->|Current baseline| Q["One-screen dashboard\nsmall changed-panel redraws"]
-    O -->|Historical experiments| R["Settings, Pin Scanner,\nOrigin Story in git history"]
-    O -->|Future apps| S["Only after signal baseline stays trustworthy"]
+    O -->|Settings| Q["Draw only when appNeedsRedraw"]
+    O -->|Pin Scanner| R["Read one tapped ADC row\nonly while active"]
+    O -->|Other apps| S["Animate at capped frame rates"]
     P --> T["Serial sanity output\nsignal, amp, BPM, IBI, lock, quality"]
     Q --> T
     R --> T

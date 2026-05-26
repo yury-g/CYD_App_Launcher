@@ -1,37 +1,16 @@
-# PulseSensor CyberDeck with CYD ESP-322432S028
+# PulseSensor CyberDeck with the CYD
 
-A one-screen PulseSensor heartbeat cyberdeck for the ESP32 **Cheap Yellow Display** (CYD). Flash from source, wire three colored wires, and watch your pulse live with sound, light, and touch volume.
+A compact PulseSensor cyberdeck for the ESP32 **Cheap Yellow Display** (CYD): live heartbeat dashboard, Settings, Pin Scanner, and Origin Story screens in one beginner-friendly Arduino sketch.
 
-![CYD Pulse Dashboard banner](docs/readme-banner.svg)
+![PulseSensor CyberDeck banner](docs/readme-banner.svg)
 
 > **Educational biofeedback demo &mdash; not for medical use.**
 
 ---
 
-## Easiest public install: [pulsesensor.com/pages/cyd](https://pulsesensor.com/pages/cyd)
+## Public One-Click Install: [pulsesensor.com/pages/cyd](https://pulsesensor.com/pages/cyd)
 
-That page has a one-click web installer, wiring diagram, and the full tutorial. Use it if you just want to flash your CYD and see your heartbeat. This README is for people who want to read the source or build from source.
-
-## Current Source State
-
-```text
-Firmware: CyberDesk 0.5.3-LKG
-Date:     2026-05-25
-Role:     last-known-good source baseline for reliable beat detection
-```
-
-This `main` branch intentionally favors the last hardware-trusted one-screen
-PulseSensor dashboard over the newer experimental multi-app signal stack. The
-later app-shell, Pin Scanner, Origin Story, peak-to-peak recovery, and dynamic
-signal experiments remain in git history and docs, but they are not the current
-source-of-truth firmware.
-
-The connected CYD was flashed successfully from this baseline on
-`/dev/cu.usbserial-10` and showed `CyberDesk 0.5.3-LKG` on screen.
-
-Development rule: every firmware flash must bump the visible on-screen
-`APP_VERSION` first, so different computers, CYDs, and AI sessions can confirm
-which build is actually running by looking at the device.
+That page has a one-click web installer, wiring diagram, and the full tutorial for the published public firmware. Use the source-flash instructions below when you want the current CyberDeck source build with the newer app shell, Settings page, Pin Scanner, display modes, and `Origin Story` app.
 
 ---
 
@@ -39,10 +18,10 @@ which build is actually running by looking at the device.
 
 | Channel | Feedback |
 | --- | --- |
-| Screen | Cyan waveform (searching) → white waveform (locked), dotted `THR 550` guide, BPM, IBI, compact `SIG GPIO35` quality bars that move yellow → green |
+| Screen | Waveform and `SIG GPIO35` use the same state color: yellow while acquiring, then the locked signal color after lock; dotted `THR 550` guide, BPM, IBI, and compact 12-step quality bars |
 | Light | Rear LED pulses yellow while locking and red once locked, using the same smooth heartbeat fade |
 | Sound | Rising signal-quality harmony while locking, then short heartbeat tone on the CYD speaker (GPIO 26) |
-| Touch | Header buttons change speaker volume, default 1/10, and rotate the dashboard for different enclosures |
+| Touch | App navigation plus Settings controls for speaker volume, display mode, rotation, LED, and diagnostics |
 | Heart | Centered animated red heart with cyan outline |
 
 Current horizontal dashboard:
@@ -53,7 +32,66 @@ Current horizontal dashboard:
 | --- | --- |
 | ![Searching signal screen](docs/screenshots/searching.svg) | ![Locked qualified beat screen](docs/screenshots/locked.svg) |
 
----
+Portrait mode:
+
+![Portrait locked CYD dashboard](docs/screenshots/portrait-locked.svg)
+
+Beat-dot explainer:
+
+![Beat-dot explainer showing cyan beat marker dots on the live graph](docs/screenshots/beat-dot-explainer.svg)
+
+## Current Source State
+
+Use this section as the quick human-readable project log. See [CHANGELOG.md](CHANGELOG.md) for release notes, [docs/signal-behavior-log.md](docs/signal-behavior-log.md) for signal testing, and [docs/experiment-log.md](docs/experiment-log.md) for longer development archaeology.
+
+### PulseSensor CyberDeck main — 2026-05-25
+
+This is the current source state on `main`:
+
+```text
+Branch:   main
+Firmware: 0.4.41-snappy-lock
+```
+
+- Latest continuation handoff:
+  [docs/handoff-2026-05-24-0.4.41-snappy-lock.md](docs/handoff-2026-05-24-0.4.41-snappy-lock.md).
+- The screen order is Pulse dashboard, Settings, Pin Scanner, `Your App Here`, and `Origin Story`.
+- The Pulse dashboard remains the priority: `readPulseSensor()` stays first in `loop()`, signal math remains conservative, and peak-to-peak recovery is shipped behavior for earlobe movement cases.
+- Settings controls volume, display mode, rotation, LED behavior, diagnostics, firmware identity, memory, and build labels.
+- Pin Scanner is manual and guarded: it scans only a tapped row and never analog-reads known unsafe/non-ADC rows.
+- `Origin Story` uses canonical crawl text from [docs/origin-story-crawl.txt](docs/origin-story-crawl.txt), synced into firmware and render tools.
+- `tools/check_project.py` is the default local guard before commits.
+
+External code audits and the current response live in [docs/code-audits/](docs/code-audits/).
+
+### v1.2.0 — 2026-05-15
+
+- Added Signal Coach teaching feedback: `TOO FLAT`, `HOLD STEADY`, `GOOD WAVE`, `LOCKING`, and `QUALIFIED BEAT`.
+- Added the amplitude meter and dotted `THR 550` guide.
+- Lowered startup volume to `1/10`.
+
+### v1.1.0 — 2026-05-14
+
+- Added beat sound on the CYD speaker and touch volume controls.
+- Added the centered animated heart and state-colored waveform behavior.
+- Added the first ESP Web Tools browser flasher prototype.
+- Reworked the README into a flash-first, student-friendly guide.
+
+### v1.0.0 — 2026-05-13
+
+- Established the known-good one-screen CYD Pulse dashboard.
+- Switched PulseSensor input to `GPIO 35` for the tested CYD hardware.
+- Added BPM, IBI, waveform, signal quality bars, rear LED pulse, and automatic detector re-arm.
+
+### v0.2.0 — 2026-04-08
+
+- Built the first complete five-app launcher sketch.
+- Added touch menu navigation and early Heartbeat, Breathing, Relaxation, HRV, and BreathFFT apps.
+- Status at that point was still incomplete and not yet hardware-verified.
+
+### v0.1.0 — 2026-04-08
+
+- Started the repository with a placeholder README and initial Git history.
 
 ## Wire The PulseSensor
 
@@ -69,32 +107,68 @@ Current horizontal dashboard:
 
 ## Flash Your CYD
 
-### Option A — One-click web installer (recommended)
+### Option A — Current CyberDeck source build
 
-Go to **[pulsesensor.com/pages/cyd](https://pulsesensor.com/pages/cyd)** in Chrome, Edge, or Brave on a desktop or laptop. Plug in your CYD over USB. Click **Install**.
+Use this path on any computer when you want the current CyberDeck app shell, display modes, Settings screen, Pin Scanner, and `Origin Story` app from this branch. This does not require a Codex session.
 
-The same installer is also hosted from this repo:
-**[worldfamouselectronics.github.io/PulseSensor_CYD/](https://worldfamouselectronics.github.io/PulseSensor_CYD/)**
+1. Install Git, Python 3, and PlatformIO:
 
-### Option B — Local USB flash with PlatformIO
+```bash
+python3 -m pip install --user platformio
+```
 
-This branch includes a `platformio.ini` for repeatable local builds and uploads.
+2. Clone this repo and use the current `main` branch:
 
-1. Plug one CYD into USB.
-2. Detect the serial port:
+```bash
+git clone https://github.com/yury-g/CYD_App_Launcher.git
+cd CYD_App_Launcher
+git log -1 --oneline
+```
+
+Run `git log -1 --oneline` after clone to see the latest pushed handoff
+commit. The latest firmware/UI code commit is the current `HEAD` commit on
+`main`.
+
+3. Plug in one CYD and detect the serial port:
 
 ```bash
 pio device list
 ```
 
-3. Build and flash, replacing the port with the one you detected:
+On macOS the port usually looks like `/dev/cu.usbserial-*`, `/dev/cu.SLAB_USBtoUART*`, or similar. On Windows it usually looks like `COM3`, `COM4`, or similar.
+
+4. Build and flash, replacing the port with the one you detected:
 
 ```bash
 pio run -e cyd
 pio run -e cyd -t upload --upload-port <detected-port>
 ```
 
-The config includes the required `TFT_eSPI` CYD display compile flags and uses `115200` upload speed.
+This branch includes a `platformio.ini` for repeatable local builds and uploads. For internal signal logging, build and upload `cyd_diag` instead of `cyd`.
+
+### Internal Resume Flash Helper
+
+For a fresh internal development machine or a new AI session, use the helper
+below to flash the current favorite hardware state from a clean clone. It guards
+against accidentally flashing an experiment branch when the intended comparison
+state is `0.4.41-snappy-lock`.
+
+```bash
+python3 tools/flash_current_favorite.py --port <detected-port>
+```
+
+If the connected CYD uses a different port, pass that port instead. The helper
+expects the internal repo `yury-g/CYD_App_Launcher`, favorite ref
+`main`, and firmware `0.4.41-snappy-lock`.
+
+### Option B — Public one-click web installer
+
+Go to **[pulsesensor.com/pages/cyd](https://pulsesensor.com/pages/cyd)** in Chrome, Edge, or Brave on a desktop or laptop. Plug in your CYD over USB. Click **Install**.
+
+The same installer is also hosted from this repo:
+**[worldfamouselectronics.github.io/PulseSensor_CYD/](https://worldfamouselectronics.github.io/PulseSensor_CYD/)**
+
+Important: the public one-click installer is for the published tutorial firmware unless the checked-in `firmware/` binaries have been regenerated from the current app-shell branch. The checked-in `firmware/` files are web-installer artifacts, not proof that the current source build has been published. To test the new screens and display modes right now, use Option A.
 
 ### Option C — Build in Arduino IDE
 
@@ -130,7 +204,7 @@ Every reading on screen comes directly from the [PulseSensor Playground](https:/
 | Amplitude meter | `getPulseAmplitude()` |
 | Dotted threshold guide | `setThreshold(550)` |
 
-The 12-step quality meter is shown as bars in the compact `SIG GPIO35` panel. Lock requires four consecutive qualified beats, a healthy live signal range, and low recent clipping, which keeps the classroom demo from locking onto obvious false positives.
+The 12-step quality meter is shown as bars in the compact `SIG GPIO35` panel. Lock requires four consecutive qualified beats, a healthy live signal range, and low recent clipping, which keeps the classroom demo from locking onto obvious false positives. After lock, the firmware holds through up to two unqualified beat events within a short 2200 ms grace window so normal finger movement does not instantly erase an otherwise good signal.
 
 The `SIG GPIO35` label is intentionally compact because a future revision may show two PulseSensor inputs side by side.
 
@@ -138,9 +212,8 @@ The `SIG GPIO35` label is intentionally compact because a future revision may sh
 
 The dashboard uses a small, consistent color vocabulary so beginners can learn the state at a glance:
 
-- **Cyan:** live waveform and graph guide details.
-- **Yellow:** signal is promising and the detector is locking. The `SIG GPIO35` bars and rear LED both use yellow here.
-- **Green:** signal is locked. The `SIG GPIO35` box and bars turn green.
+- **Yellow:** signal is promising and the detector is locking. The live waveform and `SIG GPIO35` panel both use yellow here.
+- **Cyan/teal:** signal is locked. The live waveform and `SIG GPIO35` panel change together after lock.
 - **Red:** confirmed heartbeat feedback. The rear LED and on-screen heart use red after lock.
 
 The rear LED is intentionally expressive rather than diagnostic. It should feel alive: yellow says "finding your beat," red says "got it." More detailed explanations belong in the docs, not on the tiny CYD screen.
@@ -227,27 +300,29 @@ Good Playground branches that should stay out of this default firmware until the
 
 ## Web Installer Firmware
 
-The web installer's binary parts live in `firmware/`, and the root `manifest.json` lists their ESP Web Tools offsets:
+The web installer's binary parts live in `firmware/`, and the root `manifest.json` lists their ESP Web Tools offsets. Treat these as web-installer artifacts and regenerate them only during an intentional browser-installer release:
 
 - `firmware/bootloader.bin` (offset `0x1000`)
 - `firmware/partitions.bin` (offset `0x8000`)
 - `firmware/boot_app0.bin` (offset `0xE000`)
 - `firmware/firmware.bin` (offset `0x10000`)
 
-These checked-in binaries are web-installer artifacts, not automatically-current source builds. Use the PlatformIO local flash path above while iterating on source. Regenerate and replace the installer binaries before publishing a web-flasher release.
+Use the PlatformIO local flash path above while iterating on source. Regenerate and replace the installer binaries before publishing a web-flasher release.
 
-## Regenerate Screenshots
+## Screenshots And Render Tools
 
-The checked-in screenshots are SVG recreations of the CYD screen in `docs/screenshots/`. Update them whenever the on-device layout changes.
+Checked-in screenshots live in `docs/screenshots/`. They are documentation
+artifacts, not part of the normal build/flash loop.
 
-Older screenshot sets are kept under `docs/screenshots/history/` as design-version history.
+Render/mock helpers in `tools/` are optional. Run them only when deliberately
+changing visual design or refreshing documentation screenshots.
 
 ## Development Checkpoints
 
 The current hardware-tested branch is:
 
 ```text
-codex/finger-coach-dashboard-20260519-111641-EDT
+codex/app4-pin-scanner-perf-safe-20260524
 ```
 
 Timestamped local tags record the iteration path:
@@ -257,13 +332,15 @@ Timestamped local tags record the iteration path:
 - `signal-box-minimal-20260519-114712-EDT` — compact `SIG GPIO35` quality-bar panel.
 - `rotate-control-20260522-121644-EDT` — hardware-tested top-row screen rotation control.
 
+Current CyberDeck continuation notes live in `START_HERE_NEXT_CHAT.md` and `CODEX_HANDOFF.md`.
+
 See `docs/experiment-log.md` for the rejected Signal Dashboard / Finger Coach side quest. The only UI idea carried forward from that experiment is the dotted threshold line plus `THR 550` label.
 
 ---
 
 ## Release
 
-Current release: `v1.2.0`. First known-good single-screen release: `v1.0.0`. See [CHANGELOG.md](CHANGELOG.md).
+Current source firmware: `0.4.41-snappy-lock`. Public web-installer binaries are updated only during an intentional browser-installer release. See [CHANGELOG.md](CHANGELOG.md).
 
 ---
 

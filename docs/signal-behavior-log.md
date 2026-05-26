@@ -436,6 +436,42 @@ Verdict:
   BPM/IBI remain plausible and still clear when the sensor is removed from the
   body.
 
+## 2026-05-26 - App Shell P2P Human-Range Integration
+
+Firmware: `0.5.17-p2papps`
+
+Context:
+
+- User testing found the one-screen `0.5.15-humanrange` build successful after
+  restoring tight p2p scoring and adding human timing limits.
+- This pass starts from the known-good app-shell backup
+  `good-working-0.4.24-front-id-20260524` and brings that Pulse behavior into
+  the multi-app launcher rather than merging the old main rollback.
+
+Change:
+
+- Kept the app switch, Settings, Pin Scanner, `Your App Here`, and `Origin
+  Story` apps.
+- Changed the active Pulse path to p2p-first acceptance with 60-200 BPM,
+  300-1000 ms IBI, tight p2p score, and three accepted beats before lock.
+- Removed the old active lock-grace/cadence-gate acquisition behavior from the
+  Pulse path for this branch.
+- Added graph event markers: `P` p2p, `S` strict, `L` locked, `X` rejected, and
+  `A` artifact/clipping.
+- Kept sound conservative with default volume off and heartbeat audio only after
+  trusted lock.
+- Added project and SignalLab fixture checks so controls/ignored captures cannot
+  become lock-review eligible and `GOOD WAVEFORM` cannot override control,
+  clipping, or movement warnings.
+
+Verification:
+
+- `python3 tools/check_project.py` passed.
+- `python3 -m platformio run -e cyd` passed with RAM 7.3% and Flash 28.9%.
+- Flashed `/dev/cu.usbserial-10` successfully after the visible version bump.
+- Short serial sanity with the current input clipped showed no lock, no BPM/IBI,
+  p2p score 0, and explicit `drop=CLIPPED`.
+
 ## 2026-05-24 - Peak/Cadence Recovery
 
 Firmware: `0.4.19-peak-cadence`

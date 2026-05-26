@@ -44,7 +44,33 @@ Beat-dot explainer:
 
 Use this section as the quick human-readable project log. See [CHANGELOG.md](CHANGELOG.md) for the full detailed history.
 
-### Current app-shell preview — 2026-05-24
+### Current app-shell p2p integration - 2026-05-26
+
+This branch brings the successful `0.5.15-humanrange` Pulse acquisition behavior
+back into the multi-app launcher shell from the known-good `0.4.24-front-id`
+backup.
+
+```text
+Branch:   codex/app-shell-p2p-humanrange-integration-20260526
+Firmware: 0.5.17-p2papps
+```
+
+- Keeps the app shell, Settings, Pin Scanner, `Your App Here`, and `Origin Story`
+  screens from the good app-shell backup.
+- Moves Pulse acquisition to the p2p-first human-range path tested on CYD:
+  60-200 BPM, 300-1000 ms IBI, tight p2p score, and three repeated qualified
+  beats before lock.
+- Removes the old app-shell acquisition cadence gate and lock-grace beat hold
+  from the active Pulse path so BPM/IBI only update from accepted p2p or strict
+  beats.
+- Adds graph markers for beat decisions: `P` p2p, `S` strict, `L` locked, `X`
+  rejected, and `A` clipping/artifact.
+- Keeps sound conservative: volume defaults to off, heartbeat tones require
+  trusted lock, and progress tones require repeated qualified-beat progress.
+- Adds `tools/check_project.py` and `tools/check_siglab_fixtures.py` so the
+  SignalLab control/ignore lessons are checked before builds.
+
+### App-shell preview baseline - 2026-05-24
 
 This is the current good development pause point for the app shell branch:
 

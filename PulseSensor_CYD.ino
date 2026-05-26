@@ -62,36 +62,32 @@
 #define MIN_QUALIFIED_AMPLITUDE 20
 #define SIGNAL_QUALITY_STEPS 12
 #define LOCK_QUALITY_STEPS 10
-#define LOCK_QUALIFIED_BEATS 4
-#define LOCK_GRACE_BAD_BEATS 2
-#define LOCK_HOLD_GRACE_MS 2200
-#define ACQUISITION_CADENCE_TOLERANCE_PERCENT 35
-#define ACQUISITION_CADENCE_MIN_IBI_PERCENT 70
-#define PEAK_TO_PEAK_EXPERIMENT 1
+#define LOCK_QUALIFIED_BEATS 3
 #define PEAK_TO_PEAK_MIN_RANGE 70
 #define PEAK_TO_PEAK_STRONG_RANGE 135
 #define PEAK_TO_PEAK_MIN_AMPLITUDE 10
-#define PEAK_TO_PEAK_ACQUIRE_MIN_SCORE 5
-#define PEAK_TO_PEAK_LOCKED_MIN_SCORE 4
-#define PEAK_TO_PEAK_PRELOCK_CADENCE_MIN_STREAK 1
-#define PEAK_TO_PEAK_FIRST_BEAT_SCORE 8
-#define PEAK_TO_PEAK_LOCKED_IBI_TOLERANCE_PERCENT 35
-#define PEAK_TO_PEAK_LOCKED_MIN_IBI_TOLERANCE_MS 180
-#define PEAK_TO_PEAK_LOCKED_MIN_IBI_PERCENT 70
-#define PEAK_RECOVERY_IBI_TOLERANCE_PERCENT 28
-#define PEAK_RECOVERY_MIN_IBI_TOLERANCE_MS 120
-#define PEAK_RECOVERY_MIN_RANGE 80
-#define PEAK_RECOVERY_MIN_AMPLITUDE 12
+#define PEAK_TO_PEAK_PRIMARY_MIN_SCORE 6
+#define PEAK_TO_PEAK_FIRST_BEAT_SCORE 7
+#define PEAK_TO_PEAK_MIN_BPM 60
+#define PEAK_TO_PEAK_MAX_BPM 200
+#define PEAK_TO_PEAK_MIN_IBI 300
+#define PEAK_TO_PEAK_MAX_IBI 1000
+#define PEAK_TO_PEAK_RECOVERY_ENABLED 1
 #define REARM_SIGNAL_RANGE 120
 #define REARM_NO_BEAT_MS 2200
 #define REARM_COOLDOWN_MS 3500
 #define SIGNAL_COACH_FLAT_RANGE 90
 #define SIGNAL_COACH_FLAT_AMPLITUDE 12
 #define SIGNAL_COACH_STEADY_AMPLITUDE MIN_QUALIFIED_AMPLITUDE
+#define SIGNAL_COACH_ARTIFACT_RANGE 900
+#define SIGNAL_ARTIFACT_HOLD_MS 1500
+#define SIGNAL_CLIP_LOCKOUT_SCORE 18
+#define SIGNAL_JUMP_WARN_STEP 80
+#define SIGNAL_JUMP_WARN_SCORE 28
+#define SIGNAL_JUMP_HOLD_MS 1200
 #define SIGNAL_ACQUISITION_MIN_RANGE 40
 #define SIGNAL_ACQUISITION_FULL_RANGE 220
 #define SIGNAL_ACQUISITION_MAX_SCORE_BEFORE_LOCK 11
-#define SIGNAL_MOTION_ARTIFACT_RANGE 420
 #define AMPLITUDE_METER_MAX 120
 
 // ===== BEAT TONE SETTINGS =====
@@ -118,16 +114,16 @@
 #define HEART_MAX_SIZE 15
 #define VOLUME_MIN 0
 #define VOLUME_MAX 10
-#define VOLUME_START 1
+#define VOLUME_START 0
 #define SCREEN_ROTATION_DEFAULT 1
 #define SCREEN_ROTATION_COUNT 4
 
 // ===== APP SHELL =====
 
 #ifndef APP_VERSION
-#define APP_VERSION "0.4.24-front-id"
+#define APP_VERSION "0.5.17-p2papps"
 #endif
-#define APP_FIRMWARE_DATE "2026-05-24"
+#define APP_FIRMWARE_DATE "2026-05-26"
 #define APP_BUILD_RAM_USAGE "RAM 7.3%"
 #define APP_BUILD_FLASH_USAGE "Flash 28.9%"
 #define TOOLBAR_BUTTON_WIDTH 44
@@ -179,6 +175,7 @@
 #define COLOR_LOCK_GREEN 0x07E0
 #define COLOR_RED 0xF800
 #define COLOR_RED_DARK 0x6000
+#define COLOR_MAGENTA 0xF81F
 #define COLOR_SCREEN_BEAT COLOR_CYAN
 #define COLOR_HIGH_VIS_YELLOW 0xFFF2
 #define COLOR_AMBER COLOR_HIGH_VIS_YELLOW
@@ -200,6 +197,28 @@ enum SignalCoachState {
   COACH_GOOD_WAVE,
   COACH_LOCKING,
   COACH_QUALIFIED
+};
+
+enum BeatDropReason {
+  DROP_NONE,
+  DROP_LOW_AMP,
+  DROP_TOO_FLAT,
+  DROP_CLIPPED,
+  DROP_ARTIFACT_RANGE,
+  DROP_MOVEMENT,
+  DROP_LOW_P2P,
+  DROP_BPM_RANGE,
+  DROP_IBI_RANGE,
+  DROP_NO_BEAT_TIMEOUT
+};
+
+enum BeatGraphMarker {
+  MARKER_NONE,
+  MARKER_P2P,
+  MARKER_STRICT,
+  MARKER_LOCKED,
+  MARKER_REJECT,
+  MARKER_ARTIFACT
 };
 
 enum AppId {
@@ -337,15 +356,6 @@ struct ScannerPin {
   int movement;
 };
 
-struct BeatDecision {
-  bool qualified;
-  bool strictAccepted;
-  bool peakToPeakAccepted;
-  bool recovered;
-  bool accepted;
-  const char* acceptReason;
-};
-
 ScannerPin scannerPins[] = {
   {"P3  IO35", 35, 0, PIN_SCANNER_ADC_MAX_VALUE, 0, 0},
   {"IO22", 22, 0, PIN_SCANNER_ADC_MAX_VALUE, 0, 0},
@@ -370,6 +380,8 @@ unsigned long lastRawDiagnosticPrint = 0;
 unsigned long lastDetectorRearmTime = 0;
 unsigned long lastControlTouchTime = 0;
 unsigned long lastSignalHarmonyTime = 0;
+unsigned long lastSignalArtifactTime = 0;
+unsigned long lastSignalJumpTime = 0;
 
 bool lockedSignal = false;
 bool previousLockedSignal = false;
@@ -380,7 +392,10 @@ int qualifiedBeatStreak = 0;
 int unqualifiedBeatStreak = 0;
 int peakToPeakScore = 0;
 int clippedSampleScore = 0;
+int signalJumpScore = 0;
+int previousSignalSample = 512;
 int rearmCount = 0;
+BeatDropReason lastDropReason = DROP_NONE;
 const char* lastLockDropReason = "none";
 const char* lastBeatAcceptReason = "none";
 bool rawDiagnosticsHeaderPrinted = false;
@@ -420,6 +435,8 @@ unsigned long app3CrawlFanfareNextStepTime = 0;
 
 int graphX = 0;
 int lastGraphY = 104;
+BeatGraphMarker pendingGraphMarker = MARKER_NONE;
+int pendingGraphMarkerSignal = 512;
 
 // ===== LAYOUT STATE =====
 
@@ -601,16 +618,16 @@ const char* currentAppName();
 #endif
 bool isQualifiedBeat(int bpm, int ibi, int amplitude);
 bool isPlausibleBeatTiming(int bpm, int ibi);
-bool isAcquisitionCadenceMatch(int ibi);
-bool isLockedCadenceMatch(int ibi);
-bool isPeakToPeakCadenceMatch(int ibi);
-bool isPeakCadenceRecoveryBeat(int bpm, int ibi, int amplitude);
-bool signalIsRecentlyClipped();
-bool signalRangeIsMotionArtifact();
+bool isPlausiblePeakToPeakTiming(int bpm, int ibi);
+BeatDropReason beatDropReason(int bpm, int ibi, int amplitude);
+const char* beatDropReasonText(BeatDropReason reason);
+void updateSignalJumpScore();
+bool signalMovementActive();
+void updateSignalArtifactState();
+bool signalArtifactActive();
 bool signalLooksCleanForAcquisition();
 int peakToPeakScoreForCurrentSignal();
-bool isPeakToPeakCandidateBeat(int bpm, int ibi, int amplitude, bool wasLocked);
-BeatDecision decideBeat(int bpm, int ibi, int amplitude, bool wasLocked);
+bool isPeakToPeakCandidateBeat(int bpm, int ibi, int amplitude);
 void updateClippingScore();
 int acquisitionScoreForCurrentSignal();
 void updateSignalAcquisitionScore();
@@ -622,6 +639,10 @@ void maybeRearmDetector();
 void rearmPulseDetector(const char* reason);
 void resetSignalAcquisitionWindow();
 void updateSignalRange();
+void noteGraphBeatMarker(BeatGraphMarker marker);
+void drawBeatGraphMarker(int localX, int y, BeatGraphMarker marker);
+uint16_t beatGraphMarkerColor(BeatGraphMarker marker);
+const char* beatGraphMarkerGlyph(BeatGraphMarker marker);
 void drawActiveApp();
 void drawStaticScreen();
 void drawDashboardIfChanged();
@@ -806,13 +827,13 @@ void loop() {
                       pinScannerStatusText(scannerActiveIndex));
       }
     } else {
-      Serial.printf("signal=%d amp=%d bpm=%d ibi=%d locked=%d quality=%d p2p=%d range=%d clip=%d qStreak=%d badStreak=%d accept=%s drop=%s\n",
+      Serial.printf("signal=%d amp=%d bpm=%d ibi=%d locked=%d quality=%d p2p=%d range=%d clip=%d jump=%d qStreak=%d accept=%s drop=%s\n",
                     currentSignal, pulseAmplitude, displayBPM, displayIBI,
                     lockedSignal ? 1 : 0, signalQuality, peakToPeakScore,
-                    maxSignal - minSignal, clippedSampleScore,
-                    qualifiedBeatStreak, unqualifiedBeatStreak,
+                    maxSignal - minSignal, clippedSampleScore, signalJumpScore,
+                    qualifiedBeatStreak,
                     lastBeatAcceptReason,
-                    lastLockDropReason);
+                    beatDropReasonText(lastDropReason));
     }
   }
 }
@@ -1549,54 +1570,64 @@ void readPulseSensor() {
 #endif
   pulseAmplitude = pulseSensor.getPulseAmplitude();
   insideBeatWindow = pulseSensor.isInsideBeat();
+  int previousQualifiedBeatStreak = qualifiedBeatStreak;
+  updateSignalJumpScore();
   updateClippingScore();
   updateSignalRange();
+  updateSignalArtifactState();
   peakToPeakScore = peakToPeakScoreForCurrentSignal();
+  if (signalArtifactActive()) {
+    lockedSignal = false;
+    qualifiedBeatStreak = 0;
+    unqualifiedBeatStreak = 0;
+    displayBPM = 0;
+    displayIBI = 0;
+    lastDropReason = clippedSampleScore > SIGNAL_CLIP_LOCKOUT_SCORE ? DROP_CLIPPED : DROP_ARTIFACT_RANGE;
+    lastLockDropReason = beatDropReasonText(lastDropReason);
+    lastBeatAcceptReason = "reject";
+  }
   maybeRearmDetector();
-  updateSignalAcquisitionScore();
 
   if (pulseSensor.sawStartOfBeat()) {
 #if PERF_DIAGNOSTICS
     notePerfBeatEvent();
 #endif
     unsigned long now = millis();
-    bool wasLocked = lockedSignal;
     int bpm = pulseSensor.getBeatsPerMinute();
     int ibi = pulseSensor.getInterBeatIntervalMs();
-    BeatDecision decision = decideBeat(bpm, ibi, pulseAmplitude, wasLocked);
+    bool peakToPeakAccepted = isPeakToPeakCandidateBeat(bpm, ibi, pulseAmplitude);
+    bool strictAccepted = !peakToPeakAccepted && isQualifiedBeat(bpm, ibi, pulseAmplitude);
+    bool accepted = peakToPeakAccepted || strictAccepted;
 
     lastBeatTime = now;
 
-    if (decision.accepted) {
+    if (accepted) {
       displayBPM = bpm;
       displayIBI = ibi;
       lastQualifiedBeatTime = now;
       unqualifiedBeatStreak = 0;
-      lastLockDropReason = "none";
-      lastBeatAcceptReason = decision.acceptReason;
+      lastDropReason = DROP_NONE;
+      lastLockDropReason = "NONE";
+      lastBeatAcceptReason = peakToPeakAccepted ? "p2p" : "strict";
       qualifiedBeatStreak++;
       if (qualifiedBeatStreak > LOCK_QUALIFIED_BEATS) qualifiedBeatStreak = LOCK_QUALIFIED_BEATS;
-    } else if (wasLocked) {
-      lastBeatAcceptReason = "reject";
-      unqualifiedBeatStreak++;
-      if (wasLocked && unqualifiedBeatStreak <= LOCK_GRACE_BAD_BEATS &&
-          now - lastQualifiedBeatTime <= LOCK_HOLD_GRACE_MS) {
-        qualifiedBeatStreak = LOCK_QUALIFIED_BEATS;
-      } else {
-        dropSignalLock("grace expired");
-      }
     } else {
+      lastDropReason = beatDropReason(bpm, ibi, pulseAmplitude);
+      lastLockDropReason = beatDropReasonText(lastDropReason);
       lastBeatAcceptReason = "reject";
       qualifiedBeatStreak = 0;
-      unqualifiedBeatStreak = 0;
+      unqualifiedBeatStreak++;
     }
 
     lockedSignal = qualifiedBeatStreak >= LOCK_QUALIFIED_BEATS;
     updateSignalAcquisitionScore();
     rawDiagnosticsBeatPending = true;
     rawDiagnosticsBeatAcceptReason = lastBeatAcceptReason;
+    noteGraphBeatMarker(accepted ?
+                        (lockedSignal ? MARKER_LOCKED : (peakToPeakAccepted ? MARKER_P2P : MARKER_STRICT)) :
+                        ((lastDropReason == DROP_CLIPPED || lastDropReason == DROP_ARTIFACT_RANGE) ? MARKER_ARTIFACT : MARKER_REJECT));
 
-    if (decision.accepted) {
+    if (accepted) {
       if (lockedSignal) {
         triggerBeatEffects();
       } else {
@@ -1606,12 +1637,18 @@ void readPulseSensor() {
   }
 
   unsigned long now = millis();
-  if (lockedSignal && now - lastQualifiedBeatTime > LOCK_HOLD_GRACE_MS) {
-    dropSignalLock("grace expired");
+  if (now - lastQualifiedBeatTime > NO_BEAT_TIMEOUT) {
+    if (signalArtifactActive()) {
+      lastDropReason = clippedSampleScore > SIGNAL_CLIP_LOCKOUT_SCORE ? DROP_CLIPPED : DROP_ARTIFACT_RANGE;
+      dropSignalLock(beatDropReasonText(lastDropReason));
+    } else {
+      dropSignalLock("NO_BEAT_TIMEOUT");
+    }
   }
 
-  if (now - lastQualifiedBeatTime > NO_BEAT_TIMEOUT) {
-    dropSignalLock("no beat timeout");
+  updateSignalAcquisitionScore();
+  if (!lockedSignal && qualifiedBeatStreak > previousQualifiedBeatStreak && qualifiedBeatStreak >= 2) {
+    startSignalHarmony(signalQuality);
   }
 
 #if PERF_DIAGNOSTICS
@@ -1744,6 +1781,8 @@ bool isQualifiedBeat(int bpm, int ibi, int amplitude) {
   if (!isPlausibleBeatTiming(bpm, ibi)) return false;
   if (amplitude < MIN_QUALIFIED_AMPLITUDE) return false;
   if (maxSignal - minSignal < SIGNAL_COACH_FLAT_RANGE) return false;
+  if (clippedSampleScore > SIGNAL_CLIP_LOCKOUT_SCORE) return false;
+  if (signalArtifactActive()) return false;
   if (!signalLooksCleanForAcquisition()) return false;
   return true;
 }
@@ -1754,61 +1793,62 @@ bool isPlausibleBeatTiming(int bpm, int ibi) {
   return true;
 }
 
-bool isAcquisitionCadenceMatch(int ibi) {
-  if (qualifiedBeatStreak <= 0 || displayIBI <= 0) return true;
-  if (ibi < (displayIBI * ACQUISITION_CADENCE_MIN_IBI_PERCENT) / 100) return false;
-  int ibiTolerance = max(PEAK_RECOVERY_MIN_IBI_TOLERANCE_MS,
-                         (displayIBI * ACQUISITION_CADENCE_TOLERANCE_PERCENT) / 100);
-  return abs(ibi - displayIBI) <= ibiTolerance;
-}
-
-bool isLockedCadenceMatch(int ibi) {
-  if (displayIBI <= 0) return false;
-  int ibiTolerance = max(PEAK_RECOVERY_MIN_IBI_TOLERANCE_MS,
-                         (displayIBI * PEAK_RECOVERY_IBI_TOLERANCE_PERCENT) / 100);
-  return abs(ibi - displayIBI) <= ibiTolerance;
-}
-
-bool isPeakToPeakCadenceMatch(int ibi) {
-  if (displayIBI <= 0) return false;
-  if (ibi < (displayIBI * PEAK_TO_PEAK_LOCKED_MIN_IBI_PERCENT) / 100) return false;
-  int ibiTolerance = max(PEAK_TO_PEAK_LOCKED_MIN_IBI_TOLERANCE_MS,
-                         (displayIBI * PEAK_TO_PEAK_LOCKED_IBI_TOLERANCE_PERCENT) / 100);
-  return abs(ibi - displayIBI) <= ibiTolerance;
-}
-
-bool isPeakCadenceRecoveryBeat(int bpm, int ibi, int amplitude) {
-  if (!lockedSignal) return false;
-  if (!isPlausibleBeatTiming(bpm, ibi)) return false;
-  if (!isLockedCadenceMatch(ibi)) return false;
-
-  int liveRange = maxSignal - minSignal;
-  // sawStartOfBeat() is already the peak-side evidence; do not require the
-  // fixed startup threshold here because post-lock movement can shift baseline.
-  bool signalStillMoving = liveRange >= PEAK_RECOVERY_MIN_RANGE ||
-                           amplitude >= PEAK_RECOVERY_MIN_AMPLITUDE;
-  if (!signalStillMoving) return false;
-
-  if (!signalLooksCleanForAcquisition()) return false;
+bool isPlausiblePeakToPeakTiming(int bpm, int ibi) {
+  if (bpm < PEAK_TO_PEAK_MIN_BPM || bpm > PEAK_TO_PEAK_MAX_BPM) return false;
+  if (ibi < PEAK_TO_PEAK_MIN_IBI || ibi > PEAK_TO_PEAK_MAX_IBI) return false;
   return true;
 }
 
-bool signalIsRecentlyClipped() {
-  return clippedSampleScore > 18;
+BeatDropReason beatDropReason(int bpm, int ibi, int amplitude) {
+  int liveRange = maxSignal - minSignal;
+  if (clippedSampleScore > SIGNAL_CLIP_LOCKOUT_SCORE) return DROP_CLIPPED;
+  if (liveRange >= SIGNAL_COACH_ARTIFACT_RANGE || signalArtifactActive()) return DROP_ARTIFACT_RANGE;
+  if (signalMovementActive()) return DROP_MOVEMENT;
+  if (bpm < PEAK_TO_PEAK_MIN_BPM || bpm > PEAK_TO_PEAK_MAX_BPM) return DROP_BPM_RANGE;
+  if (ibi < PEAK_TO_PEAK_MIN_IBI || ibi > PEAK_TO_PEAK_MAX_IBI) return DROP_IBI_RANGE;
+  if (peakToPeakScore < PEAK_TO_PEAK_PRIMARY_MIN_SCORE) return DROP_LOW_P2P;
+  if (amplitude < MIN_QUALIFIED_AMPLITUDE) return DROP_LOW_AMP;
+  if (liveRange < SIGNAL_COACH_FLAT_RANGE) return DROP_TOO_FLAT;
+  return DROP_NONE;
 }
 
-bool signalRangeIsMotionArtifact() {
-  return maxSignal - minSignal > SIGNAL_MOTION_ARTIFACT_RANGE;
+const char* beatDropReasonText(BeatDropReason reason) {
+  switch (reason) {
+    case DROP_LOW_AMP:
+      return "LOW_AMP";
+    case DROP_TOO_FLAT:
+      return "TOO_FLAT";
+    case DROP_CLIPPED:
+      return "CLIPPED";
+    case DROP_ARTIFACT_RANGE:
+      return "ARTIFACT_RANGE";
+    case DROP_MOVEMENT:
+      return "MOVEMENT";
+    case DROP_LOW_P2P:
+      return "LOW_P2P";
+    case DROP_BPM_RANGE:
+      return "BPM_RANGE";
+    case DROP_IBI_RANGE:
+      return "IBI_RANGE";
+    case DROP_NO_BEAT_TIMEOUT:
+      return "NO_BEAT_TIMEOUT";
+    default:
+      return "NONE";
+  }
 }
 
 bool signalLooksCleanForAcquisition() {
-  return !signalIsRecentlyClipped() && !signalRangeIsMotionArtifact();
+  int liveRange = maxSignal - minSignal;
+  return clippedSampleScore <= SIGNAL_CLIP_LOCKOUT_SCORE &&
+         liveRange < SIGNAL_COACH_ARTIFACT_RANGE &&
+         !signalArtifactActive();
 }
 
 int peakToPeakScoreForCurrentSignal() {
-  if (!signalLooksCleanForAcquisition()) return 0;
-
   int liveRange = maxSignal - minSignal;
+  if (!signalLooksCleanForAcquisition()) return 0;
+  if (liveRange < PEAK_TO_PEAK_MIN_RANGE && pulseAmplitude < PEAK_TO_PEAK_MIN_AMPLITUDE) return 0;
+
   int rangeScore = map(constrain(liveRange,
                                  PEAK_TO_PEAK_MIN_RANGE,
                                  PEAK_TO_PEAK_STRONG_RANGE),
@@ -1825,49 +1865,17 @@ int peakToPeakScoreForCurrentSignal() {
                            3);
   int cleanScore = clippedSampleScore <= 4 ? 2 : (clippedSampleScore <= 18 ? 1 : 0);
   int beatWindowScore = insideBeatWindow ? 1 : 0;
-  int score = rangeScore + amplitudeScore + cleanScore + beatWindowScore;
 
-  if (liveRange < PEAK_TO_PEAK_MIN_RANGE && pulseAmplitude < PEAK_TO_PEAK_MIN_AMPLITUDE) {
-    score = 0;
-  }
-
-  return constrain(score, 0, 10);
+  return constrain(rangeScore + amplitudeScore + cleanScore + beatWindowScore, 0, 10);
 }
 
-bool isPeakToPeakCandidateBeat(int bpm, int ibi, int amplitude, bool wasLocked) {
-  if (!isPlausibleBeatTiming(bpm, ibi)) return false;
+bool isPeakToPeakCandidateBeat(int bpm, int ibi, int amplitude) {
+  if (!PEAK_TO_PEAK_RECOVERY_ENABLED) return false;
+  if (!isPlausiblePeakToPeakTiming(bpm, ibi)) return false;
   if (!signalLooksCleanForAcquisition()) return false;
-
-  int requiredScore = wasLocked ? PEAK_TO_PEAK_LOCKED_MIN_SCORE : PEAK_TO_PEAK_ACQUIRE_MIN_SCORE;
-  if (peakToPeakScore < requiredScore) return false;
-
-  if (wasLocked) return isPeakToPeakCadenceMatch(ibi);
-  if (qualifiedBeatStreak < PEAK_TO_PEAK_PRELOCK_CADENCE_MIN_STREAK &&
-      peakToPeakScore < PEAK_TO_PEAK_FIRST_BEAT_SCORE) {
-    return false;
-  }
-  if (!isAcquisitionCadenceMatch(ibi)) return false;
+  if (peakToPeakScore < PEAK_TO_PEAK_PRIMARY_MIN_SCORE) return false;
+  if (qualifiedBeatStreak == 0 && peakToPeakScore < PEAK_TO_PEAK_FIRST_BEAT_SCORE) return false;
   return amplitude >= PEAK_TO_PEAK_MIN_AMPLITUDE || (maxSignal - minSignal) >= PEAK_TO_PEAK_MIN_RANGE;
-}
-
-BeatDecision decideBeat(int bpm, int ibi, int amplitude, bool wasLocked) {
-  BeatDecision decision;
-  decision.qualified = isQualifiedBeat(bpm, ibi, amplitude);
-  decision.strictAccepted = decision.qualified &&
-                            (wasLocked ? isLockedCadenceMatch(ibi) : isAcquisitionCadenceMatch(ibi));
-  decision.peakToPeakAccepted = PEAK_TO_PEAK_EXPERIMENT &&
-                                !decision.strictAccepted &&
-                                isPeakToPeakCandidateBeat(bpm, ibi, amplitude, wasLocked);
-  decision.recovered = !decision.strictAccepted &&
-                       !decision.peakToPeakAccepted &&
-                       wasLocked &&
-                       isPeakCadenceRecoveryBeat(bpm, ibi, amplitude);
-  decision.accepted = decision.strictAccepted || decision.peakToPeakAccepted || decision.recovered;
-  decision.acceptReason = decision.accepted ?
-                          (decision.strictAccepted ? "strict" :
-                           (decision.peakToPeakAccepted ? "peak2peak" : "peak-cadence")) :
-                          "reject";
-  return decision;
 }
 
 void updateClippingScore() {
@@ -1886,6 +1894,37 @@ void updateClippingScore() {
     clippedSampleScore--;
     lastClipDecayMs = now;
   }
+}
+
+void updateSignalJumpScore() {
+  int step = abs(currentSignal - previousSignalSample);
+  previousSignalSample = currentSignal;
+
+  if (step >= SIGNAL_JUMP_WARN_STEP) {
+    int add = 6 + ((step - SIGNAL_JUMP_WARN_STEP) / 16);
+    signalJumpScore += constrain(add, 6, 18);
+    if (signalJumpScore > 100) signalJumpScore = 100;
+    if (signalJumpScore >= SIGNAL_JUMP_WARN_SCORE) lastSignalJumpTime = millis();
+    return;
+  }
+
+  if (signalJumpScore > 0) signalJumpScore--;
+}
+
+bool signalMovementActive() {
+  if (signalJumpScore >= SIGNAL_JUMP_WARN_SCORE) return true;
+  return lastSignalJumpTime > 0 && millis() - lastSignalJumpTime < SIGNAL_JUMP_HOLD_MS;
+}
+
+void updateSignalArtifactState() {
+  int liveRange = maxSignal - minSignal;
+  if (clippedSampleScore > SIGNAL_CLIP_LOCKOUT_SCORE || liveRange >= SIGNAL_COACH_ARTIFACT_RANGE) {
+    lastSignalArtifactTime = millis();
+  }
+}
+
+bool signalArtifactActive() {
+  return lastSignalArtifactTime > 0 && millis() - lastSignalArtifactTime < SIGNAL_ARTIFACT_HOLD_MS;
 }
 
 int acquisitionScoreForCurrentSignal() {
@@ -1910,7 +1949,7 @@ int acquisitionScoreForCurrentSignal() {
   int cleanScore = clippedSampleScore <= 4 ? 2 : (clippedSampleScore <= 18 ? 1 : 0);
   int beatWindowScore = insideBeatWindow ? 1 : 0;
   int streakScore = qualifiedBeatStreak * 2;
-  int peakScore = PEAK_TO_PEAK_EXPERIMENT ? min(2, peakToPeakScore / 3) : 0;
+  int peakScore = min(2, peakToPeakScore / 3);
   int score = rangeScore + amplitudeScore + cleanScore + beatWindowScore + streakScore + peakScore;
 
   if (liveRange < SIGNAL_ACQUISITION_MIN_RANGE && pulseAmplitude < SIGNAL_COACH_FLAT_AMPLITUDE) {
@@ -1921,19 +1960,7 @@ int acquisitionScoreForCurrentSignal() {
 }
 
 void updateSignalAcquisitionScore() {
-  int previousQuality = signalQuality;
   signalQuality = acquisitionScoreForCurrentSignal();
-
-  if (signalQuality <= 1) {
-    lastSignalHarmonyQuality = 0;
-  }
-
-  if (!lockedSignal &&
-      signalQuality > previousQuality &&
-      signalQuality > lastSignalHarmonyQuality) {
-    startSignalHarmony(signalQuality);
-    lastSignalHarmonyQuality = signalQuality;
-  }
 }
 
 void dropSignalLock(const char* reason) {
@@ -1950,6 +1977,17 @@ void dropSignalLock(const char* reason) {
   qualifiedBeatStreak = 0;
   unqualifiedBeatStreak = 0;
   lastBeatAcceptReason = "none";
+  if (strcmp(reason, "NO_BEAT_TIMEOUT") == 0) {
+    lastDropReason = DROP_NO_BEAT_TIMEOUT;
+  } else if (strcmp(reason, "CLIPPED") == 0) {
+    lastDropReason = DROP_CLIPPED;
+  } else if (strcmp(reason, "ARTIFACT_RANGE") == 0) {
+    lastDropReason = DROP_ARTIFACT_RANGE;
+  } else if (strcmp(reason, "MOVEMENT") == 0) {
+    lastDropReason = DROP_MOVEMENT;
+  } else {
+    lastDropReason = DROP_NONE;
+  }
   displayBPM = 0;
   displayIBI = 0;
   updateSignalAcquisitionScore();
@@ -1960,6 +1998,7 @@ int signalCoachState() {
 
   if (lockedSignal) return COACH_QUALIFIED;
   if (!signalLooksCleanForAcquisition()) return COACH_CLIPPED;
+  if (signalMovementActive()) return COACH_HOLD_STEADY;
   if (liveRange < SIGNAL_COACH_FLAT_RANGE || pulseAmplitude < SIGNAL_COACH_FLAT_AMPLITUDE) {
     return COACH_TOO_FLAT;
   }
@@ -2021,9 +2060,14 @@ void rearmPulseDetector(const char* reason) {
   qualifiedBeatStreak = 0;
   unqualifiedBeatStreak = 0;
   peakToPeakScore = 0;
+  signalJumpScore = 0;
+  previousSignalSample = currentSignal;
+  lastSignalArtifactTime = 0;
+  lastSignalJumpTime = 0;
   displayBPM = 0;
   displayIBI = 0;
   lockedSignal = false;
+  lastDropReason = DROP_NONE;
   lastLockDropReason = reason;
   lastBeatAcceptReason = "none";
   rearmCount++;
@@ -2037,8 +2081,14 @@ void resetSignalAcquisitionWindow() {
   minSignal = currentSignal - 40;
   maxSignal = currentSignal + 40;
   clippedSampleScore = 0;
+  signalJumpScore = 0;
+  previousSignalSample = currentSignal;
+  lastSignalArtifactTime = 0;
+  lastSignalJumpTime = 0;
   peakToPeakScore = 0;
+  lastDropReason = DROP_NONE;
   insideBeatWindow = false;
+  pendingGraphMarker = MARKER_NONE;
   rearLedPulseActive = false;
   ledPulseActive = false;
   rearLedBrightness = 0;
@@ -2727,6 +2777,13 @@ void drawGraphLabels() {
   tft.setCursor(graphLeft + graphWidth - 48, graphTop + 5);
   tft.print("THR ");
   tft.print(PULSE_THRESHOLD);
+
+  tft.setCursor(graphLeft + 6, graphTop + graphHeight - 14);
+  if (portraitLayout) {
+    tft.print("P S L X A");
+  } else {
+    tft.print("P p2p  S ok  L lock  X/A drop");
+  }
 }
 
 void drawSignalCoachStatus() {
@@ -2804,6 +2861,12 @@ void drawWaveform() {
     tft.fillCircle(graphLeft + graphX, y, 3, beatColor());
   }
 
+  if (pendingGraphMarker != MARKER_NONE) {
+    int markerY = signalToGraphY(pendingGraphMarkerSignal);
+    drawBeatGraphMarker(graphX, markerY, pendingGraphMarker);
+    pendingGraphMarker = MARKER_NONE;
+  }
+
   lastGraphY = y;
   graphX++;
 
@@ -2812,6 +2875,63 @@ void drawWaveform() {
     lastGraphY = y;
     drawGraphLabels();
     drawSignalCoachStatus();
+  }
+}
+
+void noteGraphBeatMarker(BeatGraphMarker marker) {
+  pendingGraphMarker = marker;
+  pendingGraphMarkerSignal = currentSignal;
+}
+
+void drawBeatGraphMarker(int localX, int y, BeatGraphMarker marker) {
+  int x = graphLeft + localX;
+  uint16_t bg = screenBgColor();
+  y = constrain(y, graphTop + 8, graphTop + graphHeight - 8);
+
+  uint16_t color = beatGraphMarkerColor(marker);
+  tft.fillCircle(x, y, 4, bg);
+  tft.drawCircle(x, y, 4, color);
+  tft.fillCircle(x, y, 2, color);
+
+  const char* glyph = beatGraphMarkerGlyph(marker);
+  tft.setTextSize(1);
+  tft.setTextColor(color, bg);
+  tft.setCursor(constrain(x - 3, graphLeft, graphLeft + graphWidth - 6),
+                constrain(y - 13, graphTop + 1, graphTop + graphHeight - 9));
+  tft.print(glyph);
+}
+
+uint16_t beatGraphMarkerColor(BeatGraphMarker marker) {
+  switch (marker) {
+    case MARKER_P2P:
+      return COLOR_SIGNAL_YELLOW;
+    case MARKER_STRICT:
+      return COLOR_CYAN;
+    case MARKER_LOCKED:
+      return COLOR_LOCK_GREEN;
+    case MARKER_ARTIFACT:
+      return COLOR_MAGENTA;
+    case MARKER_REJECT:
+      return COLOR_RED;
+    default:
+      return gridColor();
+  }
+}
+
+const char* beatGraphMarkerGlyph(BeatGraphMarker marker) {
+  switch (marker) {
+    case MARKER_P2P:
+      return "P";
+    case MARKER_STRICT:
+      return "S";
+    case MARKER_LOCKED:
+      return "L";
+    case MARKER_ARTIFACT:
+      return "A";
+    case MARKER_REJECT:
+      return "X";
+    default:
+      return "";
   }
 }
 
